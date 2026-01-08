@@ -1,0 +1,8 @@
+{
+  "category": "02-oop-basics",
+  "title": "Object-Oriented Programming Basics",
+  "description": "Learn the fundamentals of OOP in C#",
+  "order": 2,
+  "icon": "🏛️",
+  "color": "#8b5cf6"
+}

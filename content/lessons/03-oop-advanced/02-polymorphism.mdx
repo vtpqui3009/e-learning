@@ -1,0 +1,675 @@
+---
+title: "Polymorphism"
+description: "Master the power of polymorphism - one interface, many implementations"
+order: 2
+difficulty: "advanced"
+tags: ["oop", "polymorphism", "virtual", "override"]
+duration: "35 minutes"
+---
+
+# Polymorphism
+
+Polymorphism means "many forms" - it allows objects of different types to be treated as objects of a common base type. It's one of the most powerful features of OOP.
+
+## What is Polymorphism?
+
+Polymorphism lets you:
+- Write code that works with base class references
+- Have methods behave differently based on the actual object type
+- Add new derived classes without changing existing code
+
+## Method Overriding
+
+Use `virtual` in base class and `override` in derived class:
+
+<CodeEditor 
+  language="csharp"
+  code={`using System;
+
+class Animal
+{
+    public string Name { get; set; }
+    
+    public Animal(string name)
+    {
+        Name = name;
+    }
+    
+    // Virtual method - can be overridden
+    public virtual void MakeSound()
+    {
+        Console.WriteLine($"{Name} makes a sound");
+    }
+    
+    public virtual void Move()
+    {
+        Console.WriteLine($"{Name} moves");
+    }
+}
+
+class Dog : Animal
+{
+    public Dog(string name) : base(name) { }
+    
+    // Override the virtual method
+    public override void MakeSound()
+    {
+        Console.WriteLine($"{Name} barks: Woof!");
+    }
+    
+    public override void Move()
+    {
+        Console.WriteLine($"{Name} runs on four legs");
+    }
+}
+
+class Cat : Animal
+{
+    public Cat(string name) : base(name) { }
+    
+    public override void MakeSound()
+    {
+        Console.WriteLine($"{Name} meows: Meow!");
+    }
+    
+    public override void Move()
+    {
+        Console.WriteLine($"{Name} walks gracefully");
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        // Polymorphism - base class reference, derived class objects
+        Animal animal1 = new Dog("Buddy");
+        Animal animal2 = new Cat("Whiskers");
+        Animal animal3 = new Animal("Generic");
+        
+        animal1.MakeSound();  // Calls Dog's version
+        animal2.MakeSound();  // Calls Cat's version
+        animal3.MakeSound();  // Calls Animal's version
+        
+        Console.WriteLine();
+        
+        animal1.Move();
+        animal2.Move();
+        animal3.Move();
+    }
+}`}
+  title="Method Overriding"
+/>
+
+## Polymorphic Collections
+
+Store different types in the same collection:
+
+<CodeEditor 
+  language="csharp"
+  code={`using System;
+using System.Collections.Generic;
+
+abstract class Shape
+{
+    public string Name { get; set; }
+    
+    public Shape(string name)
+    {
+        Name = name;
+    }
+    
+    public abstract double GetArea();
+    public abstract double GetPerimeter();
+    
+    public virtual void Display()
+    {
+        Console.WriteLine($"{Name}: Area = {GetArea():F2}, Perimeter = {GetPerimeter():F2}");
+    }
+}
+
+class Circle : Shape
+{
+    public double Radius { get; set; }
+    
+    public Circle(double radius) : base("Circle")
+    {
+        Radius = radius;
+    }
+    
+    public override double GetArea()
+    {
+        return Math.PI * Radius * Radius;
+    }
+    
+    public override double GetPerimeter()
+    {
+        return 2 * Math.PI * Radius;
+    }
+}
+
+class Rectangle : Shape
+{
+    public double Width { get; set; }
+    public double Height { get; set; }
+    
+    public Rectangle(double width, double height) : base("Rectangle")
+    {
+        Width = width;
+        Height = height;
+    }
+    
+    public override double GetArea()
+    {
+        return Width * Height;
+    }
+    
+    public override double GetPerimeter()
+    {
+        return 2 * (Width + Height);
+    }
+}
+
+class Triangle : Shape
+{
+    public double Base { get; set; }
+    public double Height { get; set; }
+    public double Side1 { get; set; }
+    public double Side2 { get; set; }
+    
+    public Triangle(double baseLength, double height, double side1, double side2) 
+        : base("Triangle")
+    {
+        Base = baseLength;
+        Height = height;
+        Side1 = side1;
+        Side2 = side2;
+    }
+    
+    public override double GetArea()
+    {
+        return 0.5 * Base * Height;
+    }
+    
+    public override double GetPerimeter()
+    {
+        return Base + Side1 + Side2;
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        // Polymorphic collection
+        List<Shape> shapes = new List<Shape>
+        {
+            new Circle(5),
+            new Rectangle(4, 6),
+            new Triangle(3, 4, 3, 5)
+        };
+        
+        double totalArea = 0;
+        
+        foreach (Shape shape in shapes)
+        {
+            shape.Display();
+            totalArea += shape.GetArea();
+        }
+        
+        Console.WriteLine($"\\nTotal area: {totalArea:F2}");
+    }
+}`}
+  title="Polymorphic Collections"
+/>
+
+## Base Class Methods
+
+Call base class method from override using `base`:
+
+<CodeEditor 
+  language="csharp"
+  code={`using System;
+
+class Employee
+{
+    public string Name { get; set; }
+    public decimal BaseSalary { get; set; }
+    
+    public Employee(string name, decimal baseSalary)
+    {
+        Name = name;
+        BaseSalary = baseSalary;
+    }
+    
+    public virtual decimal CalculateSalary()
+    {
+        Console.WriteLine("Calculating base salary");
+        return BaseSalary;
+    }
+    
+    public virtual void DisplayInfo()
+    {
+        Console.WriteLine($"Employee: {Name}");
+        Console.WriteLine($"Salary: \${CalculateSalary():N2}");
+    }
+}
+
+class Manager : Employee
+{
+    public decimal Bonus { get; set; }
+    
+    public Manager(string name, decimal baseSalary, decimal bonus) 
+        : base(name, baseSalary)
+    {
+        Bonus = bonus;
+    }
+    
+    public override decimal CalculateSalary()
+    {
+        // Call base class method and add bonus
+        decimal basePay = base.CalculateSalary();
+        Console.WriteLine("Adding manager bonus");
+        return basePay + Bonus;
+    }
+    
+    public override void DisplayInfo()
+    {
+        base.DisplayInfo();  // Call base implementation
+        Console.WriteLine($"Bonus: \${Bonus:N2}");
+    }
+}
+
+class Developer : Employee
+{
+    public int ProjectCount { get; set; }
+    public decimal ProjectBonus { get; set; }
+    
+    public Developer(string name, decimal baseSalary, int projectCount) 
+        : base(name, baseSalary)
+    {
+        ProjectCount = projectCount;
+        ProjectBonus = 5000;
+    }
+    
+    public override decimal CalculateSalary()
+    {
+        decimal basePay = base.CalculateSalary();
+        decimal projectPay = ProjectCount * ProjectBonus;
+        Console.WriteLine($"Adding project bonuses ({ProjectCount} projects)");
+        return basePay + projectPay;
+    }
+    
+    public override void DisplayInfo()
+    {
+        base.DisplayInfo();
+        Console.WriteLine($"Projects: {ProjectCount}");
+        Console.WriteLine($"Project Bonus: \${ProjectCount * ProjectBonus:N2}");
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        Employee emp1 = new Manager("Alice", 80000, 20000);
+        Employee emp2 = new Developer("Bob", 75000, 3);
+        Employee emp3 = new Employee("Charlie", 50000);
+        
+        Employee[] employees = { emp1, emp2, emp3 };
+        
+        foreach (var emp in employees)
+        {
+            emp.DisplayInfo();
+            Console.WriteLine();
+        }
+    }
+}`}
+  title="Using base Keyword"
+/>
+
+## sealed Methods
+
+Prevent further overriding:
+
+<CodeEditor 
+  language="csharp"
+  code={`using System;
+
+class Vehicle
+{
+    public virtual void StartEngine()
+    {
+        Console.WriteLine("Engine starting...");
+    }
+}
+
+class Car : Vehicle
+{
+    // Sealed - cannot be overridden in derived classes
+    public sealed override void StartEngine()
+    {
+        Console.WriteLine("Car engine starting with key");
+    }
+}
+
+class SportsCar : Car
+{
+    // ERROR: Cannot override sealed method
+    // public override void StartEngine() { }
+    
+    // But can add new methods
+    public void TurboBoost()
+    {
+        Console.WriteLine("Turbo boost activated!");
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        Vehicle car1 = new Car();
+        Vehicle car2 = new SportsCar();
+        
+        car1.StartEngine();
+        car2.StartEngine();
+        
+        if (car2 is SportsCar sports)
+        {
+            sports.TurboBoost();
+        }
+    }
+}`}
+  title="sealed Methods"
+/>
+
+## Method Hiding with new
+
+Hide base class method (not recommended usually):
+
+<CodeEditor 
+  language="csharp"
+  code={`using System;
+
+class BaseClass
+{
+    public virtual void Display()
+    {
+        Console.WriteLine("BaseClass Display");
+    }
+    
+    public void Show()
+    {
+        Console.WriteLine("BaseClass Show");
+    }
+}
+
+class DerivedClass : BaseClass
+{
+    // Override virtual method
+    public override void Display()
+    {
+        Console.WriteLine("DerivedClass Display (overridden)");
+    }
+    
+    // Hide non-virtual method with 'new'
+    public new void Show()
+    {
+        Console.WriteLine("DerivedClass Show (hidden)");
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        DerivedClass derived = new DerivedClass();
+        BaseClass baseRef = derived;
+        
+        Console.WriteLine("Calling through derived reference:");
+        derived.Display();  // DerivedClass version
+        derived.Show();     // DerivedClass version
+        
+        Console.WriteLine("\\nCalling through base reference:");
+        baseRef.Display();  // DerivedClass version (polymorphism!)
+        baseRef.Show();     // BaseClass version (no polymorphism)
+    }
+}`}
+  title="Method Hiding (new keyword)"
+/>
+
+## Polymorphic Behavior Example
+
+<CodeEditor 
+  language="csharp"
+  code={`using System;
+using System.Collections.Generic;
+
+abstract class PaymentMethod
+{
+    public string Name { get; set; }
+    
+    public PaymentMethod(string name)
+    {
+        Name = name;
+    }
+    
+    public abstract bool ProcessPayment(decimal amount);
+    
+    public virtual void DisplayReceipt(decimal amount)
+    {
+        Console.WriteLine($"\\n--- Payment Receipt ---");
+        Console.WriteLine($"Method: {Name}");
+        Console.WriteLine($"Amount: \${amount:N2}");
+        Console.WriteLine($"Status: Processed");
+    }
+}
+
+class CreditCard : PaymentMethod
+{
+    public string CardNumber { get; set; }
+    
+    public CreditCard(string cardNumber) : base("Credit Card")
+    {
+        CardNumber = cardNumber;
+    }
+    
+    public override bool ProcessPayment(decimal amount)
+    {
+        Console.WriteLine($"Processing credit card payment: \${amount:N2}");
+        Console.WriteLine($"Card: ****{CardNumber.Substring(CardNumber.Length - 4)}");
+        return true;
+    }
+    
+    public override void DisplayReceipt(decimal amount)
+    {
+        base.DisplayReceipt(amount);
+        Console.WriteLine($"Card: ****{CardNumber.Substring(CardNumber.Length - 4)}");
+    }
+}
+
+class PayPal : PaymentMethod
+{
+    public string Email { get; set; }
+    
+    public PayPal(string email) : base("PayPal")
+    {
+        Email = email;
+    }
+    
+    public override bool ProcessPayment(decimal amount)
+    {
+        Console.WriteLine($"Processing PayPal payment: \${amount:N2}");
+        Console.WriteLine($"Account: {Email}");
+        return true;
+    }
+    
+    public override void DisplayReceipt(decimal amount)
+    {
+        base.DisplayReceipt(amount);
+        Console.WriteLine($"PayPal Account: {Email}");
+    }
+}
+
+class BankTransfer : PaymentMethod
+{
+    public string AccountNumber { get; set; }
+    
+    public BankTransfer(string accountNumber) : base("Bank Transfer")
+    {
+        AccountNumber = accountNumber;
+    }
+    
+    public override bool ProcessPayment(decimal amount)
+    {
+        Console.WriteLine($"Processing bank transfer: \${amount:N2}");
+        Console.WriteLine($"Account: {AccountNumber}");
+        return true;
+    }
+    
+    public override void DisplayReceipt(decimal amount)
+    {
+        base.DisplayReceipt(amount);
+        Console.WriteLine($"Account: {AccountNumber}");
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        List<PaymentMethod> payments = new List<PaymentMethod>
+        {
+            new CreditCard("1234567890123456"),
+            new PayPal("user@example.com"),
+            new BankTransfer("ACC123456")
+        };
+        
+        decimal[] amounts = { 99.99m, 149.50m, 299.00m };
+        
+        for (int i = 0; i < payments.Count; i++)
+        {
+            PaymentMethod method = payments[i];
+            decimal amount = amounts[i];
+            
+            if (method.ProcessPayment(amount))
+            {
+                method.DisplayReceipt(amount);
+            }
+        }
+    }
+}`}
+  title="Payment Processing System"
+/>
+
+## Runtime Type Checking
+
+<CodeEditor 
+  language="csharp"
+  code={`using System;
+
+class Animal
+{
+    public string Name { get; set; }
+    public Animal(string name) { Name = name; }
+    public virtual void MakeSound() 
+    { 
+        Console.WriteLine($"{Name} makes a sound"); 
+    }
+}
+
+class Dog : Animal
+{
+    public Dog(string name) : base(name) { }
+    public override void MakeSound() 
+    { 
+        Console.WriteLine($"{Name} barks"); 
+    }
+    public void Fetch() 
+    { 
+        Console.WriteLine($"{Name} fetches the ball"); 
+    }
+}
+
+class Cat : Animal
+{
+    public Cat(string name) : base(name) { }
+    public override void MakeSound() 
+    { 
+        Console.WriteLine($"{Name} meows"); 
+    }
+    public void Scratch() 
+    { 
+        Console.WriteLine($"{Name} scratches"); 
+    }
+}
+
+class Program
+{
+    static void ProcessAnimal(Animal animal)
+    {
+        // Always works - defined in base class
+        animal.MakeSound();
+        
+        // Type checking with 'is'
+        if (animal is Dog)
+        {
+            Console.WriteLine($"{animal.Name} is a dog");
+        }
+        
+        // Pattern matching with 'is'
+        if (animal is Dog dog)
+        {
+            dog.Fetch();
+        }
+        
+        // Type casting with 'as'
+        Cat cat = animal as Cat;
+        if (cat != null)
+        {
+            cat.Scratch();
+        }
+        
+        Console.WriteLine();
+    }
+    
+    static void Main()
+    {
+        Animal[] animals = 
+        {
+            new Dog("Buddy"),
+            new Cat("Whiskers"),
+            new Dog("Max")
+        };
+        
+        foreach (var animal in animals)
+        {
+            ProcessAnimal(animal);
+        }
+    }
+}`}
+  title="Runtime Type Checking"
+/>
+
+## Best Practices
+
+1. **Use virtual/override** for true polymorphism
+2. **Avoid 'new' hiding** - Confusing and error-prone
+3. **Keep overrides consistent** - Same behavior contract as base
+4. **Use 'sealed' sparingly** - Only when you have a good reason
+5. **Document virtual methods** - Explain expected behavior
+6. **Test with base references** - Ensure polymorphism works correctly
+
+## Key Takeaways
+
+- **Polymorphism** allows one interface with many implementations
+- Use `virtual` and `override` for method overriding
+- **Base class references** can point to derived class objects
+- Use `base` keyword to call parent class methods
+- `sealed` prevents further overriding
+- Polymorphism enables **flexible and extensible** code
+
+## Next Steps
+
+Next, we'll learn about **Interfaces** - defining contracts that classes must implement!

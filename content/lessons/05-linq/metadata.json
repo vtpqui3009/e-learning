@@ -1,0 +1,8 @@
+{
+  "category": "05-linq",
+  "title": "LINQ - Language Integrated Query",
+  "description": "Query and manipulate data with LINQ",
+  "order": 5,
+  "icon": "🔍",
+  "color": "#f59e0b"
+}

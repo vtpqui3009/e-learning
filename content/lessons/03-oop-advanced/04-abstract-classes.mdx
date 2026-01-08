@@ -1,0 +1,788 @@
+---
+title: "Abstract Classes in C#"
+description: "Learn abstract classes, abstract methods, and when to use them vs interfaces"
+order: 4
+difficulty: "intermediate"
+estimatedTime: "25 minutes"
+keywords: ["abstract", "abstract class", "abstract method", "virtual", "inheritance"]
+prerequisites: ["03-oop-advanced/01-inheritance"]
+---
+
+# Abstract Classes in C#
+
+Abstract classes provide a way to define common behavior while forcing derived classes to implement specific functionality. They serve as templates that cannot be instantiated directly.
+
+## What are Abstract Classes?
+
+An **abstract class** is a class that cannot be instantiated on its own and is meant to be inherited by other classes. It can contain both implemented methods (concrete methods) and abstract methods that must be implemented by derived classes.
+
+Think of an abstract class as a blueprint that defines what derived classes should do, while allowing flexibility in how they do it.
+
+## Basic Abstract Class
+
+<CodeEditor 
+  language="csharp"
+  code={`using System;
+
+// Abstract class cannot be instantiated
+public abstract class Shape
+{
+    public string Color { get; set; }
+    
+    // Abstract method - no implementation
+    public abstract double CalculateArea();
+    
+    // Concrete method - has implementation
+    public void Display()
+    {
+        Console.WriteLine($"This is a {Color} shape with area: \${CalculateArea():F2}");
+    }
+}
+
+public class Circle : Shape
+{
+    public double Radius { get; set; }
+    
+    // Must implement abstract method
+    public override double CalculateArea()
+    {
+        return Math.PI * Radius * Radius;
+    }
+}
+
+public class Rectangle : Shape
+{
+    public double Width { get; set; }
+    public double Height { get; set; }
+    
+    public override double CalculateArea()
+    {
+        return Width * Height;
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        // Shape shape = new Shape(); // ERROR: Cannot instantiate abstract class
+        
+        Circle circle = new Circle { Color = "Red", Radius = 5 };
+        circle.Display();
+        
+        Rectangle rectangle = new Rectangle { Color = "Blue", Width = 4, Height = 6 };
+        rectangle.Display();
+    }
+}`}
+  title="Basic Abstract Class Example"
+/>
+
+## Abstract Methods vs Virtual Methods
+
+Abstract methods must be overridden, while virtual methods can optionally be overridden.
+
+<CodeEditor 
+  language="csharp"
+  code={`using System;
+
+public abstract class Animal
+{
+    public string Name { get; set; }
+    
+    // Abstract method - MUST be overridden
+    public abstract void MakeSound();
+    
+    // Virtual method - CAN be overridden (optional)
+    public virtual void Move()
+    {
+        Console.WriteLine($"{Name} is moving.");
+    }
+    
+    // Regular method - cannot be overridden
+    public void Eat()
+    {
+        Console.WriteLine($"{Name} is eating.");
+    }
+}
+
+public class Dog : Animal
+{
+    // Must override abstract method
+    public override void MakeSound()
+    {
+        Console.WriteLine($"{Name} says: Woof!");
+    }
+    
+    // Optional: Override virtual method
+    public override void Move()
+    {
+        Console.WriteLine($"{Name} is running on four legs.");
+    }
+}
+
+public class Bird : Animal
+{
+    // Must override abstract method
+    public override void MakeSound()
+    {
+        Console.WriteLine($"{Name} says: Chirp!");
+    }
+    
+    // Optional: Override virtual method
+    public override void Move()
+    {
+        Console.WriteLine($"{Name} is flying.");
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        Dog dog = new Dog { Name = "Rex" };
+        dog.MakeSound();
+        dog.Move();
+        dog.Eat();
+        
+        Console.WriteLine();
+        
+        Bird bird = new Bird { Name = "Tweety" };
+        bird.MakeSound();
+        bird.Move();
+        bird.Eat();
+    }
+}`}
+  title="Abstract vs Virtual Methods"
+/>
+
+## Real-World Example: Payment System
+
+<CodeEditor 
+  language="csharp"
+  code={`using System;
+
+public abstract class PaymentMethod
+{
+    public string AccountHolder { get; set; }
+    public decimal Amount { get; set; }
+    
+    // Abstract method - each payment type implements differently
+    public abstract bool ProcessPayment();
+    
+    // Abstract method for validation
+    public abstract bool ValidatePayment();
+    
+    // Concrete method - common to all payment methods
+    public void LogTransaction()
+    {
+        string status = ProcessPayment() ? "Success" : "Failed";
+        Console.WriteLine($"Transaction: {AccountHolder} - \${Amount:F2} - Status: {status}");
+    }
+}
+
+public class CreditCard : PaymentMethod
+{
+    public string CardNumber { get; set; }
+    public string CVV { get; set; }
+    
+    public override bool ValidatePayment()
+    {
+        // Simplified validation
+        return CardNumber.Length == 16 && CVV.Length == 3;
+    }
+    
+    public override bool ProcessPayment()
+    {
+        if (!ValidatePayment())
+        {
+            Console.WriteLine("Invalid credit card details.");
+            return false;
+        }
+        
+        Console.WriteLine($"Processing credit card payment of \${Amount:F2}...");
+        Console.WriteLine($"Card ending in {CardNumber.Substring(12)}");
+        return true;
+    }
+}
+
+public class PayPal : PaymentMethod
+{
+    public string Email { get; set; }
+    
+    public override bool ValidatePayment()
+    {
+        return Email.Contains("@") && Email.Contains(".");
+    }
+    
+    public override bool ProcessPayment()
+    {
+        if (!ValidatePayment())
+        {
+            Console.WriteLine("Invalid PayPal email.");
+            return false;
+        }
+        
+        Console.WriteLine($"Processing PayPal payment of \${Amount:F2}...");
+        Console.WriteLine($"PayPal account: {Email}");
+        return true;
+    }
+}
+
+public class BankTransfer : PaymentMethod
+{
+    public string AccountNumber { get; set; }
+    public string RoutingNumber { get; set; }
+    
+    public override bool ValidatePayment()
+    {
+        return AccountNumber.Length >= 8 && RoutingNumber.Length == 9;
+    }
+    
+    public override bool ProcessPayment()
+    {
+        if (!ValidatePayment())
+        {
+            Console.WriteLine("Invalid bank account details.");
+            return false;
+        }
+        
+        Console.WriteLine($"Processing bank transfer of \${Amount:F2}...");
+        Console.WriteLine($"Account: {AccountNumber}");
+        return true;
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        PaymentMethod[] payments = new PaymentMethod[]
+        {
+            new CreditCard 
+            { 
+                AccountHolder = "John Doe", 
+                Amount = 150.00m,
+                CardNumber = "1234567890123456",
+                CVV = "123"
+            },
+            new PayPal 
+            { 
+                AccountHolder = "Jane Smith", 
+                Amount = 75.50m,
+                Email = "jane@example.com"
+            },
+            new BankTransfer 
+            { 
+                AccountHolder = "Bob Johnson", 
+                Amount = 200.00m,
+                AccountNumber = "12345678",
+                RoutingNumber = "987654321"
+            }
+        };
+        
+        foreach (var payment in payments)
+        {
+            payment.LogTransaction();
+            Console.WriteLine();
+        }
+    }
+}`}
+  title="Real-World Payment System"
+/>
+
+## Abstract Properties
+
+Abstract classes can also have abstract properties that derived classes must implement.
+
+<CodeEditor 
+  language="csharp"
+  code={`using System;
+
+public abstract class Employee
+{
+    public string Name { get; set; }
+    public int Id { get; set; }
+    
+    // Abstract property - must be implemented
+    public abstract decimal Salary { get; }
+    
+    // Abstract method
+    public abstract decimal CalculateBonus();
+    
+    // Concrete method
+    public void DisplayInfo()
+    {
+        Console.WriteLine($"ID: {Id}");
+        Console.WriteLine($"Name: {Name}");
+        Console.WriteLine($"Salary: \${Salary:N2}");
+        Console.WriteLine($"Bonus: \${CalculateBonus():N2}");
+        Console.WriteLine($"Total: \${Salary + CalculateBonus():N2}");
+    }
+}
+
+public class FullTimeEmployee : Employee
+{
+    public decimal BaseSalary { get; set; }
+    
+    public override decimal Salary => BaseSalary;
+    
+    public override decimal CalculateBonus()
+    {
+        return BaseSalary * 0.10m; // 10% bonus
+    }
+}
+
+public class ContractEmployee : Employee
+{
+    public decimal HourlyRate { get; set; }
+    public int HoursWorked { get; set; }
+    
+    public override decimal Salary => HourlyRate * HoursWorked;
+    
+    public override decimal CalculateBonus()
+    {
+        return HoursWorked > 160 ? 500m : 0m; // Flat bonus if over 160 hours
+    }
+}
+
+public class PartTimeEmployee : Employee
+{
+    public decimal HourlyRate { get; set; }
+    public int HoursWorked { get; set; }
+    
+    public override decimal Salary => HourlyRate * HoursWorked;
+    
+    public override decimal CalculateBonus()
+    {
+        return 0m; // No bonus for part-time
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        Employee[] employees = new Employee[]
+        {
+            new FullTimeEmployee { Id = 1, Name = "Alice", BaseSalary = 60000m },
+            new ContractEmployee { Id = 2, Name = "Bob", HourlyRate = 50m, HoursWorked = 180 },
+            new PartTimeEmployee { Id = 3, Name = "Charlie", HourlyRate = 20m, HoursWorked = 80 }
+        };
+        
+        foreach (var emp in employees)
+        {
+            emp.DisplayInfo();
+            Console.WriteLine(new string('-', 40));
+        }
+    }
+}`}
+  title="Abstract Properties Example"
+/>
+
+## Abstract Classes with Constructors
+
+Abstract classes can have constructors that derived classes must call.
+
+<CodeEditor 
+  language="csharp"
+  code={`using System;
+
+public abstract class Vehicle
+{
+    public string Brand { get; private set; }
+    public string Model { get; private set; }
+    public int Year { get; private set; }
+    
+    // Abstract class can have constructor
+    protected Vehicle(string brand, string model, int year)
+    {
+        Brand = brand;
+        Model = model;
+        Year = year;
+        Console.WriteLine($"Vehicle created: {brand} {model} ({year})");
+    }
+    
+    // Abstract method
+    public abstract void StartEngine();
+    
+    // Abstract method
+    public abstract string GetVehicleType();
+    
+    // Concrete method
+    public void DisplayInfo()
+    {
+        Console.WriteLine($"{GetVehicleType()}: {Brand} {Model} ({Year})");
+    }
+}
+
+public class Car : Vehicle
+{
+    public int Doors { get; set; }
+    
+    // Must call base constructor
+    public Car(string brand, string model, int year, int doors) 
+        : base(brand, model, year)
+    {
+        Doors = doors;
+    }
+    
+    public override void StartEngine()
+    {
+        Console.WriteLine("Car engine started: Vroom vroom!");
+    }
+    
+    public override string GetVehicleType()
+    {
+        return "Car";
+    }
+}
+
+public class Motorcycle : Vehicle
+{
+    public bool HasSidecar { get; set; }
+    
+    public Motorcycle(string brand, string model, int year, bool hasSidecar) 
+        : base(brand, model, year)
+    {
+        HasSidecar = hasSidecar;
+    }
+    
+    public override void StartEngine()
+    {
+        Console.WriteLine("Motorcycle engine started: Vroom!");
+    }
+    
+    public override string GetVehicleType()
+    {
+        return HasSidecar ? "Motorcycle with Sidecar" : "Motorcycle";
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        Vehicle car = new Car("Toyota", "Camry", 2023, 4);
+        car.StartEngine();
+        car.DisplayInfo();
+        
+        Console.WriteLine();
+        
+        Vehicle motorcycle = new Motorcycle("Harley-Davidson", "Street 750", 2023, false);
+        motorcycle.StartEngine();
+        motorcycle.DisplayInfo();
+    }
+}`}
+  title="Abstract Classes with Constructors"
+/>
+
+## When to Use Abstract Classes vs Interfaces
+
+<CodeEditor 
+  language="csharp"
+  code={`using System;
+
+// Use ABSTRACT CLASS when:
+// 1. You have common implementation to share
+// 2. You want to provide default behavior
+// 3. You have fields or constructors
+// 4. Classes are closely related
+
+public abstract class DatabaseConnection
+{
+    protected string ConnectionString { get; set; }
+    protected bool IsConnected { get; set; }
+    
+    // Constructor with common logic
+    protected DatabaseConnection(string connectionString)
+    {
+        ConnectionString = connectionString;
+        IsConnected = false;
+    }
+    
+    // Abstract methods that must be implemented
+    public abstract void Connect();
+    public abstract void Disconnect();
+    public abstract void ExecuteQuery(string query);
+    
+    // Concrete method with shared implementation
+    public void CheckConnection()
+    {
+        Console.WriteLine($"Connection status: {(IsConnected ? "Connected" : "Disconnected")}");
+    }
+}
+
+public class SqlServerConnection : DatabaseConnection
+{
+    public SqlServerConnection(string connectionString) : base(connectionString) { }
+    
+    public override void Connect()
+    {
+        Console.WriteLine("Connecting to SQL Server...");
+        IsConnected = true;
+    }
+    
+    public override void Disconnect()
+    {
+        Console.WriteLine("Disconnecting from SQL Server...");
+        IsConnected = false;
+    }
+    
+    public override void ExecuteQuery(string query)
+    {
+        if (IsConnected)
+            Console.WriteLine($"Executing SQL Server query: {query}");
+        else
+            Console.WriteLine("Not connected!");
+    }
+}
+
+// Use INTERFACE when:
+// 1. You want to define a contract without implementation
+// 2. You need multiple inheritance (C# allows multiple interfaces)
+// 3. Unrelated classes should have common behavior
+// 4. You want loose coupling
+
+public interface ILogger
+{
+    void Log(string message);
+    void LogError(string error);
+}
+
+public interface IEmailSender
+{
+    void SendEmail(string to, string subject, string body);
+}
+
+// Class can implement multiple interfaces but inherit from only one abstract class
+public class NotificationService : ILogger, IEmailSender
+{
+    public void Log(string message)
+    {
+        Console.WriteLine($"[LOG] {message}");
+    }
+    
+    public void LogError(string error)
+    {
+        Console.WriteLine($"[ERROR] {error}");
+    }
+    
+    public void SendEmail(string to, string subject, string body)
+    {
+        Console.WriteLine($"Email sent to {to}: {subject}");
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        // Abstract class example
+        Console.WriteLine("=== Abstract Class Example ===");
+        DatabaseConnection db = new SqlServerConnection("Server=localhost;Database=Test");
+        db.CheckConnection();
+        db.Connect();
+        db.CheckConnection();
+        db.ExecuteQuery("SELECT * FROM Users");
+        db.Disconnect();
+        
+        Console.WriteLine();
+        
+        // Interface example
+        Console.WriteLine("=== Interface Example ===");
+        NotificationService service = new NotificationService();
+        service.Log("Application started");
+        service.SendEmail("user@example.com", "Welcome", "Hello!");
+        service.LogError("Something went wrong");
+    }
+}`}
+  title="Abstract Classes vs Interfaces"
+/>
+
+## Complex Abstract Class Hierarchy
+
+<CodeEditor 
+  language="csharp"
+  code={`using System;
+using System.Collections.Generic;
+
+public abstract class GameCharacter
+{
+    public string Name { get; set; }
+    public int Health { get; protected set; }
+    public int MaxHealth { get; protected set; }
+    public bool IsAlive => Health > 0;
+    
+    protected GameCharacter(string name, int maxHealth)
+    {
+        Name = name;
+        MaxHealth = maxHealth;
+        Health = maxHealth;
+    }
+    
+    // Abstract methods
+    public abstract void Attack(GameCharacter target);
+    public abstract void SpecialAbility();
+    
+    // Concrete methods
+    public void TakeDamage(int damage)
+    {
+        Health = Math.Max(0, Health - damage);
+        Console.WriteLine($"{Name} takes {damage} damage. Health: {Health}/{MaxHealth}");
+        
+        if (!IsAlive)
+            Console.WriteLine($"{Name} has been defeated!");
+    }
+    
+    public void Heal(int amount)
+    {
+        if (IsAlive)
+        {
+            Health = Math.Min(MaxHealth, Health + amount);
+            Console.WriteLine($"{Name} heals for {amount}. Health: {Health}/{MaxHealth}");
+        }
+    }
+}
+
+public class Warrior : GameCharacter
+{
+    public int Armor { get; set; }
+    
+    public Warrior(string name) : base(name, 150)
+    {
+        Armor = 20;
+    }
+    
+    public override void Attack(GameCharacter target)
+    {
+        int damage = 25;
+        Console.WriteLine($"{Name} swings sword at {target.Name}!");
+        target.TakeDamage(damage);
+    }
+    
+    public override void SpecialAbility()
+    {
+        Console.WriteLine($"{Name} uses Shield Block! Armor increased by 10.");
+        Armor += 10;
+    }
+}
+
+public class Mage : GameCharacter
+{
+    public int Mana { get; private set; }
+    
+    public Mage(string name) : base(name, 80)
+    {
+        Mana = 100;
+    }
+    
+    public override void Attack(GameCharacter target)
+    {
+        if (Mana >= 20)
+        {
+            int damage = 35;
+            Mana -= 20;
+            Console.WriteLine($"{Name} casts Fireball at {target.Name}! (Mana: {Mana}/100)");
+            target.TakeDamage(damage);
+        }
+        else
+        {
+            Console.WriteLine($"{Name} is out of mana!");
+        }
+    }
+    
+    public override void SpecialAbility()
+    {
+        Console.WriteLine($"{Name} meditates and restores 30 mana.");
+        Mana = Math.Min(100, Mana + 30);
+    }
+}
+
+public class Healer : GameCharacter
+{
+    public Healer(string name) : base(name, 100) { }
+    
+    public override void Attack(GameCharacter target)
+    {
+        int damage = 15;
+        Console.WriteLine($"{Name} strikes {target.Name} with staff!");
+        target.TakeDamage(damage);
+    }
+    
+    public override void SpecialAbility()
+    {
+        Console.WriteLine($"{Name} uses Group Heal!");
+        Heal(30);
+    }
+    
+    public void HealAlly(GameCharacter ally)
+    {
+        Console.WriteLine($"{Name} heals {ally.Name}!");
+        ally.Heal(40);
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        List<GameCharacter> party = new List<GameCharacter>
+        {
+            new Warrior("Thorin"),
+            new Mage("Gandalf"),
+            new Healer("Elara")
+        };
+        
+        GameCharacter enemy = new Warrior("Orc Warrior");
+        
+        Console.WriteLine("=== Battle Begins! ===\n");
+        
+        // Round 1
+        party[0].Attack(enemy);
+        party[1].Attack(enemy);
+        enemy.Attack(party[1]);
+        
+        Console.WriteLine();
+        
+        // Round 2
+        if (party[2] is Healer healer)
+        {
+            healer.HealAlly(party[1]);
+        }
+        party[0].SpecialAbility();
+        party[1].SpecialAbility();
+        
+        Console.WriteLine();
+        
+        // Round 3
+        foreach (var character in party)
+        {
+            if (enemy.IsAlive)
+                character.Attack(enemy);
+        }
+    }
+}`}
+  title="Complex Game Character System"
+/>
+
+## Best Practices
+
+1. **Use abstract classes for "is-a" relationships** - When classes share a common base and have a hierarchical relationship
+2. **Provide meaningful default implementations** - Use concrete methods in abstract classes for shared behavior
+3. **Keep abstract methods focused** - Each abstract method should have a single, clear purpose
+4. **Don't overuse abstraction** - Only create abstract classes when you need to share implementation
+5. **Document abstract members** - Clearly explain what derived classes should implement
+6. **Use sealed keyword strategically** - Prevent further inheritance when appropriate
+
+## Key Takeaways
+
+- **Abstract classes** cannot be instantiated and are meant to be inherited
+- **Abstract methods** have no implementation and must be overridden by derived classes
+- **Virtual methods** can be optionally overridden, abstract methods must be overridden
+- Abstract classes can have **constructors, fields, properties, and concrete methods**
+- Use abstract classes when you need to **share implementation** among related classes
+- Use interfaces when you need to define a **contract** or when classes are unrelated
+- Abstract classes support **single inheritance** only (one base class)
+- Combine abstract methods and concrete methods to create **flexible, reusable** class hierarchies
+
+Abstract classes are powerful tools for creating maintainable, extensible code hierarchies. They strike a balance between the full implementation of concrete classes and the pure contracts of interfaces, making them ideal for scenarios where you need both shared behavior and enforced implementation contracts.

@@ -1,0 +1,534 @@
+---
+title: "Classes and Objects"
+description: "Learn the foundations of Object-Oriented Programming with classes and objects"
+order: 1
+difficulty: "intermediate"
+estimatedTime: "30 minutes"
+keywords: ["class", "object", "OOP", "constructor", "instance"]
+prerequisites: ["01-fundamentals/06-methods"]
+---
+
+# Classes and Objects in C#
+
+Classes are blueprints for creating objects. They're the foundation of Object-Oriented Programming (OOP) in C#.
+
+## What is a Class?
+
+A **class** is a template that defines:
+- **Data** (fields and properties)
+- **Behavior** (methods)
+
+An **object** is an instance of a class - the actual thing created from the blueprint.
+
+**Analogy:**
+- Class = Cookie cutter
+- Object = The actual cookie
+
+## Creating Your First Class
+
+<CodeEditor 
+  initialCode={`using System;
+
+class Person
+{
+    // Fields (data)
+    public string Name;
+    public int Age;
+    
+    // Method (behavior)
+    public void Introduce()
+    {
+        Console.WriteLine($"Hi, I'm {Name} and I'm {Age} years old.");
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        // Create objects (instances)
+        Person person1 = new Person();
+        person1.Name = "Alice";
+        person1.Age = 25;
+        person1.Introduce();
+        
+        Person person2 = new Person();
+        person2.Name = "Bob";
+        person2.Age = 30;
+        person2.Introduce();
+    }
+}`}
+/>
+
+## Constructors
+
+A **constructor** is a special method that runs when you create an object:
+
+<CodeEditor 
+  initialCode={`using System;
+
+class Person
+{
+    public string Name;
+    public int Age;
+    
+    // Constructor
+    public Person(string name, int age)
+    {
+        Name = name;
+        Age = age;
+        Console.WriteLine($"Created person: {name}");
+    }
+    
+    public void Introduce()
+    {
+        Console.WriteLine($"Hi, I'm {Name}, age {Age}");
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        // Use constructor to initialize
+        Person alice = new Person("Alice", 25);
+        Person bob = new Person("Bob", 30);
+        
+        alice.Introduce();
+        bob.Introduce();
+    }
+}`}
+/>
+
+### Default Constructor
+
+If you don't provide a constructor, C# creates a default one:
+
+```csharp
+class Person
+{
+    public string Name;
+    public int Age;
+    
+    // No constructor defined - C# creates this automatically:
+    // public Person() { }
+}
+
+// Usage
+Person p = new Person();  // Default constructor
+p.Name = "Alice";
+p.Age = 25;
+```
+
+## Multiple Constructors (Overloading)
+
+<CodeEditor 
+  initialCode={`using System;
+
+class Person
+{
+    public string Name;
+    public int Age;
+    public string City;
+    
+    // Constructor 1: Name only
+    public Person(string name)
+    {
+        Name = name;
+        Age = 0;
+        City = "Unknown";
+    }
+    
+    // Constructor 2: Name and age
+    public Person(string name, int age)
+    {
+        Name = name;
+        Age = age;
+        City = "Unknown";
+    }
+    
+    // Constructor 3: All parameters
+    public Person(string name, int age, string city)
+    {
+        Name = name;
+        Age = age;
+        City = city;
+    }
+    
+    public void Display()
+    {
+        Console.WriteLine($"{Name}, {Age}, {City}");
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        Person p1 = new Person("Alice");
+        Person p2 = new Person("Bob", 30);
+        Person p3 = new Person("Charlie", 25, "NYC");
+        
+        p1.Display();
+        p2.Display();
+        p3.Display();
+    }
+}`}
+/>
+
+## Properties
+
+Properties provide controlled access to fields:
+
+<CodeEditor 
+  initialCode={`using System;
+
+class BankAccount
+{
+    private double balance;  // private field
+    
+    // Property with get and set
+    public double Balance
+    {
+        get { return balance; }
+        set 
+        { 
+            if (value >= 0)
+                balance = value;
+            else
+                Console.WriteLine("Balance cannot be negative!");
+        }
+    }
+    
+    public BankAccount(double initialBalance)
+    {
+        Balance = initialBalance;
+    }
+    
+    public void Deposit(double amount)
+    {
+        if (amount > 0)
+        {
+            Balance += amount;
+            Console.WriteLine($"Deposited: \${amount}");
+        }
+    }
+    
+    public void Withdraw(double amount)
+    {
+        if (amount > 0 && amount <= Balance)
+        {
+            Balance -= amount;
+            Console.WriteLine($"Withdrew: \${amount}");
+        }
+        else
+        {
+            Console.WriteLine("Insufficient funds!");
+        }
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        BankAccount account = new BankAccount(1000);
+        Console.WriteLine($"Initial: \${account.Balance}");
+        
+        account.Deposit(500);
+        Console.WriteLine($"After deposit: \${account.Balance}");
+        
+        account.Withdraw(300);
+        Console.WriteLine($"After withdrawal: \${account.Balance}");
+        
+        account.Withdraw(2000);  // Insufficient!
+    }
+}`}
+/>
+
+## Auto-Properties
+
+Shorthand for simple properties:
+
+<CodeEditor 
+  initialCode={`using System;
+
+class Person
+{
+    // Auto-properties
+    public string Name { get; set; }
+    public int Age { get; set; }
+    public string Email { get; set; }
+    
+    public Person(string name, int age, string email)
+    {
+        Name = name;
+        Age = age;
+        Email = email;
+    }
+    
+    public void Display()
+    {
+        Console.WriteLine($"Name: {Name}");
+        Console.WriteLine($"Age: {Age}");
+        Console.WriteLine($"Email: {Email}");
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        Person person = new Person("Alice", 25, "alice@example.com");
+        person.Display();
+        
+        // Can modify properties
+        person.Age = 26;
+        Console.WriteLine($"\\nUpdated age: {person.Age}");
+    }
+}`}
+/>
+
+## Read-Only Properties
+
+<CodeEditor 
+  initialCode={`using System;
+
+class Product
+{
+    public string Name { get; set; }
+    public double Price { get; set; }
+    
+    // Read-only property (calculated)
+    public double PriceWithTax
+    {
+        get { return Price * 1.1; }  // 10% tax
+    }
+    
+    public Product(string name, double price)
+    {
+        Name = name;
+        Price = price;
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        Product laptop = new Product("Laptop", 1000);
+        
+        Console.WriteLine($"Product: {laptop.Name}");
+        Console.WriteLine($"Price: \${laptop.Price}");
+        Console.WriteLine($"Price with tax: \${laptop.PriceWithTax}");
+        
+        // laptop.PriceWithTax = 1200;  // ERROR: read-only!
+    }
+}`}
+/>
+
+## Practical Example: Rectangle Class
+
+<CodeEditor 
+  initialCode={`using System;
+
+class Rectangle
+{
+    public double Width { get; set; }
+    public double Height { get; set; }
+    
+    public Rectangle(double width, double height)
+    {
+        Width = width;
+        Height = height;
+    }
+    
+    public double CalculateArea()
+    {
+        return Width * Height;
+    }
+    
+    public double CalculatePerimeter()
+    {
+        return 2 * (Width + Height);
+    }
+    
+    public bool IsSquare()
+    {
+        return Width == Height;
+    }
+    
+    public void Display()
+    {
+        Console.WriteLine($"Rectangle: {Width} x {Height}");
+        Console.WriteLine($"Area: {CalculateArea()}");
+        Console.WriteLine($"Perimeter: {CalculatePerimeter()}");
+        Console.WriteLine($"Is square: {IsSquare()}");
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        Rectangle rect1 = new Rectangle(5, 10);
+        rect1.Display();
+        
+        Console.WriteLine();
+        
+        Rectangle rect2 = new Rectangle(7, 7);
+        rect2.Display();
+    }
+}`}
+/>
+
+## Static Members
+
+Static members belong to the class itself, not instances:
+
+<CodeEditor 
+  initialCode={`using System;
+
+class Counter
+{
+    // Static field - shared by all instances
+    public static int TotalCount = 0;
+    
+    // Instance field - unique to each instance
+    public int InstanceNumber;
+    
+    public Counter()
+    {
+        TotalCount++;
+        InstanceNumber = TotalCount;
+    }
+    
+    public void Display()
+    {
+        Console.WriteLine($"I am counter #{InstanceNumber}");
+        Console.WriteLine($"Total counters created: {TotalCount}");
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        Counter c1 = new Counter();
+        c1.Display();
+        
+        Console.WriteLine();
+        
+        Counter c2 = new Counter();
+        c2.Display();
+        
+        Console.WriteLine();
+        
+        Counter c3 = new Counter();
+        c3.Display();
+        
+        // Access static member without instance
+        Console.WriteLine($"\\nTotal: {Counter.TotalCount}");
+    }
+}`}
+/>
+
+## Object Initializers
+
+Shorthand for setting properties:
+
+<CodeEditor 
+  initialCode={`using System;
+
+class Car
+{
+    public string Make { get; set; }
+    public string Model { get; set; }
+    public int Year { get; set; }
+    public string Color { get; set; }
+    
+    public void Display()
+    {
+        Console.WriteLine($"{Year} {Color} {Make} {Model}");
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        // Object initializer syntax
+        Car car1 = new Car
+        {
+            Make = "Toyota",
+            Model = "Camry",
+            Year = 2024,
+            Color = "Blue"
+        };
+        
+        car1.Display();
+        
+        Car car2 = new Car
+        {
+            Make = "Honda",
+            Model = "Civic",
+            Year = 2023,
+            Color = "Red"
+        };
+        
+        car2.Display();
+    }
+}`}
+/>
+
+## The 'this' Keyword
+
+`this` refers to the current instance:
+
+```csharp
+class Person
+{
+    public string Name;
+    
+    public Person(string name)
+    {
+        this.Name = name;  // Disambiguate between parameter and field
+    }
+    
+    public void SetName(string name)
+    {
+        this.Name = name;
+    }
+}
+```
+
+## Practice Exercises
+
+1. **Student Class**:
+   Create a `Student` class with properties: Name, StudentID, GPA
+   Methods: DisplayInfo(), IsHonorRoll() (GPA >= 3.5)
+
+2. **Circle Class**:
+   Properties: Radius
+   Methods: CalculateArea(), CalculateCircumference()
+
+3. **Temperature Class**:
+   Property: Celsius
+   Read-only properties: Fahrenheit, Kelvin (calculated from Celsius)
+
+4. **Library Book**:
+   Properties: Title, Author, ISBN, IsCheckedOut
+   Methods: CheckOut(), Return()
+
+## Key Takeaways
+
+- **Class** = blueprint, **Object** = instance of class
+- **Constructor** initializes objects
+- **Properties** provide controlled access to fields
+- **Auto-properties** are shorthand for simple properties
+- **Static members** belong to the class, not instances
+- Use `this` to refer to current instance
+- **Object initializers** provide convenient syntax
+- Classes encapsulate data and behavior together
+
+In the next lesson, we'll explore **Properties and Fields** in more detail, including access modifiers!

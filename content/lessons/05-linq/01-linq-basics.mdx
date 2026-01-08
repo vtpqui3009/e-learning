@@ -1,0 +1,461 @@
+---
+title: "LINQ Basics"
+description: "Master Language Integrated Query for powerful data manipulation"
+order: 1
+difficulty: "intermediate"
+tags: ["linq", "queries", "collections", "functional"]
+duration: "35 minutes"
+---
+
+# LINQ Basics
+
+LINQ (Language Integrated Query) provides a unified syntax for querying different data sources. It makes working with collections intuitive and powerful.
+
+## What is LINQ?
+
+LINQ enables you to:
+- **Query collections** with SQL-like syntax
+- **Filter, transform, and aggregate** data
+- Work with **any collection type**
+- Write **declarative** instead of imperative code
+
+## Query Syntax vs Method Syntax
+
+<CodeEditor 
+  language="csharp"
+  code={`using System;
+using System.Linq;
+using System.Collections.Generic;
+
+class Program
+{
+    static void Main()
+    {
+        List<int> numbers = new List<int> { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+        
+        // Query syntax (SQL-like)
+        var queryEven = from n in numbers
+                        where n % 2 == 0
+                        select n;
+        
+        Console.WriteLine("Query syntax evens: " + string.Join(", ", queryEven));
+        
+        // Method syntax (fluent)
+        var methodEven = numbers.Where(n => n % 2 == 0);
+        
+        Console.WriteLine("Method syntax evens: " + string.Join(", ", methodEven));
+        
+        // Complex query syntax
+        var queryComplex = from n in numbers
+                          where n > 3
+                          orderby n descending
+                          select n * n;
+        
+        Console.WriteLine("\\nComplex query: " + string.Join(", ", queryComplex));
+        
+        // Equivalent method syntax
+        var methodComplex = numbers
+            .Where(n => n > 3)
+            .OrderByDescending(n => n)
+            .Select(n => n * n);
+        
+        Console.WriteLine("Complex method: " + string.Join(", ", methodComplex));
+    }
+}`}
+  title="Query vs Method Syntax"
+/>
+
+## Where - Filtering
+
+<CodeEditor 
+  language="csharp"
+  code={`using System;
+using System.Linq;
+using System.Collections.Generic;
+
+class Program
+{
+    static void Main()
+    {
+        List<int> numbers = new List<int> { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+        
+        // Simple filter
+        var evens = numbers.Where(n => n % 2 == 0);
+        Console.WriteLine("Evens: " + string.Join(", ", evens));
+        
+        // Multiple conditions
+        var filtered = numbers.Where(n => n > 3 && n < 8);
+        Console.WriteLine("Between 3 and 8: " + string.Join(", ", filtered));
+        
+        // Complex condition
+        var complex = numbers.Where(n => n % 2 == 0 || n > 7);
+        Console.WriteLine("Even or > 7: " + string.Join(", ", complex));
+        
+        // With strings
+        List<string> names = new List<string> 
+        { 
+            "Alice", "Bob", "Charlie", "David", "Eve" 
+        };
+        
+        var longNames = names.Where(name => name.Length > 4);
+        Console.WriteLine("\\nLong names: " + string.Join(", ", longNames));
+        
+        var startsWithC = names.Where(name => name.StartsWith("C"));
+        Console.WriteLine("Starts with C: " + string.Join(", ", startsWithC));
+    }
+}`}
+  title="Where - Filtering"
+/>
+
+## Select - Transformation
+
+<CodeEditor 
+  language="csharp"
+  code={`using System;
+using System.Linq;
+using System.Collections.Generic;
+
+class Program
+{
+    static void Main()
+    {
+        List<int> numbers = new List<int> { 1, 2, 3, 4, 5 };
+        
+        // Simple transformation
+        var squares = numbers.Select(n => n * n);
+        Console.WriteLine("Squares: " + string.Join(", ", squares));
+        
+        // Transform to different type
+        var strings = numbers.Select(n => $"Number {n}");
+        foreach (var s in strings)
+            Console.WriteLine(s);
+        
+        // Transform to anonymous type
+        var transformed = numbers.Select(n => new
+        {
+            Original = n,
+            Square = n * n,
+            Cube = n * n * n
+        });
+        
+        Console.WriteLine("\\nTransformed:");
+        foreach (var item in transformed)
+        {
+            Console.WriteLine($"  {item.Original} -> Square: {item.Square}, Cube: {item.Cube}");
+        }
+        
+        // Transform strings
+        List<string> names = new List<string> { "alice", "bob", "charlie" };
+        var upper = names.Select(n => n.ToUpper());
+        Console.WriteLine("\\nUppercase: " + string.Join(", ", upper));
+    }
+}`}
+  title="Select - Transformation"
+/>
+
+## OrderBy - Sorting
+
+<CodeEditor 
+  language="csharp"
+  code={`using System;
+using System.Linq;
+using System.Collections.Generic;
+
+class Person
+{
+    public string Name { get; set; }
+    public int Age { get; set; }
+    public string City { get; set; }
+    
+    public override string ToString() => $"{Name} ({Age}) from {City}";
+}
+
+class Program
+{
+    static void Main()
+    {
+        List<int> numbers = new List<int> { 5, 2, 8, 1, 9, 3 };
+        
+        // Ascending
+        var ascending = numbers.OrderBy(n => n);
+        Console.WriteLine("Ascending: " + string.Join(", ", ascending));
+        
+        // Descending
+        var descending = numbers.OrderByDescending(n => n);
+        Console.WriteLine("Descending: " + string.Join(", ", descending));
+        
+        // Complex objects
+        List<Person> people = new List<Person>
+        {
+            new Person { Name = "Alice", Age = 30, City = "New York" },
+            new Person { Name = "Bob", Age = 25, City = "Boston" },
+            new Person { Name = "Charlie", Age = 35, City = "Chicago" },
+            new Person { Name = "David", Age = 25, City = "Austin" }
+        };
+        
+        // Sort by age
+        var byAge = people.OrderBy(p => p.Age);
+        Console.WriteLine("\\nBy age:");
+        foreach (var p in byAge)
+            Console.WriteLine($"  {p}");
+        
+        // Sort by multiple criteria
+        var multiSort = people.OrderBy(p => p.Age).ThenBy(p => p.Name);
+        Console.WriteLine("\\nBy age, then name:");
+        foreach (var p in multiSort)
+            Console.WriteLine($"  {p}");
+    }
+}`}
+  title="OrderBy - Sorting"
+/>
+
+## First, FirstOrDefault, Single
+
+<CodeEditor 
+  language="csharp"
+  code={`using System;
+using System.Linq;
+using System.Collections.Generic;
+
+class Program
+{
+    static void Main()
+    {
+        List<int> numbers = new List<int> { 1, 2, 3, 4, 5 };
+        List<int> empty = new List<int>();
+        
+        // First - throws if empty
+        var first = numbers.First();
+        Console.WriteLine($"First: {first}");
+        
+        // First with condition
+        var firstEven = numbers.First(n => n % 2 == 0);
+        Console.WriteLine($"First even: {firstEven}");
+        
+        // FirstOrDefault - returns default if empty/not found
+        var firstOrDefault = empty.FirstOrDefault();
+        Console.WriteLine($"FirstOrDefault on empty: {firstOrDefault}");
+        
+        var firstLarge = numbers.FirstOrDefault(n => n > 10);
+        Console.WriteLine($"First > 10: {firstLarge} (not found)");
+        
+        // Last and LastOrDefault
+        var last = numbers.Last();
+        var lastOdd = numbers.Last(n => n % 2 == 1);
+        Console.WriteLine($"\\nLast: {last}");
+        Console.WriteLine($"Last odd: {lastOdd}");
+        
+        // Single - exactly one element
+        List<int> single = new List<int> { 42 };
+        var singleValue = single.Single();
+        Console.WriteLine($"\\nSingle value: {singleValue}");
+        
+        // Single with condition
+        var singleFive = numbers.Single(n => n == 5);
+        Console.WriteLine($"Single 5: {singleFive}");
+        
+        // ElementAt - by index
+        var third = numbers.ElementAt(2);  // 0-based
+        Console.WriteLine($"\\nThird element: {third}");
+    }
+}`}
+  title="First, Last, Single"
+/>
+
+## Any and All
+
+<CodeEditor 
+  language="csharp"
+  code={`using System;
+using System.Linq;
+using System.Collections.Generic;
+
+class Program
+{
+    static void Main()
+    {
+        List<int> numbers = new List<int> { 1, 2, 3, 4, 5 };
+        List<int> empty = new List<int>();
+        
+        // Any - check if any elements exist
+        bool hasElements = numbers.Any();
+        bool emptyHasElements = empty.Any();
+        Console.WriteLine($"Numbers has elements: {hasElements}");
+        Console.WriteLine($"Empty has elements: {emptyHasElements}");
+        
+        // Any with condition
+        bool hasEvens = numbers.Any(n => n % 2 == 0);
+        bool hasLarge = numbers.Any(n => n > 10);
+        Console.WriteLine($"\\nHas evens: {hasEvens}");
+        Console.WriteLine($"Has > 10: {hasLarge}");
+        
+        // All - check if all elements match
+        bool allPositive = numbers.All(n => n > 0);
+        bool allEven = numbers.All(n => n % 2 == 0);
+        Console.WriteLine($"\\nAll positive: {allPositive}");
+        Console.WriteLine($"All even: {allEven}");
+        
+        // Practical example
+        List<string> words = new List<string> 
+        { 
+            "apple", "banana", "cherry" 
+        };
+        
+        bool anyLong = words.Any(w => w.Length > 6);
+        bool allStartsWithA = words.All(w => w.StartsWith("a"));
+        bool allLowerCase = words.All(w => w == w.ToLower());
+        
+        Console.WriteLine($"\\nAny word > 6 chars: {anyLong}");
+        Console.WriteLine($"All start with 'a': {allStartsWithA}");
+        Console.WriteLine($"All lowercase: {allLowerCase}");
+    }
+}`}
+  title="Any and All"
+/>
+
+## Count, Sum, Average, Min, Max
+
+<CodeEditor 
+  language="csharp"
+  code={`using System;
+using System.Linq;
+using System.Collections.Generic;
+
+class Product
+{
+    public string Name { get; set; }
+    public decimal Price { get; set; }
+    public int Stock { get; set; }
+}
+
+class Program
+{
+    static void Main()
+    {
+        List<int> numbers = new List<int> { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+        
+        // Basic aggregations
+        int count = numbers.Count();
+        int sum = numbers.Sum();
+        double average = numbers.Average();
+        int min = numbers.Min();
+        int max = numbers.Max();
+        
+        Console.WriteLine($"Count: {count}");
+        Console.WriteLine($"Sum: {sum}");
+        Console.WriteLine($"Average: {average}");
+        Console.WriteLine($"Min: {min}");
+        Console.WriteLine($"Max: {max}");
+        
+        // With conditions
+        int evenCount = numbers.Count(n => n % 2 == 0);
+        int sumLarge = numbers.Where(n => n > 5).Sum();
+        Console.WriteLine($"\\nEven count: {evenCount}");
+        Console.WriteLine($"Sum of numbers > 5: {sumLarge}");
+        
+        // With complex objects
+        List<Product> products = new List<Product>
+        {
+            new Product { Name = "Laptop", Price = 999, Stock = 5 },
+            new Product { Name = "Mouse", Price = 25, Stock = 50 },
+            new Product { Name = "Keyboard", Price = 79, Stock = 30 }
+        };
+        
+        decimal totalValue = products.Sum(p => p.Price * p.Stock);
+        decimal avgPrice = products.Average(p => p.Price);
+        decimal maxPrice = products.Max(p => p.Price);
+        int totalStock = products.Sum(p => p.Stock);
+        
+        Console.WriteLine($"\\nTotal inventory value: \${totalValue}");
+        Console.WriteLine($"Average price: \${avgPrice:F2}");
+        Console.WriteLine($"Most expensive: \${maxPrice}");
+        Console.WriteLine($"Total stock: {totalStock} units");
+    }
+}`}
+  title="Aggregation Methods"
+/>
+
+## Chaining Multiple Operations
+
+<CodeEditor 
+  language="csharp"
+  code={`using System;
+using System.Linq;
+using System.Collections.Generic;
+
+class Student
+{
+    public string Name { get; set; }
+    public int Age { get; set; }
+    public double GPA { get; set; }
+    public string Major { get; set; }
+}
+
+class Program
+{
+    static void Main()
+    {
+        List<Student> students = new List<Student>
+        {
+            new Student { Name = "Alice", Age = 20, GPA = 3.8, Major = "CS" },
+            new Student { Name = "Bob", Age = 22, GPA = 3.2, Major = "Math" },
+            new Student { Name = "Charlie", Age = 19, GPA = 3.9, Major = "CS" },
+            new Student { Name = "David", Age = 21, GPA = 3.5, Major = "Physics" },
+            new Student { Name = "Eve", Age = 20, GPA = 3.7, Major = "CS" }
+        };
+        
+        // Complex query chain
+        var result = students
+            .Where(s => s.Major == "CS")
+            .Where(s => s.GPA > 3.5)
+            .OrderByDescending(s => s.GPA)
+            .ThenBy(s => s.Name)
+            .Select(s => new
+            {
+                s.Name,
+                s.GPA,
+                Standing = s.GPA >= 3.8 ? "Excellent" : "Good"
+            });
+        
+        Console.WriteLine("Top CS students:");
+        foreach (var s in result)
+        {
+            Console.WriteLine($"  {s.Name}: GPA {s.GPA} - {s.Standing}");
+        }
+        
+        // Statistics
+        var csStudents = students.Where(s => s.Major == "CS");
+        double avgGPA = csStudents.Average(s => s.GPA);
+        double maxGPA = csStudents.Max(s => s.GPA);
+        int count = csStudents.Count();
+        
+        Console.WriteLine($"\\nCS Statistics:");
+        Console.WriteLine($"  Count: {count}");
+        Console.WriteLine($"  Avg GPA: \${avgGPA:F2}");
+        Console.WriteLine($"  Max GPA: {maxGPA}");
+    }
+}`}
+  title="Chaining Operations"
+/>
+
+## Best Practices
+
+1. **Use method syntax** - More flexible and composable
+2. **Chain operations** - Build complex queries step by step
+3. **Deferred execution** - Queries execute when iterated
+4. **Use ToList()/ToArray()** - When you need immediate execution
+5. **Keep it readable** - Break into multiple lines
+6. **Consider performance** - Don't over-query
+
+## Key Takeaways
+
+- **LINQ** provides unified syntax for querying collections
+- **Method syntax** (`Where`, `Select`) vs **Query syntax** (`from...where`)
+- **Deferred execution** - queries run when enumerated
+- **Fluent API** allows chaining multiple operations
+- Essential methods: **Where**, **Select**, **OrderBy**, **First**, **Any**, **All**
+- Aggregations: **Count**, **Sum**, **Average**, **Min**, **Max**
+
+## Next Steps
+
+Next: **Advanced LINQ** - GroupBy, Join, and complex queries!

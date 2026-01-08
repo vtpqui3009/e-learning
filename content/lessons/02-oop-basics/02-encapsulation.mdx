@@ -1,0 +1,433 @@
+---
+title: "Encapsulation"
+description: "Learn how to hide implementation details and protect data with encapsulation"
+order: 2
+difficulty: "intermediate"
+tags: ["oop", "encapsulation", "access-modifiers"]
+duration: "25 minutes"
+---
+
+# Encapsulation
+
+Encapsulation is one of the fundamental principles of Object-Oriented Programming. It's the practice of hiding the internal state and implementation details of an object, exposing only what's necessary through a public interface.
+
+## What is Encapsulation?
+
+Encapsulation bundles data (fields) and methods that operate on that data within a single unit (class), and restricts direct access to some of the object's components. This is achieved through **access modifiers**.
+
+## Access Modifiers
+
+C# provides several access modifiers to control visibility:
+
+| Modifier | Description |
+|----------|-------------|
+| `public` | Accessible from anywhere |
+| `private` | Accessible only within the same class |
+| `protected` | Accessible within the class and derived classes |
+| `internal` | Accessible within the same assembly |
+| `protected internal` | Accessible within the same assembly or derived classes |
+| `private protected` | Accessible within the same class or derived classes in the same assembly |
+
+## Private Fields and Public Methods
+
+The most common encapsulation pattern uses private fields with public methods:
+
+<CodeEditor 
+  language="csharp"
+  code={`using System;
+
+class BankAccount
+{
+    // Private fields - hidden from outside
+    private string accountNumber;
+    private decimal balance;
+    
+    public BankAccount(string accountNumber, decimal initialBalance)
+    {
+        this.accountNumber = accountNumber;
+        this.balance = initialBalance;
+    }
+    
+    // Public method to access balance
+    public decimal GetBalance()
+    {
+        return balance;
+    }
+    
+    // Public method with validation
+    public bool Deposit(decimal amount)
+    {
+        if (amount <= 0)
+        {
+            Console.WriteLine("Deposit amount must be positive");
+            return false;
+        }
+        
+        balance += amount;
+        Console.WriteLine($"Deposited \${amount}. New balance: \${balance}");
+        return true;
+    }
+    
+    public bool Withdraw(decimal amount)
+    {
+        if (amount <= 0)
+        {
+            Console.WriteLine("Withdrawal amount must be positive");
+            return false;
+        }
+        
+        if (amount > balance)
+        {
+            Console.WriteLine("Insufficient funds");
+            return false;
+        }
+        
+        balance -= amount;
+        Console.WriteLine($"Withdrew \${amount}. New balance: \${balance}");
+        return true;
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        BankAccount account = new BankAccount("123456", 1000);
+        
+        Console.WriteLine($"Initial balance: \${account.GetBalance()}");
+        
+        account.Deposit(500);
+        account.Withdraw(200);
+        account.Withdraw(2000); // Will fail - insufficient funds
+        
+        // This would cause a compile error:
+        // account.balance = 1000000; // Can't access private field!
+    }
+}`}
+  title="Bank Account with Encapsulation"
+/>
+
+## Benefits of Encapsulation
+
+### 1. Data Validation
+
+You can validate data before accepting it:
+
+<CodeEditor 
+  language="csharp"
+  code={`using System;
+
+class Person
+{
+    private int age;
+    
+    public void SetAge(int value)
+    {
+        if (value < 0 || value > 150)
+        {
+            Console.WriteLine("Invalid age! Must be between 0 and 150");
+            return;
+        }
+        age = value;
+        Console.WriteLine($"Age set to {age}");
+    }
+    
+    public int GetAge()
+    {
+        return age;
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        Person person = new Person();
+        
+        person.SetAge(25);   // Valid
+        person.SetAge(-5);   // Invalid
+        person.SetAge(200);  // Invalid
+        
+        Console.WriteLine($"Current age: {person.GetAge()}");
+    }
+}`}
+  title="Data Validation Example"
+/>
+
+### 2. Internal Implementation Changes
+
+You can change how data is stored internally without affecting external code:
+
+<CodeEditor 
+  language="csharp"
+  code={`using System;
+
+class Temperature
+{
+    // Internally stored in Celsius
+    private double celsius;
+    
+    public void SetFahrenheit(double fahrenheit)
+    {
+        // Convert and store as Celsius
+        celsius = (fahrenheit - 32) * 5 / 9;
+        Console.WriteLine($"Set to {fahrenheit}°F ({celsius:F1}°C)");
+    }
+    
+    public double GetFahrenheit()
+    {
+        // Convert from Celsius to Fahrenheit
+        return (celsius * 9 / 5) + 32;
+    }
+    
+    public void SetCelsius(double value)
+    {
+        celsius = value;
+        Console.WriteLine($"Set to {celsius}°C");
+    }
+    
+    public double GetCelsius()
+    {
+        return celsius;
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        Temperature temp = new Temperature();
+        
+        temp.SetFahrenheit(98.6);
+        Console.WriteLine($"Temperature: {temp.GetCelsius():F1}°C");
+        
+        temp.SetCelsius(100);
+        Console.WriteLine($"Temperature: {temp.GetFahrenheit():F1}°F");
+    }
+}`}
+  title="Internal Implementation Flexibility"
+/>
+
+### 3. Read-Only Access
+
+You can provide read-only access by only exposing a getter:
+
+<CodeEditor 
+  language="csharp"
+  code={`using System;
+
+class Product
+{
+    private string id;
+    private string name;
+    private DateTime createdDate;
+    
+    public Product(string name)
+    {
+        this.id = Guid.NewGuid().ToString();
+        this.name = name;
+        this.createdDate = DateTime.Now;
+    }
+    
+    // Read-only access to ID
+    public string GetId()
+    {
+        return id;
+    }
+    
+    // Read-only access to creation date
+    public DateTime GetCreatedDate()
+    {
+        return createdDate;
+    }
+    
+    // Read and write access to name
+    public string GetName()
+    {
+        return name;
+    }
+    
+    public void SetName(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            Console.WriteLine("Name cannot be empty");
+            return;
+        }
+        name = value;
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        Product product = new Product("Laptop");
+        
+        Console.WriteLine($"Product ID: {product.GetId()}");
+        Console.WriteLine($"Name: {product.GetName()}");
+        Console.WriteLine($"Created: {product.GetCreatedDate()}");
+        
+        // Can change name
+        product.SetName("Gaming Laptop");
+        Console.WriteLine($"Updated name: {product.GetName()}");
+        
+        // Cannot change ID or creation date - no setters provided!
+    }
+}`}
+  title="Read-Only Fields"
+/>
+
+## Encapsulation with Properties (Preview)
+
+While we'll cover properties in detail in the next lesson, here's a quick preview of how C# provides a cleaner syntax for encapsulation:
+
+<CodeEditor 
+  language="csharp"
+  code={`using System;
+
+class Employee
+{
+    // Private backing field
+    private string name;
+    
+    // Property with validation
+    public string Name
+    {
+        get { return name; }
+        set 
+        { 
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                Console.WriteLine("Name cannot be empty");
+                return;
+            }
+            name = value;
+        }
+    }
+    
+    // Auto-implemented property
+    public int EmployeeId { get; private set; }
+    
+    public Employee(int id, string name)
+    {
+        this.EmployeeId = id;
+        this.Name = name;
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        Employee emp = new Employee(101, "John Doe");
+        
+        Console.WriteLine($"ID: {emp.EmployeeId}");
+        Console.WriteLine($"Name: {emp.Name}");
+        
+        // Can update name
+        emp.Name = "Jane Doe";
+        Console.WriteLine($"Updated name: {emp.Name}");
+        
+        // Cannot update ID - private setter
+        // emp.EmployeeId = 102; // Compile error!
+    }
+}`}
+  title="Properties for Encapsulation"
+/>
+
+## Best Practices
+
+1. **Make fields private** - Always use private access for fields unless you have a specific reason not to
+2. **Provide public methods/properties** - Control access through well-defined interfaces
+3. **Validate input** - Check data in setters/methods before accepting it
+4. **Return copies when needed** - For mutable objects, consider returning copies to prevent external modification
+5. **Use meaningful names** - Method names should clearly indicate what they do
+
+<CodeEditor 
+  language="csharp"
+  code={`using System;
+using System.Collections.Generic;
+
+class ShoppingCart
+{
+    private List<string> items;
+    private decimal total;
+    
+    public ShoppingCart()
+    {
+        items = new List<string>();
+        total = 0;
+    }
+    
+    // Add item with validation
+    public void AddItem(string item, decimal price)
+    {
+        if (string.IsNullOrWhiteSpace(item))
+        {
+            Console.WriteLine("Item name cannot be empty");
+            return;
+        }
+        
+        if (price < 0)
+        {
+            Console.WriteLine("Price cannot be negative");
+            return;
+        }
+        
+        items.Add(item);
+        total += price;
+        Console.WriteLine($"Added {item} - \${price}");
+    }
+    
+    // Return copy of items to prevent external modification
+    public List<string> GetItems()
+    {
+        return new List<string>(items);
+    }
+    
+    public decimal GetTotal()
+    {
+        return total;
+    }
+    
+    public int GetItemCount()
+    {
+        return items.Count;
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        ShoppingCart cart = new ShoppingCart();
+        
+        cart.AddItem("Book", 19.99m);
+        cart.AddItem("Pen", 2.50m);
+        cart.AddItem("Notebook", 5.99m);
+        
+        Console.WriteLine($"\\nTotal items: {cart.GetItemCount()}");
+        Console.WriteLine($"Total cost: \${cart.GetTotal()}");
+        
+        Console.WriteLine("\\nItems in cart:");
+        foreach (var item in cart.GetItems())
+        {
+            Console.WriteLine($"- {item}");
+        }
+    }
+}`}
+  title="Complete Encapsulation Example"
+/>
+
+## Key Takeaways
+
+- **Encapsulation hides internal details** and exposes only what's necessary
+- **Private fields** protect data from unauthorized access
+- **Public methods** provide controlled access with validation
+- **Access modifiers** control the visibility of class members
+- Encapsulation makes code **more maintainable** and **less prone to bugs**
+
+## Next Steps
+
+In the next lesson, we'll learn about **Properties** - C#'s elegant way to implement encapsulation with less boilerplate code!

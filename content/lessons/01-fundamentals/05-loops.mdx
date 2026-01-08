@@ -1,0 +1,373 @@
+---
+title: "Loops - For, While, and Foreach"
+description: "Master iteration with loops to repeat code efficiently"
+order: 5
+difficulty: "beginner"
+estimatedTime: "20 minutes"
+keywords: ["loops", "for", "while", "foreach", "iteration"]
+prerequisites: ["01-fundamentals/04-control-flow"]
+---
+
+# Loops in C#
+
+Loops allow you to execute code repeatedly without writing it multiple times. C# provides several types of loops for different scenarios.
+
+## For Loop
+
+The `for` loop is ideal when you know how many times you want to iterate:
+
+<CodeEditor 
+  initialCode={`using System;
+
+class Program
+{
+    static void Main()
+    {
+        // Print numbers 1 to 5
+        for (int i = 1; i <= 5; i++)
+        {
+            Console.WriteLine($"Count: {i}");
+        }
+        
+        Console.WriteLine("Loop finished!");
+    }
+}`}
+/>
+
+**Syntax breakdown:**
+- `int i = 1` - Initialization (runs once)
+- `i <= 5` - Condition (checked before each iteration)
+- `i++` - Increment (runs after each iteration)
+
+## For Loop Examples
+
+### Counting Backwards
+
+<CodeEditor 
+  initialCode={`using System;
+
+class Program
+{
+    static void Main()
+    {
+        // Countdown from 10 to 1
+        for (int i = 10; i >= 1; i--)
+        {
+            Console.WriteLine(i);
+        }
+        Console.WriteLine("Blast off!");
+    }
+}`}
+/>
+
+### Skip Numbers
+
+<CodeEditor 
+  initialCode={`using System;
+
+class Program
+{
+    static void Main()
+    {
+        // Print even numbers from 0 to 20
+        for (int i = 0; i <= 20; i += 2)
+        {
+            Console.WriteLine(i);
+        }
+    }
+}`}
+/>
+
+### Multiplication Table
+
+<CodeEditor 
+  initialCode={`using System;
+
+class Program
+{
+    static void Main()
+    {
+        int number = 7;
+        
+        Console.WriteLine($"Multiplication table for {number}:");
+        for (int i = 1; i <= 10; i++)
+        {
+            Console.WriteLine($"{number} x {i} = {number * i}");
+        }
+    }
+}`}
+/>
+
+Try changing the `number` variable to see different multiplication tables!
+
+## While Loop
+
+The `while` loop repeats as long as a condition is true:
+
+<CodeEditor 
+  initialCode={`using System;
+
+class Program
+{
+    static void Main()
+    {
+        int count = 1;
+        
+        while (count <= 5)
+        {
+            Console.WriteLine($"Count: {count}");
+            count++;
+        }
+        
+        Console.WriteLine("Done!");
+    }
+}`}
+/>
+
+**When to use while:**
+- You don't know how many iterations you'll need
+- The loop depends on user input or external conditions
+- You want to loop until a specific condition is met
+
+### While Loop Example: User Input
+
+```csharp
+int number;
+while (true)
+{
+    Console.Write("Enter a positive number (or -1 to quit): ");
+    number = int.Parse(Console.ReadLine());
+    
+    if (number == -1)
+        break;
+    
+    if (number > 0)
+        Console.WriteLine($"You entered: {number}");
+    else
+        Console.WriteLine("Please enter a positive number!");
+}
+```
+
+## Do-While Loop
+
+The `do-while` loop always executes at least once:
+
+<CodeEditor 
+  initialCode={`using System;
+
+class Program
+{
+    static void Main()
+    {
+        int count = 1;
+        
+        do
+        {
+            Console.WriteLine($"Count: {count}");
+            count++;
+        }
+        while (count <= 5);
+        
+        Console.WriteLine("Loop finished!");
+    }
+}`}
+/>
+
+**Difference from while:**
+- `while` checks condition BEFORE execution
+- `do-while` checks condition AFTER execution
+- `do-while` guarantees at least one iteration
+
+## Foreach Loop
+
+The `foreach` loop is perfect for iterating through collections:
+
+<CodeEditor 
+  initialCode={`using System;
+
+class Program
+{
+    static void Main()
+    {
+        // Array of names
+        string[] names = { "Alice", "Bob", "Charlie", "Diana" };
+        
+        Console.WriteLine("Class roster:");
+        foreach (string name in names)
+        {
+            Console.WriteLine($"- {name}");
+        }
+    }
+}`}
+/>
+
+### Foreach with Numbers
+
+<CodeEditor 
+  initialCode={`using System;
+
+class Program
+{
+    static void Main()
+    {
+        int[] scores = { 95, 87, 92, 88, 91 };
+        
+        int total = 0;
+        foreach (int score in scores)
+        {
+            total += score;
+            Console.WriteLine($"Score: {score}");
+        }
+        
+        double average = (double)total / scores.Length;
+        Console.WriteLine($"\\nAverage score: {average:F2}");
+    }
+}`}
+/>
+
+## Loop Control Statements
+
+### Break - Exit Loop Early
+
+<CodeEditor 
+  initialCode={`using System;
+
+class Program
+{
+    static void Main()
+    {
+        // Find the first even number
+        int[] numbers = { 1, 3, 5, 8, 9, 11 };
+        
+        foreach (int num in numbers)
+        {
+            if (num % 2 == 0)
+            {
+                Console.WriteLine($"First even number: {num}");
+                break;  // Exit the loop
+            }
+        }
+    }
+}`}
+/>
+
+### Continue - Skip to Next Iteration
+
+<CodeEditor 
+  initialCode={`using System;
+
+class Program
+{
+    static void Main()
+    {
+        // Print only odd numbers
+        for (int i = 1; i <= 10; i++)
+        {
+            if (i % 2 == 0)
+            {
+                continue;  // Skip even numbers
+            }
+            Console.WriteLine(i);
+        }
+    }
+}`}
+/>
+
+## Nested Loops
+
+Loops inside loops - great for working with tables or grids:
+
+<CodeEditor 
+  initialCode={`using System;
+
+class Program
+{
+    static void Main()
+    {
+        // Print a multiplication table
+        Console.WriteLine("Multiplication Table (1-5):\\n");
+        
+        for (int row = 1; row <= 5; row++)
+        {
+            for (int col = 1; col <= 5; col++)
+            {
+                Console.Write($"{row * col,4}");
+            }
+            Console.WriteLine();
+        }
+    }
+}`}
+/>
+
+### Pattern Printing
+
+<CodeEditor 
+  initialCode={`using System;
+
+class Program
+{
+    static void Main()
+    {
+        // Print a triangle pattern
+        int rows = 5;
+        
+        for (int i = 1; i <= rows; i++)
+        {
+            for (int j = 1; j <= i; j++)
+            {
+                Console.Write("* ");
+            }
+            Console.WriteLine();
+        }
+    }
+}`}
+/>
+
+## Choosing the Right Loop
+
+| Loop Type | When to Use |
+|-----------|-------------|
+| **for** | Known number of iterations, need counter variable |
+| **while** | Unknown iterations, condition-based looping |
+| **do-while** | Need at least one iteration guaranteed |
+| **foreach** | Iterating through collections/arrays |
+
+## Infinite Loops (Be Careful!)
+
+```csharp
+// This will run forever!
+while (true)
+{
+    Console.WriteLine("Forever...");
+    // Need a 'break' statement to exit
+}
+
+// Missing increment - infinite loop!
+int i = 0;
+while (i < 10)
+{
+    Console.WriteLine(i);
+    // Forgot i++; - will loop forever!
+}
+```
+
+## Practice Exercises
+
+1. **Sum of Numbers**: Calculate sum of numbers 1 to 100
+2. **Factorial**: Calculate factorial of a number (e.g., 5! = 5×4×3×2×1)
+3. **Fibonacci**: Print first 10 Fibonacci numbers (0, 1, 1, 2, 3, 5, 8...)
+4. **Prime Numbers**: Print all prime numbers between 1 and 50
+5. **Pattern**: Create a diamond pattern with asterisks
+
+## Key Takeaways
+
+- `for` loops are best when you know iteration count
+- `while` loops continue until a condition becomes false
+- `do-while` guarantees at least one execution
+- `foreach` is perfect for collections and arrays
+- `break` exits a loop immediately
+- `continue` skips to the next iteration
+- Be careful with infinite loops!
+- Nested loops multiply the number of iterations
+
+In the next lesson, we'll explore **methods** - how to organize code into reusable functions!

@@ -1,0 +1,503 @@
+---
+title: "Async/Await"
+description: "Master asynchronous programming with async and await"
+order: 1
+difficulty: "advanced"
+tags: ["async", "await", "task", "asynchronous", "performance"]
+duration: "35 minutes"
+---
+
+# Async/Await
+
+Asynchronous programming allows your application to remain responsive while performing long-running operations. The `async` and `await` keywords make asynchronous code as easy to write as synchronous code.
+
+## What is Async/Await?
+
+Async/await enables:
+- **Non-blocking operations** - UI stays responsive
+- **Better scalability** - Efficient resource usage
+- **Improved performance** - Handle multiple operations concurrently
+- **Cleaner code** - Avoid callback hell
+
+## Basic Async Method
+
+<CodeEditor 
+  language="csharp"
+  code={`using System;
+using System.Threading.Tasks;
+
+class Program
+{
+    static async Task Main()
+    {
+        Console.WriteLine("Starting...");
+        
+        // Call async method
+        string result = await GetMessageAsync();
+        Console.WriteLine(result);
+        
+        Console.WriteLine("Done!");
+    }
+    
+    // Async method returns Task<T>
+    static async Task<string> GetMessageAsync()
+    {
+        Console.WriteLine("Getting message...");
+        
+        // Simulate async operation
+        await Task.Delay(2000);  // Wait 2 seconds
+        
+        return "Hello from async method!";
+    }
+}`}
+  title="Basic Async/Await"
+/>
+
+## Task and Task&lt;T&gt;
+
+<CodeEditor 
+  language="csharp"
+  code={`using System;
+using System.Threading.Tasks;
+
+class Program
+{
+    static async Task Main()
+    {
+        // Task with no return value
+        await DoWorkAsync();
+        
+        // Task<T> with return value
+        int result = await CalculateAsync(5, 10);
+        Console.WriteLine($"\\nResult: {result}");
+        
+        // Multiple async operations
+        string message = await GetDataAsync();
+        Console.WriteLine($"Message: {message}");
+    }
+    
+    static async Task DoWorkAsync()
+    {
+        Console.WriteLine("Starting work...");
+        await Task.Delay(1000);
+        Console.WriteLine("Work completed!");
+    }
+    
+    static async Task<int> CalculateAsync(int a, int b)
+    {
+        Console.WriteLine($"Calculating {a} + {b}...");
+        await Task.Delay(500);
+        return a + b;
+    }
+    
+    static async Task<string> GetDataAsync()
+    {
+        await Task.Delay(800);
+        return "Data retrieved successfully";
+    }
+}`}
+  title="Task and Task&lt;T&gt;"
+/>
+
+## Running Multiple Tasks Concurrently
+
+<CodeEditor 
+  language="csharp"
+  code={`using System;
+using System.Threading.Tasks;
+using System.Diagnostics;
+
+class Program
+{
+    static async Task Main()
+    {
+        var watch = Stopwatch.StartNew();
+        
+        // Sequential execution
+        Console.WriteLine("Sequential execution:");
+        await DownloadAsync("File1");
+        await DownloadAsync("File2");
+        await DownloadAsync("File3");
+        watch.Stop();
+        Console.WriteLine($"Time: {watch.ElapsedMilliseconds}ms\\n");
+        
+        // Concurrent execution with Task.WhenAll
+        watch.Restart();
+        Console.WriteLine("Concurrent execution:");
+        Task task1 = DownloadAsync("File1");
+        Task task2 = DownloadAsync("File2");
+        Task task3 = DownloadAsync("File3");
+        
+        await Task.WhenAll(task1, task2, task3);
+        watch.Stop();
+        Console.WriteLine($"Time: {watch.ElapsedMilliseconds}ms\\n");
+        
+        // With return values
+        watch.Restart();
+        Console.WriteLine("Concurrent with results:");
+        var tasks = new[]
+        {
+            GetNumberAsync(1),
+            GetNumberAsync(2),
+            GetNumberAsync(3)
+        };
+        
+        int[] results = await Task.WhenAll(tasks);
+        Console.WriteLine($"Results: {string.Join(", ", results)}");
+        watch.Stop();
+        Console.WriteLine($"Time: {watch.ElapsedMilliseconds}ms");
+    }
+    
+    static async Task DownloadAsync(string file)
+    {
+        Console.WriteLine($"  Downloading {file}...");
+        await Task.Delay(1000);
+        Console.WriteLine($"  {file} completed");
+    }
+    
+    static async Task<int> GetNumberAsync(int n)
+    {
+        await Task.Delay(1000);
+        return n * n;
+    }
+}`}
+  title="Concurrent Tasks"
+/>
+
+## Task.WhenAny - First to Complete
+
+<CodeEditor 
+  language="csharp"
+  code={`using System;
+using System.Threading.Tasks;
+
+class Program
+{
+    static async Task Main()
+    {
+        Console.WriteLine("Starting race...\\n");
+        
+        Task<string> task1 = DownloadFromServerAsync("Server1", 2000);
+        Task<string> task2 = DownloadFromServerAsync("Server2", 1000);
+        Task<string> task3 = DownloadFromServerAsync("Server3", 1500);
+        
+        // Wait for first to complete
+        Task<string> firstCompleted = await Task.WhenAny(task1, task2, task3);
+        string result = await firstCompleted;
+        
+        Console.WriteLine($"\\nWinner: {result}");
+        Console.WriteLine("\\nOther tasks still running...");
+        
+        // Wait for all to finish
+        await Task.WhenAll(task1, task2, task3);
+        Console.WriteLine("All tasks completed");
+    }
+    
+    static async Task<string> DownloadFromServerAsync(string server, int delay)
+    {
+        Console.WriteLine($"{server} started");
+        await Task.Delay(delay);
+        Console.WriteLine($"{server} finished");
+        return server;
+    }
+}`}
+  title="Task.WhenAny"
+/>
+
+## Exception Handling
+
+<CodeEditor 
+  language="csharp"
+  code={`using System;
+using System.Threading.Tasks;
+
+class Program
+{
+    static async Task Main()
+    {
+        // Single task exception
+        try
+        {
+            await RiskyOperationAsync(false);
+            Console.WriteLine("Operation succeeded");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Caught: {ex.Message}");
+        }
+        
+        // Multiple tasks with exceptions
+        Console.WriteLine("\\nMultiple tasks:");
+        try
+        {
+            await Task.WhenAll(
+                RiskyOperationAsync(true),
+                RiskyOperationAsync(true),
+                RiskyOperationAsync(false)
+            );
+        }
+        catch (Exception ex)
+        {
+            // Only first exception is thrown
+            Console.WriteLine($"Caught first: {ex.Message}");
+        }
+        
+        // Handling all exceptions
+        Console.WriteLine("\\nHandling all exceptions:");
+        Task task1 = RiskyOperationAsync(true);
+        Task task2 = RiskyOperationAsync(true);
+        Task task3 = RiskyOperationAsync(false);
+        
+        try
+        {
+            await Task.WhenAll(task1, task2, task3);
+        }
+        catch
+        {
+            // Access all exceptions through tasks
+            if (task1.IsFaulted)
+                Console.WriteLine($"Task1: {task1.Exception?.InnerException?.Message}");
+            if (task2.IsFaulted)
+                Console.WriteLine($"Task2: {task2.Exception?.InnerException?.Message}");
+        }
+    }
+    
+    static async Task RiskyOperationAsync(bool shouldFail)
+    {
+        await Task.Delay(500);
+        if (shouldFail)
+            throw new InvalidOperationException("Operation failed!");
+        Console.WriteLine("Operation completed successfully");
+    }
+}`}
+  title="Exception Handling"
+/>
+
+## CancellationToken
+
+<CodeEditor 
+  language="csharp"
+  code={`using System;
+using System.Threading;
+using System.Threading.Tasks;
+
+class Program
+{
+    static async Task Main()
+    {
+        var cts = new CancellationTokenSource();
+        
+        // Cancel after 3 seconds
+        cts.CancelAfter(3000);
+        
+        try
+        {
+            await LongRunningOperationAsync(cts.Token);
+            Console.WriteLine("Operation completed");
+        }
+        catch (OperationCanceledException)
+        {
+            Console.WriteLine("\\nOperation was canceled");
+        }
+        
+        // Manual cancellation
+        Console.WriteLine("\\n--- Manual cancellation ---");
+        var cts2 = new CancellationTokenSource();
+        
+        Task task = ProcessDataAsync(cts2.Token);
+        
+        // Cancel after 1.5 seconds
+        await Task.Delay(1500);
+        cts2.Cancel();
+        
+        try
+        {
+            await task;
+        }
+        catch (OperationCanceledException)
+        {
+            Console.WriteLine("Processing was canceled");
+        }
+    }
+    
+    static async Task LongRunningOperationAsync(CancellationToken token)
+    {
+        for (int i = 1; i <= 10; i++)
+        {
+            // Check if cancellation requested
+            token.ThrowIfCancellationRequested();
+            
+            Console.WriteLine($"Step {i}/10");
+            await Task.Delay(500);
+        }
+    }
+    
+    static async Task ProcessDataAsync(CancellationToken token)
+    {
+        int count = 0;
+        while (!token.IsCancellationRequested)
+        {
+            count++;
+            Console.WriteLine($"Processing item {count}...");
+            await Task.Delay(500);
+        }
+        Console.WriteLine($"Processed {count} items before cancellation");
+    }
+}`}
+  title="Cancellation Support"
+/>
+
+## ConfigureAwait
+
+<CodeEditor 
+  language="csharp"
+  code={`using System;
+using System.Threading.Tasks;
+
+class Program
+{
+    static async Task Main()
+    {
+        Console.WriteLine($"Main thread: {System.Threading.Thread.CurrentThread.ManagedThreadId}");
+        
+        // Default behavior - captures context
+        await DoWorkAsync();
+        Console.WriteLine($"After await: {System.Threading.Thread.CurrentThread.ManagedThreadId}");
+        
+        // ConfigureAwait(false) - don't capture context
+        await DoWorkConfiguredAsync().ConfigureAwait(false);
+        Console.WriteLine($"After ConfigureAwait(false): {System.Threading.Thread.CurrentThread.ManagedThreadId}");
+        
+        Console.WriteLine("\\nDone!");
+    }
+    
+    static async Task DoWorkAsync()
+    {
+        Console.WriteLine($"Before delay: {System.Threading.Thread.CurrentThread.ManagedThreadId}");
+        await Task.Delay(100);
+        Console.WriteLine($"After delay: {System.Threading.Thread.CurrentThread.ManagedThreadId}");
+    }
+    
+    static async Task DoWorkConfiguredAsync()
+    {
+        Console.WriteLine($"Before delay: {System.Threading.Thread.CurrentThread.ManagedThreadId}");
+        await Task.Delay(100).ConfigureAwait(false);
+        Console.WriteLine($"After delay: {System.Threading.Thread.CurrentThread.ManagedThreadId}");
+    }
+}`}
+  title="ConfigureAwait"
+/>
+
+## Real-World Example: API Client
+
+<CodeEditor 
+  language="csharp"
+  code={`using System;
+using System.Threading.Tasks;
+using System.Collections.Generic;
+using System.Linq;
+
+class ApiClient
+{
+    public async Task<User> GetUserAsync(int id)
+    {
+        Console.WriteLine($"Fetching user {id}...");
+        await Task.Delay(500);  // Simulate network delay
+        return new User { Id = id, Name = $"User{id}" };
+    }
+    
+    public async Task<List<Post>> GetUserPostsAsync(int userId)
+    {
+        Console.WriteLine($"Fetching posts for user {userId}...");
+        await Task.Delay(700);
+        return new List<Post>
+        {
+            new Post { Id = 1, UserId = userId, Title = $"Post 1 by User{userId}" },
+            new Post { Id = 2, UserId = userId, Title = $"Post 2 by User{userId}" }
+        };
+    }
+}
+
+class User
+{
+    public int Id { get; set; }
+    public string Name { get; set; }
+}
+
+class Post
+{
+    public int Id { get; set; }
+    public int UserId { get; set; }
+    public string Title { get; set; }
+}
+
+class Program
+{
+    static async Task Main()
+    {
+        var client = new ApiClient();
+        
+        // Sequential - slow
+        Console.WriteLine("Sequential loading:");
+        var watch = System.Diagnostics.Stopwatch.StartNew();
+        
+        var user1 = await client.GetUserAsync(1);
+        var posts1 = await client.GetUserPostsAsync(1);
+        
+        watch.Stop();
+        Console.WriteLine($"Time: {watch.ElapsedMilliseconds}ms\\n");
+        
+        // Concurrent - fast
+        Console.WriteLine("Concurrent loading:");
+        watch.Restart();
+        
+        var userTask = client.GetUserAsync(2);
+        var postsTask = client.GetUserPostsAsync(2);
+        
+        await Task.WhenAll(userTask, postsTask);
+        
+        var user2 = await userTask;
+        var posts2 = await postsTask;
+        
+        watch.Stop();
+        Console.WriteLine($"Time: {watch.ElapsedMilliseconds}ms\\n");
+        
+        // Load multiple users concurrently
+        Console.WriteLine("Loading 3 users concurrently:");
+        watch.Restart();
+        
+        var userTasks = Enumerable.Range(1, 3)
+            .Select(id => client.GetUserAsync(id));
+        
+        var users = await Task.WhenAll(userTasks);
+        
+        watch.Stop();
+        Console.WriteLine($"Loaded {users.Length} users in {watch.ElapsedMilliseconds}ms");
+    }
+}`}
+  title="API Client Example"
+/>
+
+## Best Practices
+
+1. **Use async all the way** - Don't mix with `.Result` or `.Wait()`
+2. **ConfigureAwait(false)** - In library code
+3. **Return Task directly** - When possible, avoid unnecessary async/await
+4. **Handle exceptions** - Use try-catch with async
+5. **Use CancellationToken** - For long-running operations
+6. **Avoid async void** - Except for event handlers
+7. **Don't block async code** - Never use `.Result` or `.Wait()`
+
+## Key Takeaways
+
+- **async/await** makes asynchronous code readable and maintainable
+- **Task** represents ongoing work, **Task&lt;T&gt;** returns a value
+- **Task.WhenAll** runs multiple operations concurrently
+- **Task.WhenAny** completes when first task finishes
+- **CancellationToken** enables cooperative cancellation
+- **ConfigureAwait(false)** optimizes library code performance
+- Essential for **scalable**, **responsive** applications
+
+## Next Steps
+
+Next: **Pattern Matching** - powerful switch expressions and patterns!

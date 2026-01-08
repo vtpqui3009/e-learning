@@ -1,0 +1,205 @@
+---
+title: "Operators and Expressions"
+description: "Learn about arithmetic, comparison, and logical operators in C#"
+order: 3
+difficulty: "beginner"
+estimatedTime: "15 minutes"
+keywords: ["operators", "expressions", "arithmetic", "comparison", "logical"]
+prerequisites: ["01-fundamentals/02-data-types"]
+---
+
+# Operators and Expressions in C#
+
+Operators allow you to perform operations on variables and values. C# provides a rich set of operators for arithmetic, comparison, logic, and more.
+
+## Arithmetic Operators
+
+C# supports standard mathematical operations:
+
+- `+` Addition
+- `-` Subtraction
+- `*` Multiplication
+- `/` Division
+- `%` Modulus (remainder)
+
+<CodeEditor 
+  initialCode={`using System;
+
+class Program
+{
+    static void Main()
+    {
+        // Basic arithmetic
+        int a = 10;
+        int b = 3;
+        
+        Console.WriteLine($"Addition: {a} + {b} = {a + b}");
+        Console.WriteLine($"Subtraction: {a} - {b} = {a - b}");
+        Console.WriteLine($"Multiplication: {a} * {b} = {a * b}");
+        Console.WriteLine($"Division: {a} / {b} = {a / b}");
+        Console.WriteLine($"Modulus: {a} % {b} = {a % b}");
+        
+        // Decimal division
+        double x = 10.0;
+        double y = 3.0;
+        Console.WriteLine($"Decimal division: {x} / {y} = {x / y}");
+    }
+}`}
+/>
+
+### Try it yourself!
+Modify the values of `a` and `b` and click "Run Code" to see the results.
+
+## Comparison Operators
+
+Comparison operators return a boolean value (`true` or `false`):
+
+- `==` Equal to
+- `!=` Not equal to
+- `>` Greater than
+- `<` Less than
+- `>=` Greater than or equal to
+- `<=` Less than or equal to
+
+<CodeEditor 
+  initialCode={`using System;
+
+class Program
+{
+    static void Main()
+    {
+        int age = 25;
+        int votingAge = 18;
+        
+        Console.WriteLine($"age == votingAge: {age == votingAge}");
+        Console.WriteLine($"age != votingAge: {age != votingAge}");
+        Console.WriteLine($"age > votingAge: {age > votingAge}");
+        Console.WriteLine($"age < votingAge: {age < votingAge}");
+        Console.WriteLine($"age >= votingAge: {age >= votingAge}");
+        Console.WriteLine($"age <= votingAge: {age <= votingAge}");
+    }
+}`}
+/>
+
+## Logical Operators
+
+Logical operators work with boolean values:
+
+- `&&` AND (both must be true)
+- `||` OR (at least one must be true)
+- `!` NOT (inverts the boolean)
+
+<CodeEditor 
+  initialCode={`using System;
+
+class Program
+{
+    static void Main()
+    {
+        bool hasLicense = true;
+        bool hasInsurance = true;
+        int age = 20;
+        
+        // AND operator
+        bool canDrive = hasLicense && hasInsurance;
+        Console.WriteLine($"Can drive: {canDrive}");
+        
+        // OR operator
+        bool needsAttention = !hasLicense || !hasInsurance;
+        Console.WriteLine($"Needs attention: {needsAttention}");
+        
+        // Complex expression
+        bool isEligible = age >= 18 && hasLicense && hasInsurance;
+        Console.WriteLine($"Is eligible: {isEligible}");
+        
+        // NOT operator
+        Console.WriteLine($"Does NOT have license: {!hasLicense}");
+    }
+}`}
+/>
+
+## Increment and Decrement
+
+Shorthand for adding or subtracting 1:
+
+- `++` Increment by 1
+- `--` Decrement by 1
+
+```csharp
+int count = 5;
+count++;  // count is now 6
+count--;  // count is now 5 again
+
+// Pre-increment vs post-increment
+int a = 5;
+int b = ++a;  // a = 6, b = 6 (increment first)
+int c = a++;  // a = 7, c = 6 (use first, then increment)
+```
+
+## Compound Assignment Operators
+
+Shorthand for common operations:
+
+```csharp
+int x = 10;
+
+x += 5;   // Same as: x = x + 5;  (x is now 15)
+x -= 3;   // Same as: x = x - 3;  (x is now 12)
+x *= 2;   // Same as: x = x * 2;  (x is now 24)
+x /= 4;   // Same as: x = x / 4;  (x is now 6)
+x %= 4;   // Same as: x = x % 4;  (x is now 2)
+```
+
+## Operator Precedence
+
+When multiple operators appear in an expression, precedence determines the order:
+
+1. Parentheses `()`
+2. Unary: `++`, `--`, `!`
+3. Multiplicative: `*`, `/`, `%`
+4. Additive: `+`, `-`
+5. Comparison: `<`, `>`, `<=`, `>=`
+6. Equality: `==`, `!=`
+7. Logical AND: `&&`
+8. Logical OR: `||`
+9. Assignment: `=`, `+=`, `-=`, etc.
+
+<CodeEditor 
+  initialCode={`using System;
+
+class Program
+{
+    static void Main()
+    {
+        // Without parentheses
+        int result1 = 5 + 3 * 2;
+        Console.WriteLine($"5 + 3 * 2 = {result1}");  // 11 (multiplication first)
+        
+        // With parentheses
+        int result2 = (5 + 3) * 2;
+        Console.WriteLine($"(5 + 3) * 2 = {result2}");  // 16 (addition first)
+        
+        // Complex expression
+        bool result3 = 10 > 5 && 20 < 30 || false;
+        Console.WriteLine($"Complex: {result3}");  // True
+    }
+}`}
+/>
+
+## Practice Exercise
+
+Try writing code that:
+1. Calculates the area of a rectangle (length × width)
+2. Checks if a number is even (use modulus operator: `number % 2 == 0`)
+3. Determines if a person can vote (age >= 18 and is a citizen)
+
+## Key Takeaways
+
+- Arithmetic operators perform mathematical calculations
+- Comparison operators return boolean values
+- Logical operators combine boolean expressions
+- Use parentheses to control precedence
+- Compound assignment operators are shorthand for common operations
+- Understanding operator precedence prevents unexpected results
+
+In the next lesson, we'll use these operators with **control flow statements** like `if`, `else`, and loops!

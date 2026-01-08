@@ -1,0 +1,339 @@
+---
+title: "Lambda Expressions"
+description: "Master lambda expressions, closures, and functional programming in C#"
+order: 3
+difficulty: "intermediate"
+tags: ["lambda", "functional-programming", "linq", "delegates"]
+duration: "25 minutes"
+---
+
+# Lambda Expressions
+
+Lambda expressions provide a concise way to write anonymous methods. They're essential for LINQ, events, and functional programming in C#.
+
+## Lambda Syntax
+
+Basic syntax: `(parameters) => expression`
+
+<CodeEditor 
+  language="csharp"
+  code={`using System;
+using System.Collections.Generic;
+using System.Linq;
+
+class Program
+{
+    static void Main()
+    {
+        // Expression lambda - single expression
+        Func<int, int> square = x => x * x;
+        Console.WriteLine($"Square of 5: {square(5)}");
+        
+        // Lambda with multiple parameters
+        Func<int, int, int> add = (x, y) => x + y;
+        Console.WriteLine($"5 + 3 = {add(5, 3)}");
+        
+        // Lambda with no parameters
+        Func<string> getMessage = () => "Hello, Lambda!";
+        Console.WriteLine(getMessage());
+        
+        // Statement lambda - multiple statements
+        Func<int, string> describe = n =>
+        {
+            if (n < 0) return "negative";
+            if (n == 0) return "zero";
+            return "positive";
+        };
+        Console.WriteLine($"5 is {describe(5)}");
+        Console.WriteLine($"-3 is {describe(-3)}");
+    }
+}`}
+  title="Lambda Syntax Basics"
+/>
+
+## Lambdas with Collections
+
+<CodeEditor 
+  language="csharp"
+  code={`using System;
+using System.Collections.Generic;
+using System.Linq;
+
+class Program
+{
+    static void Main()
+    {
+        List<int> numbers = new List<int> { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+        
+        // Filter with Where
+        var evens = numbers.Where(n => n % 2 == 0);
+        Console.WriteLine("Even numbers: " + string.Join(", ", evens));
+        
+        // Transform with Select
+        var squares = numbers.Select(n => n * n);
+        Console.WriteLine("Squares: " + string.Join(", ", squares));
+        
+        // Multiple operations
+        var result = numbers
+            .Where(n => n > 3)
+            .Select(n => n * 2)
+            .OrderByDescending(n => n);
+        Console.WriteLine("Filtered, doubled, sorted: " + string.Join(", ", result));
+        
+        // Find first match
+        var firstLarge = numbers.FirstOrDefault(n => n > 5);
+        Console.WriteLine($"\\nFirst number > 5: {firstLarge}");
+        
+        // Check conditions
+        bool hasNegative = numbers.Any(n => n < 0);
+        bool allPositive = numbers.All(n => n > 0);
+        Console.WriteLine($"Has negative: {hasNegative}");
+        Console.WriteLine($"All positive: {allPositive}");
+    }
+}`}
+  title="Lambdas with LINQ"
+/>
+
+## Capturing Variables (Closures)
+
+<CodeEditor 
+  language="csharp"
+  code={`using System;
+using System.Collections.Generic;
+
+class Program
+{
+    static void Main()
+    {
+        // Lambda captures outer variable
+        int factor = 10;
+        Func<int, int> multiply = x => x * factor;
+        
+        Console.WriteLine($"5 * {factor} = {multiply(5)}");
+        
+        // Change captured variable
+        factor = 20;
+        Console.WriteLine($"5 * {factor} = {multiply(5)}");
+        
+        // Creating multiple lambdas that capture variables
+        List<Func<int>> functions = new List<Func<int>>();
+        
+        for (int i = 0; i < 5; i++)
+        {
+            int captured = i;  // Capture loop variable
+            functions.Add(() => captured * captured);
+        }
+        
+        Console.WriteLine("\\nCaptured values:");
+        for (int i = 0; i < functions.Count; i++)
+        {
+            Console.WriteLine($"{i}: {functions[i]()}");
+        }
+        
+        // Closure with multiple variables
+        int x = 5, y = 10;
+        Func<int> calculate = () => x + y * 2;
+        Console.WriteLine($"\\nCalculation: {calculate()}");
+    }
+}`}
+  title="Closures"
+/>
+
+## Lambdas as Event Handlers
+
+<CodeEditor 
+  language="csharp"
+  code={`using System;
+
+class Button
+{
+    public event EventHandler Clicked;
+    public string Name { get; set; }
+    
+    public void Click()
+    {
+        Console.WriteLine($"{Name} clicked");
+        Clicked?.Invoke(this, EventArgs.Empty);
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        Button button1 = new Button { Name = "Submit" };
+        Button button2 = new Button { Name = "Cancel" };
+        
+        int clickCount = 0;
+        
+        // Lambda event handlers
+        button1.Clicked += (sender, e) =>
+        {
+            clickCount++;
+            Console.WriteLine($"Submit handler executed (click #{clickCount})");
+        };
+        
+        button2.Clicked += (sender, e) =>
+        {
+            Console.WriteLine("Cancel handler executed");
+            Console.WriteLine($"Total clicks so far: {clickCount}");
+        };
+        
+        // Trigger events
+        button1.Click();
+        button1.Click();
+        button2.Click();
+        button1.Click();
+    }
+}`}
+  title="Lambda Event Handlers"
+/>
+
+## Action and Func Delegates
+
+<CodeEditor 
+  language="csharp"
+  code={`using System;
+using System.Collections.Generic;
+
+class Program
+{
+    static void Main()
+    {
+        // Action - no return value
+        Action<string> print = message => Console.WriteLine(message);
+        print("Hello from Action!");
+        
+        Action<string, int> printMultiple = (msg, times) =>
+        {
+            for (int i = 0; i < times; i++)
+                Console.WriteLine($"{i + 1}. {msg}");
+        };
+        printMultiple("Repeated", 3);
+        
+        // Func - has return value
+        Func<int, int, int> add = (a, b) => a + b;
+        Func<int, int, int> multiply = (a, b) => a * b;
+        
+        Console.WriteLine($"\\n5 + 3 = {add(5, 3)}");
+        Console.WriteLine($"5 * 3 = {multiply(5, 3)}");
+        
+        // Func with complex return type
+        Func<string, int, string> repeat = (str, count) => 
+        {
+            string result = "";
+            for (int i = 0; i < count; i++)
+                result += str;
+            return result;
+        };
+        
+        Console.WriteLine($"\\nRepeated: {repeat("Ha", 5)}");
+        
+        // Predicate - returns bool
+        Predicate<int> isEven = n => n % 2 == 0;
+        Console.WriteLine($"\\nIs 4 even? {isEven(4)}");
+        Console.WriteLine($"Is 7 even? {isEven(7)}");
+    }
+}`}
+  title="Action, Func, and Predicate"
+/>
+
+## Real-World Example: Data Processing
+
+<CodeEditor 
+  language="csharp"
+  code={`using System;
+using System.Collections.Generic;
+using System.Linq;
+
+class Product
+{
+    public string Name { get; set; }
+    public decimal Price { get; set; }
+    public string Category { get; set; }
+    public int Stock { get; set; }
+    
+    public override string ToString() => 
+        $"{Name} (\${Price}) - Stock: {Stock}";
+}
+
+class Program
+{
+    static void Main()
+    {
+        List<Product> products = new List<Product>
+        {
+            new Product { Name = "Laptop", Price = 999, Category = "Electronics", Stock = 5 },
+            new Product { Name = "Mouse", Price = 25, Category = "Electronics", Stock = 50 },
+            new Product { Name = "Desk", Price = 299, Category = "Furniture", Stock = 10 },
+            new Product { Name = "Chair", Price = 199, Category = "Furniture", Stock = 15 },
+            new Product { Name = "Monitor", Price = 399, Category = "Electronics", Stock = 8 }
+        };
+        
+        // Filter expensive products
+        var expensive = products.Where(p => p.Price > 300);
+        Console.WriteLine("Expensive products:");
+        foreach (var p in expensive)
+            Console.WriteLine($"  {p}");
+        
+        // Group by category
+        var byCategory = products.GroupBy(p => p.Category);
+        Console.WriteLine("\\nBy category:");
+        foreach (var group in byCategory)
+        {
+            Console.WriteLine($"  {group.Key}:");
+            foreach (var p in group)
+                Console.WriteLine($"    - {p.Name}");
+        }
+        
+        // Calculate total inventory value
+        var totalValue = products.Sum(p => p.Price * p.Stock);
+        Console.WriteLine($"\\nTotal inventory value: \${totalValue}");
+        
+        // Apply discount
+        Action<Product, decimal> applyDiscount = (product, percent) =>
+        {
+            product.Price *= (1 - percent / 100);
+            Console.WriteLine($"Applied {percent}% discount to {product.Name}");
+        };
+        
+        Console.WriteLine("\\nApplying 10% discount to electronics:");
+        products
+            .Where(p => p.Category == "Electronics")
+            .ToList()
+            .ForEach(p => applyDiscount(p, 10));
+        
+        // Find low stock items
+        var lowStock = products
+            .Where(p => p.Stock < 10)
+            .OrderBy(p => p.Stock);
+        
+        Console.WriteLine("\\nLow stock alert:");
+        foreach (var p in lowStock)
+            Console.WriteLine($"  ⚠️  {p}");
+    }
+}`}
+  title="Data Processing with Lambdas"
+/>
+
+## Best Practices
+
+1. **Keep lambdas short** - Prefer methods for complex logic
+2. **Use meaningful names** - Even for single parameters
+3. **Be careful with closures** - Understand variable capture
+4. **Prefer expression lambdas** - More concise when possible
+5. **Use Action/Func** - Instead of custom delegates
+6. **Consider readability** - Sometimes named methods are clearer
+
+## Key Takeaways
+
+- **Lambda expressions** are concise anonymous methods
+- Syntax: `(parameters) => expression` or `(parameters) => { statements }`
+- **Closures** capture variables from outer scope
+- Essential for **LINQ**, **events**, and **functional programming**
+- **Action** (void), **Func** (returns value), **Predicate** (returns bool)
+- Make code more **expressive** and **concise**
+
+## Next Steps
+
+Next: **LINQ Basics** - query and transform collections with ease!

@@ -1,0 +1,304 @@
+---
+title: "Control Flow - If Statements and Switches"
+description: "Learn how to make decisions in your code with if, else, and switch statements"
+order: 4
+difficulty: "beginner"
+estimatedTime: "20 minutes"
+keywords: ["if", "else", "switch", "control flow", "conditional"]
+prerequisites: ["01-fundamentals/03-operators"]
+---
+
+# Control Flow in C#
+
+Control flow statements allow your program to make decisions and execute different code based on conditions.
+
+## If Statements
+
+The `if` statement executes code only if a condition is true:
+
+<CodeEditor 
+  initialCode={`using System;
+
+class Program
+{
+    static void Main()
+    {
+        int age = 20;
+        
+        if (age >= 18)
+        {
+            Console.WriteLine("You are an adult.");
+        }
+        
+        Console.WriteLine("Program finished.");
+    }
+}`}
+/>
+
+## If-Else Statements
+
+Use `else` to execute code when the condition is false:
+
+<CodeEditor 
+  initialCode={`using System;
+
+class Program
+{
+    static void Main()
+    {
+        int temperature = 25;
+        
+        if (temperature > 30)
+        {
+            Console.WriteLine("It's hot outside!");
+        }
+        else
+        {
+            Console.WriteLine("The weather is nice.");
+        }
+    }
+}`}
+/>
+
+## Else-If Chains
+
+Handle multiple conditions with `else if`:
+
+<CodeEditor 
+  initialCode={`using System;
+
+class Program
+{
+    static void Main()
+    {
+        int score = 85;
+        
+        if (score >= 90)
+        {
+            Console.WriteLine("Grade: A");
+        }
+        else if (score >= 80)
+        {
+            Console.WriteLine("Grade: B");
+        }
+        else if (score >= 70)
+        {
+            Console.WriteLine("Grade: C");
+        }
+        else if (score >= 60)
+        {
+            Console.WriteLine("Grade: D");
+        }
+        else
+        {
+            Console.WriteLine("Grade: F");
+        }
+    }
+}`}
+/>
+
+Try changing the score to see different grades!
+
+## Nested If Statements
+
+You can nest if statements inside each other:
+
+<CodeEditor 
+  initialCode={`using System;
+
+class Program
+{
+    static void Main()
+    {
+        int age = 25;
+        bool hasLicense = true;
+        
+        if (age >= 18)
+        {
+            Console.WriteLine("You are old enough to drive.");
+            
+            if (hasLicense)
+            {
+                Console.WriteLine("You can drive!");
+            }
+            else
+            {
+                Console.WriteLine("But you need a license first.");
+            }
+        }
+        else
+        {
+            Console.WriteLine("You are too young to drive.");
+        }
+    }
+}`}
+/>
+
+## Ternary Operator
+
+A shorthand for simple if-else statements:
+
+```csharp
+// Syntax: condition ? valueIfTrue : valueIfFalse
+int age = 20;
+string status = age >= 18 ? "Adult" : "Minor";
+Console.WriteLine(status);  // Output: Adult
+```
+
+<CodeEditor 
+  initialCode={`using System;
+
+class Program
+{
+    static void Main()
+    {
+        int a = 10;
+        int b = 20;
+        
+        // Find maximum using ternary operator
+        int max = a > b ? a : b;
+        Console.WriteLine($"Maximum: {max}");
+        
+        // Check if even or odd
+        int number = 7;
+        string parity = number % 2 == 0 ? "even" : "odd";
+        Console.WriteLine($"{number} is {parity}");
+    }
+}`}
+/>
+
+## Switch Statements
+
+Switch statements are ideal when checking one variable against multiple values:
+
+<CodeEditor 
+  initialCode={`using System;
+
+class Program
+{
+    static void Main()
+    {
+        int dayNumber = 3;
+        
+        switch (dayNumber)
+        {
+            case 1:
+                Console.WriteLine("Monday");
+                break;
+            case 2:
+                Console.WriteLine("Tuesday");
+                break;
+            case 3:
+                Console.WriteLine("Wednesday");
+                break;
+            case 4:
+                Console.WriteLine("Thursday");
+                break;
+            case 5:
+                Console.WriteLine("Friday");
+                break;
+            case 6:
+                Console.WriteLine("Saturday");
+                break;
+            case 7:
+                Console.WriteLine("Sunday");
+                break;
+            default:
+                Console.WriteLine("Invalid day number");
+                break;
+        }
+    }
+}`}
+/>
+
+Try changing `dayNumber` to see different days!
+
+## Switch with Strings
+
+Switch statements work with strings too:
+
+<CodeEditor 
+  initialCode={`using System;
+
+class Program
+{
+    static void Main()
+    {
+        string command = "start";
+        
+        switch (command.ToLower())
+        {
+            case "start":
+                Console.WriteLine("Starting the application...");
+                break;
+            case "stop":
+                Console.WriteLine("Stopping the application...");
+                break;
+            case "restart":
+                Console.WriteLine("Restarting the application...");
+                break;
+            case "status":
+                Console.WriteLine("Application is running");
+                break;
+            default:
+                Console.WriteLine("Unknown command");
+                break;
+        }
+    }
+}`}
+/>
+
+## Switch Expression (C# 8.0+)
+
+Modern C# supports a more concise switch expression:
+
+```csharp
+string dayName = dayNumber switch
+{
+    1 => "Monday",
+    2 => "Tuesday",
+    3 => "Wednesday",
+    4 => "Thursday",
+    5 => "Friday",
+    6 => "Saturday",
+    7 => "Sunday",
+    _ => "Invalid"  // _ is the default case
+};
+```
+
+## Best Practices
+
+**Use if-else when:**
+- Checking multiple different conditions
+- Conditions involve ranges or complex logic
+- You need to check boolean expressions
+
+**Use switch when:**
+- Checking one variable against many specific values
+- All cases check for equality
+- You want more readable code for many cases
+
+## Practice Exercises
+
+1. Write a program that checks if a year is a leap year:
+   - Divisible by 4 AND (not divisible by 100 OR divisible by 400)
+
+2. Create a simple calculator that asks for an operation (+, -, *, /) and two numbers
+
+3. Write a program that categorizes a temperature:
+   - Below 0: Freezing
+   - 0-15: Cold
+   - 16-25: Moderate
+   - Above 25: Hot
+
+## Key Takeaways
+
+- `if` statements execute code when a condition is true
+- `else` provides an alternative when the condition is false
+- `else if` allows checking multiple conditions in sequence
+- Ternary operator `? :` is shorthand for simple if-else
+- `switch` statements are ideal for checking one value against many options
+- Always include a `default` case in switch statements
+- Use `break` in switch cases to prevent fall-through
+
+In the next lesson, we'll explore **loops** - how to repeat code multiple times!

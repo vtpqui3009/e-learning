@@ -1,0 +1,462 @@
+---
+title: "Methods and Functions"
+description: "Learn to create reusable code with methods and understand parameters and return values"
+order: 6
+difficulty: "beginner"
+estimatedTime: "25 minutes"
+keywords: ["methods", "functions", "parameters", "return", "void"]
+prerequisites: ["01-fundamentals/05-loops"]
+---
+
+# Methods in C#
+
+Methods (also called functions) are reusable blocks of code that perform specific tasks. They help organize code and avoid repetition.
+
+## What is a Method?
+
+A method is a block of code that:
+- Has a name
+- Can accept input (parameters)
+- Can return output (return value)
+- Can be called multiple times
+
+## Basic Method Syntax
+
+<CodeEditor 
+  initialCode={`using System;
+
+class Program
+{
+    // Method that prints a greeting
+    static void SayHello()
+    {
+        Console.WriteLine("Hello, World!");
+    }
+    
+    static void Main()
+    {
+        // Call the method
+        SayHello();
+        SayHello();
+        SayHello();
+    }
+}`}
+/>
+
+**Method components:**
+- `static` - Can be called without creating an object
+- `void` - Returns nothing
+- `SayHello` - Method name
+- `()` - Parameter list (empty here)
+- `{}` - Method body
+
+## Methods with Parameters
+
+Parameters allow you to pass data into methods:
+
+<CodeEditor 
+  initialCode={`using System;
+
+class Program
+{
+    static void Greet(string name)
+    {
+        Console.WriteLine($"Hello, {name}!");
+    }
+    
+    static void Main()
+    {
+        Greet("Alice");
+        Greet("Bob");
+        Greet("Charlie");
+    }
+}`}
+/>
+
+### Multiple Parameters
+
+<CodeEditor 
+  initialCode={`using System;
+
+class Program
+{
+    static void PrintPersonInfo(string name, int age, string city)
+    {
+        Console.WriteLine($"Name: {name}");
+        Console.WriteLine($"Age: {age}");
+        Console.WriteLine($"City: {city}");
+        Console.WriteLine();
+    }
+    
+    static void Main()
+    {
+        PrintPersonInfo("Alice", 25, "New York");
+        PrintPersonInfo("Bob", 30, "Los Angeles");
+    }
+}`}
+/>
+
+## Methods with Return Values
+
+Methods can return values using the `return` keyword:
+
+<CodeEditor 
+  initialCode={`using System;
+
+class Program
+{
+    static int Add(int a, int b)
+    {
+        return a + b;
+    }
+    
+    static void Main()
+    {
+        int result1 = Add(5, 3);
+        int result2 = Add(10, 20);
+        
+        Console.WriteLine($"5 + 3 = {result1}");
+        Console.WriteLine($"10 + 20 = {result2}");
+        
+        // Can use directly in expressions
+        Console.WriteLine($"15 + 25 = {Add(15, 25)}");
+    }
+}`}
+/>
+
+### Return Different Types
+
+<CodeEditor 
+  initialCode={`using System;
+
+class Program
+{
+    static double CalculateAverage(int[] numbers)
+    {
+        int sum = 0;
+        foreach (int num in numbers)
+        {
+            sum += num;
+        }
+        return (double)sum / numbers.Length;
+    }
+    
+    static bool IsEven(int number)
+    {
+        return number % 2 == 0;
+    }
+    
+    static void Main()
+    {
+        int[] scores = { 85, 92, 78, 95, 88 };
+        double avg = CalculateAverage(scores);
+        Console.WriteLine($"Average: {avg:F2}");
+        
+        Console.WriteLine($"Is 10 even? {IsEven(10)}");
+        Console.WriteLine($"Is 7 even? {IsEven(7)}");
+    }
+}`}
+/>
+
+## Practical Method Examples
+
+### Temperature Converter
+
+<CodeEditor 
+  initialCode={`using System;
+
+class Program
+{
+    static double CelsiusToFahrenheit(double celsius)
+    {
+        return (celsius * 9 / 5) + 32;
+    }
+    
+    static double FahrenheitToCelsius(double fahrenheit)
+    {
+        return (fahrenheit - 32) * 5 / 9;
+    }
+    
+    static void Main()
+    {
+        double tempC = 25;
+        double tempF = CelsiusToFahrenheit(tempC);
+        Console.WriteLine($"{tempC}°C = {tempF}°F");
+        
+        tempF = 77;
+        tempC = FahrenheitToCelsius(tempF);
+        Console.WriteLine($"{tempF}°F = {tempC:F2}°C");
+    }
+}`}
+/>
+
+### String Manipulation
+
+<CodeEditor 
+  initialCode={`using System;
+
+class Program
+{
+    static string Reverse(string text)
+    {
+        char[] chars = text.ToCharArray();
+        Array.Reverse(chars);
+        return new string(chars);
+    }
+    
+    static int CountVowels(string text)
+    {
+        int count = 0;
+        string vowels = "aeiouAEIOU";
+        
+        foreach (char c in text)
+        {
+            if (vowels.Contains(c))
+            {
+                count++;
+            }
+        }
+        return count;
+    }
+    
+    static void Main()
+    {
+        string word = "Hello World";
+        Console.WriteLine($"Original: {word}");
+        Console.WriteLine($"Reversed: {Reverse(word)}");
+        Console.WriteLine($"Vowels: {CountVowels(word)}");
+    }
+}`}
+/>
+
+## Optional Parameters
+
+Parameters can have default values:
+
+<CodeEditor 
+  initialCode={`using System;
+
+class Program
+{
+    static void PrintMessage(string message, int times = 1)
+    {
+        for (int i = 0; i < times; i++)
+        {
+            Console.WriteLine(message);
+        }
+    }
+    
+    static void Main()
+    {
+        PrintMessage("Hello");           // Uses default: times = 1
+        PrintMessage("Goodbye", 3);      // Override default
+    }
+}`}
+/>
+
+## Named Arguments
+
+You can specify parameter names when calling methods:
+
+<CodeEditor 
+  initialCode={`using System;
+
+class Program
+{
+    static void CreateAccount(string username, string email, int age)
+    {
+        Console.WriteLine($"Username: {username}");
+        Console.WriteLine($"Email: {email}");
+        Console.WriteLine($"Age: {age}");
+    }
+    
+    static void Main()
+    {
+        // Named arguments - order doesn't matter
+        CreateAccount(
+            email: "alice@example.com",
+            username: "alice123",
+            age: 25
+        );
+    }
+}`}
+/>
+
+## Method Overloading
+
+Multiple methods can have the same name if they have different parameters:
+
+<CodeEditor 
+  initialCode={`using System;
+
+class Program
+{
+    // Add two integers
+    static int Add(int a, int b)
+    {
+        return a + b;
+    }
+    
+    // Add three integers
+    static int Add(int a, int b, int c)
+    {
+        return a + b + c;
+    }
+    
+    // Add two doubles
+    static double Add(double a, double b)
+    {
+        return a + b;
+    }
+    
+    static void Main()
+    {
+        Console.WriteLine(Add(5, 3));           // Calls int version
+        Console.WriteLine(Add(5, 3, 2));        // Calls 3-parameter version
+        Console.WriteLine(Add(5.5, 3.2));       // Calls double version
+    }
+}`}
+/>
+
+## Recursive Methods
+
+A method can call itself - this is called recursion:
+
+<CodeEditor 
+  initialCode={`using System;
+
+class Program
+{
+    static int Factorial(int n)
+    {
+        // Base case
+        if (n <= 1)
+        {
+            return 1;
+        }
+        
+        // Recursive case
+        return n * Factorial(n - 1);
+    }
+    
+    static int Fibonacci(int n)
+    {
+        if (n <= 1)
+        {
+            return n;
+        }
+        return Fibonacci(n - 1) + Fibonacci(n - 2);
+    }
+    
+    static void Main()
+    {
+        Console.WriteLine($"5! = {Factorial(5)}");
+        
+        Console.Write("Fibonacci: ");
+        for (int i = 0; i < 10; i++)
+        {
+            Console.Write($"{Fibonacci(i)} ");
+        }
+    }
+}`}
+/>
+
+## Out Parameters
+
+The `out` keyword allows methods to return multiple values:
+
+```csharp
+static bool TryDivide(int a, int b, out double result)
+{
+    if (b == 0)
+    {
+        result = 0;
+        return false;
+    }
+    
+    result = (double)a / b;
+    return true;
+}
+
+// Usage
+if (TryDivide(10, 3, out double quotient))
+{
+    Console.WriteLine($"Result: {quotient}");
+}
+```
+
+## Best Practices
+
+### 1. Single Responsibility
+Each method should do one thing well:
+
+```csharp
+// Good - focused method
+static bool IsValidEmail(string email)
+{
+    return email.Contains("@") && email.Contains(".");
+}
+
+// Bad - doing too much
+static void ProcessUser(string name, string email, int age)
+{
+    // Validates, saves to database, sends email...
+}
+```
+
+### 2. Descriptive Names
+Use clear, action-oriented names:
+
+```csharp
+// Good
+static double CalculateTax(double income)
+static bool IsEligibleForDiscount(int age)
+
+// Bad
+static double DoStuff(double x)
+static bool Check(int n)
+```
+
+### 3. Keep Methods Short
+Aim for methods that fit on one screen:
+
+```csharp
+// If a method is too long, break it into smaller methods
+static void ProcessOrder()
+{
+    ValidateOrder();
+    CalculateTotal();
+    ApplyDiscount();
+    SendConfirmation();
+}
+```
+
+## Practice Exercises
+
+1. **Prime Checker**: Write `bool IsPrime(int number)` that returns true if a number is prime
+
+2. **String Utilities**:
+   - `bool IsPalindrome(string word)` - checks if word reads same forwards/backwards
+   - `string ToTitleCase(string text)` - capitalizes first letter of each word
+
+3. **Math Functions**:
+   - `int Max(int a, int b, int c)` - returns largest of three numbers
+   - `double Power(double baseNum, int exponent)` - calculates base^exponent
+
+4. **Array Operations**:
+   - `int[] GetEvenNumbers(int[] numbers)` - returns only even numbers
+   - `int FindMax(int[] numbers)` - finds largest number in array
+
+## Key Takeaways
+
+- Methods organize code into reusable blocks
+- `void` methods don't return values
+- Methods can accept multiple parameters
+- Use `return` to send values back to the caller
+- Optional parameters have default values
+- Method overloading allows same name with different parameters
+- Recursion is when a method calls itself
+- Keep methods small, focused, and well-named
+- Use descriptive names that indicate what the method does
+
+In the next lesson, we'll explore **arrays and collections** - how to work with multiple values efficiently!

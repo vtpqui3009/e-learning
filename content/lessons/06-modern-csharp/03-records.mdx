@@ -1,0 +1,528 @@
+---
+title: "Records"
+description: "Master record types for immutable data with value semantics"
+order: 3
+difficulty: "advanced"
+tags: ["records", "immutable", "value-equality", "modern-csharp"]
+duration: "30 minutes"
+---
+
+# Records
+
+Records are reference types with value-based equality and built-in functionality for immutable data. They're perfect for DTOs, domain models, and data transfer objects.
+
+## Basic Record
+
+<CodeEditor 
+  language="csharp"
+  code={`using System;
+
+// Record declaration
+record Person(string FirstName, string LastName, int Age);
+
+class Program
+{
+    static void Main()
+    {
+        // Create record instance
+        Person person1 = new Person("John", "Doe", 30);
+        Person person2 = new Person("John", "Doe", 30);
+        Person person3 = new Person("Jane", "Smith", 25);
+        
+        // Value-based equality (not reference equality!)
+        Console.WriteLine($"person1 == person2: {person1 == person2}");  // True!
+        Console.WriteLine($"person1 == person3: {person1 == person3}");  // False
+        
+        // ToString() is automatically implemented
+        Console.WriteLine($"\\nperson1: {person1}");
+        Console.WriteLine($"person3: {person3}");
+        
+        // Deconstruction is built-in
+        var (firstName, lastName, age) = person1;
+        Console.WriteLine($"\\nDeconstructed: {firstName} {lastName}, age {age}");
+    }
+}`}
+  title="Basic Record"
+/>
+
+## with Expression - Non-Destructive Mutation
+
+<CodeEditor 
+  language="csharp"
+  code={`using System;
+
+record Person(string Name, int Age, string City);
+
+class Program
+{
+    static void Main()
+    {
+        Person person = new Person("Alice", 25, "New York");
+        Console.WriteLine($"Original: {person}");
+        
+        // Create modified copy with 'with' expression
+        Person olderPerson = person with { Age = 26 };
+        Console.WriteLine($"Modified: {olderPerson}");
+        
+        // Original is unchanged
+        Console.WriteLine($"Original unchanged: {person}");
+        
+        // Modify multiple properties
+        Person relocated = person with 
+        { 
+            City = "Boston",
+            Age = 30
+        };
+        Console.WriteLine($"\\nRelocated: {relocated}");
+        
+        // Chain with expressions
+        Person final = person
+            with { Age = 27 }
+            with { City = "Chicago" };
+        Console.WriteLine($"Chained: {final}");
+    }
+}`}
+  title="with Expression"
+/>
+
+## Record vs Class
+
+<CodeEditor 
+  language="csharp"
+  code={`using System;
+
+// Class with similar properties
+class PersonClass
+{
+    public string Name { get; init; }
+    public int Age { get; init; }
+    
+    public PersonClass(string name, int age)
+    {
+        Name = name;
+        Age = age;
+    }
+}
+
+// Record - much more concise!
+record PersonRecord(string Name, int Age);
+
+class Program
+{
+    static void Main()
+    {
+        // Classes use reference equality
+        var class1 = new PersonClass("Alice", 25);
+        var class2 = new PersonClass("Alice", 25);
+        Console.WriteLine($"Class equality: {class1 == class2}");  // False
+        Console.WriteLine($"Class1: {class1}");  // Type name only
+        
+        // Records use value equality
+        var record1 = new PersonRecord("Alice", 25);
+        var record2 = new PersonRecord("Alice", 25);
+        Console.WriteLine($"\\nRecord equality: {record1 == record2}");  // True!
+        Console.WriteLine($"Record1: {record1}");  // Nice ToString()
+        
+        // Records have built-in copy constructor
+        var record3 = record1 with { Age = 26 };
+        Console.WriteLine($"Modified copy: {record3}");
+    }
+}`}
+  title="Record vs Class"
+/>
+
+## Record Properties and Methods
+
+<CodeEditor 
+  language="csharp"
+  code={`using System;
+
+record Person(string FirstName, string LastName, int Age)
+{
+    // Computed property
+    public string FullName => $"{FirstName} {LastName}";
+    
+    // Additional property with default value
+    public string Email { get; init; } = "";
+    
+    // Method
+    public bool IsAdult() => Age >= 18;
+    
+    // Override ToString() if needed
+    public override string ToString()
+    {
+        return $"{FullName} ({Age}) - {Email}";
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        Person person = new Person("John", "Doe", 25)
+        {
+            Email = "john.doe@example.com"
+        };
+        
+        Console.WriteLine(person);
+        Console.WriteLine($"Full name: {person.FullName}");
+        Console.WriteLine($"Is adult: {person.IsAdult()}");
+        
+        // with expression works with additional properties
+        Person withNewEmail = person with 
+        { 
+            Email = "john.new@example.com" 
+        };
+        Console.WriteLine($"\\nNew email: {withNewEmail}");
+    }
+}`}
+  title="Record Properties and Methods"
+/>
+
+## Record Inheritance
+
+<CodeEditor 
+  language="csharp"
+  code={`using System;
+
+// Base record
+record Person(string Name, int Age);
+
+// Derived records
+record Student(string Name, int Age, string School, double GPA) 
+    : Person(Name, Age);
+
+record Employee(string Name, int Age, string Company, decimal Salary) 
+    : Person(Name, Age);
+
+class Program
+{
+    static void Main()
+    {
+        Student student = new Student("Alice", 20, "MIT", 3.9);
+        Employee employee = new Employee("Bob", 30, "TechCorp", 85000);
+        
+        Console.WriteLine($"Student: {student}");
+        Console.WriteLine($"Employee: {employee}");
+        
+        // Polymorphism works
+        Person[] people = { student, employee };
+        
+        Console.WriteLine("\\nAll people:");
+        foreach (var person in people)
+        {
+            Console.WriteLine($"  {person.Name}, age {person.Age}");
+            
+            // Pattern matching with records
+            string description = person switch
+            {
+                Student s => $"Student at {s.School}, GPA: {s.GPA}",
+                Employee e => $"Works at {e.Company}, Salary: \${e.Salary}",
+                _ => "Person"
+            };
+            Console.WriteLine($"    {description}");
+        }
+    }
+}`}
+  title="Record Inheritance"
+/>
+
+## Record Struct (C# 10+)
+
+<CodeEditor 
+  language="csharp"
+  code={`using System;
+
+// Record struct - value type with record features
+record struct Point(int X, int Y);
+
+// Mutable record struct
+record struct MutablePoint(int X, int Y)
+{
+    public int X { get; set; } = X;
+    public int Y { get; set; } = Y;
+}
+
+// Readonly record struct
+readonly record struct ReadonlyPoint(int X, int Y);
+
+class Program
+{
+    static void Main()
+    {
+        // Regular record struct (immutable by default)
+        Point p1 = new Point(10, 20);
+        Point p2 = new Point(10, 20);
+        
+        Console.WriteLine($"p1: {p1}");
+        Console.WriteLine($"p1 == p2: {p1 == p2}");  // Value equality
+        
+        // with expression works
+        Point p3 = p1 with { X = 30 };
+        Console.WriteLine($"Modified: {p3}");
+        
+        // Mutable record struct
+        MutablePoint mp = new MutablePoint(5, 10);
+        Console.WriteLine($"\\nMutable before: {mp}");
+        mp.X = 15;  // Can modify
+        Console.WriteLine($"Mutable after: {mp}");
+        
+        // Deconstruction
+        var (x, y) = p1;
+        Console.WriteLine($"\\nDeconstructed: X={x}, Y={y}");
+    }
+}`}
+  title="Record Struct"
+/>
+
+## Positional Records with Validation
+
+<CodeEditor 
+  language="csharp"
+  code={`using System;
+
+record Person(string Name, int Age)
+{
+    // Validation in property setters
+    public string Name { get; init; } = 
+        !string.IsNullOrWhiteSpace(Name) 
+        ? Name 
+        : throw new ArgumentException("Name cannot be empty");
+    
+    public int Age { get; init; } = 
+        Age >= 0 && Age <= 150 
+        ? Age 
+        : throw new ArgumentException("Age must be between 0 and 150");
+}
+
+record Product(string Name, decimal Price)
+{
+    public string Name { get; init; } = 
+        !string.IsNullOrWhiteSpace(Name)
+        ? Name
+        : throw new ArgumentException("Product name required");
+    
+    public decimal Price { get; init; } = 
+        Price > 0
+        ? Price
+        : throw new ArgumentException("Price must be positive");
+    
+    // Additional computed property
+    public decimal PriceWithTax => Price * 1.10m;
+}
+
+class Program
+{
+    static void Main()
+    {
+        try
+        {
+            Person person = new Person("Alice", 25);
+            Console.WriteLine($"Valid person: {person}");
+            
+            Product product = new Product("Laptop", 999.99m);
+            Console.WriteLine($"Valid product: {product}");
+            Console.WriteLine($"  With tax: \${product.PriceWithTax:F2}");
+            
+            // This will throw
+            Person invalid = new Person("", 25);
+        }
+        catch (ArgumentException ex)
+        {
+            Console.WriteLine($"\\nValidation error: {ex.Message}");
+        }
+        
+        try
+        {
+            // This will also throw
+            Product invalidProduct = new Product("Phone", -50);
+        }
+        catch (ArgumentException ex)
+        {
+            Console.WriteLine($"Validation error: {ex.Message}");
+        }
+    }
+}`}
+  title="Record with Validation"
+/>
+
+## Real-World Example: Domain Models
+
+<CodeEditor 
+  language="csharp"
+  code={`using System;
+using System.Collections.Generic;
+using System.Linq;
+
+// Domain records
+record Address(string Street, string City, string State, string ZipCode);
+
+record Customer(int Id, string Name, string Email, Address Address);
+
+record OrderItem(string ProductName, int Quantity, decimal UnitPrice)
+{
+    public decimal TotalPrice => Quantity * UnitPrice;
+}
+
+record Order(int OrderId, int CustomerId, DateTime OrderDate, List<OrderItem> Items)
+{
+    public decimal Subtotal => Items.Sum(item => item.TotalPrice);
+    public decimal Tax => Subtotal * 0.08m;
+    public decimal Total => Subtotal + Tax;
+}
+
+class Program
+{
+    static void Main()
+    {
+        // Create customer
+        var address = new Address(
+            "123 Main St",
+            "Boston",
+            "MA",
+            "02101"
+        );
+        
+        var customer = new Customer(
+            1,
+            "Alice Johnson",
+            "alice@example.com",
+            address
+        );
+        
+        Console.WriteLine($"Customer: {customer.Name}");
+        Console.WriteLine($"Location: {customer.Address.City}, {customer.Address.State}");
+        
+        // Create order
+        var items = new List<OrderItem>
+        {
+            new OrderItem("Laptop", 1, 999.99m),
+            new OrderItem("Mouse", 2, 25.00m),
+            new OrderItem("Keyboard", 1, 79.99m)
+        };
+        
+        var order = new Order(
+            1001,
+            customer.Id,
+            DateTime.Now,
+            items
+        );
+        
+        Console.WriteLine($"\\nOrder #{order.OrderId} - {order.OrderDate:yyyy-MM-dd}");
+        Console.WriteLine("Items:");
+        foreach (var item in order.Items)
+        {
+            Console.WriteLine($"  {item.ProductName}: {item.Quantity} x \${item.UnitPrice} = \${item.TotalPrice}");
+        }
+        Console.WriteLine($"\\nSubtotal: \${order.Subtotal:F2}");
+        Console.WriteLine($"Tax: \${order.Tax:F2}");
+        Console.WriteLine($"Total: \${order.Total:F2}");
+        
+        // Update customer address
+        var newAddress = customer.Address with { City = "Cambridge" };
+        var relocatedCustomer = customer with { Address = newAddress };
+        
+        Console.WriteLine($"\\nCustomer relocated to: {relocatedCustomer.Address.City}");
+    }
+}`}
+  title="Domain Model with Records"
+/>
+
+## When to Use Records
+
+**Use Records for:**
+- DTOs (Data Transfer Objects)
+- Domain models
+- Value objects
+- Immutable data
+- Configuration objects
+- API responses/requests
+
+**Use Classes for:**
+- Entities with identity
+- Mutable state management
+- Complex behavior
+- When reference equality needed
+
+<CodeEditor 
+  language="csharp"
+  code={`using System;
+
+// Good use of record - DTO/Value object
+record UserDto(int Id, string Username, string Email);
+
+// Good use of record - Configuration
+record AppConfig(string DatabaseUrl, int MaxConnections, bool EnableLogging);
+
+// Good use of class - Entity with behavior
+class ShoppingCart
+{
+    private List<string> items = new List<string>();
+    public int Id { get; set; }
+    
+    public void AddItem(string item)
+    {
+        items.Add(item);
+    }
+    
+    public int Count => items.Count;
+}
+
+class Program
+{
+    static void Main()
+    {
+        // Records for data
+        UserDto user1 = new UserDto(1, "alice", "alice@example.com");
+        UserDto user2 = new UserDto(1, "alice", "alice@example.com");
+        
+        Console.WriteLine($"Users equal: {user1 == user2}");  // True
+        
+        AppConfig config = new AppConfig(
+            "mongodb://localhost",
+            100,
+            true
+        );
+        Console.WriteLine($"Config: {config}");
+        
+        // Class for entities with behavior
+        ShoppingCart cart = new ShoppingCart { Id = 1 };
+        cart.AddItem("Laptop");
+        cart.AddItem("Mouse");
+        Console.WriteLine($"\\nCart items: {cart.Count}");
+    }
+}`}
+  title="When to Use Records"
+/>
+
+## Best Practices
+
+1. **Use for immutable data** - Records are naturally immutable
+2. **Value objects** - Perfect for money, coordinates, etc.
+3. **DTOs and API models** - Clean, concise data structures
+4. **with for updates** - Non-destructive modifications
+5. **Validate in properties** - Ensure data integrity
+6. **Prefer init over set** - Maintain immutability
+7. **Use record struct** - For small value types
+
+## Key Takeaways
+
+- **Records** provide value-based equality by default
+- **with expression** enables non-destructive mutation
+- Built-in **ToString()**, **GetHashCode()**, **Equals()**
+- **Positional syntax** for concise declarations
+- **Record struct** combines value type with record features
+- Perfect for **DTOs**, **domain models**, and **value objects**
+- Support **inheritance** and **pattern matching**
+- Make immutable data **easy and natural**
+
+## Congratulations! 🎉
+
+You've completed all the C# lessons! You now have a comprehensive understanding of:
+- C# Fundamentals
+- Object-Oriented Programming
+- Delegates, Events, and Lambda Expressions
+- LINQ for data querying
+- Modern C# features (Async/Await, Pattern Matching, Records)
+
+Keep practicing and building projects to solidify your knowledge!

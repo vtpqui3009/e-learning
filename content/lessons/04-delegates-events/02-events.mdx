@@ -1,0 +1,519 @@
+---
+title: "Events in C#"
+description: "Master events, event handlers, and the publisher-subscriber pattern"
+order: 2
+difficulty: "intermediate"
+tags: ["events", "event-handlers", "publisher-subscriber", "delegates"]
+duration: "30 minutes"
+---
+
+# Events in C#
+
+Events are a way for a class to notify other classes when something happens. They're built on top of delegates and follow the publisher-subscriber pattern.
+
+## What are Events?
+
+Events enable:
+- **Loose coupling** between components
+- **Publisher-subscriber** pattern
+- **Notification system** for state changes
+- **GUI programming** (button clicks, etc.)
+
+<CodeEditor 
+  language="csharp"
+  code={`using System;
+
+// Publisher class
+class Button
+{
+    // Declare an event using EventHandler delegate
+    public event EventHandler Clicked;
+    
+    public void Click()
+    {
+        Console.WriteLine("Button was clicked!");
+        // Raise the event
+        OnClicked();
+    }
+    
+    // Protected method to raise the event
+    protected virtual void OnClicked()
+    {
+        // Check if anyone is subscribed
+        if (Clicked != null)
+        {
+            Clicked(this, EventArgs.Empty);
+        }
+        // Shorter syntax (C# 6+):
+        // Clicked?.Invoke(this, EventArgs.Empty);
+    }
+}
+
+// Subscriber class
+class Program
+{
+    static void Main()
+    {
+        Button button = new Button();
+        
+        // Subscribe to the event
+        button.Clicked += Button_Clicked;
+        button.Clicked += AnotherHandler;
+        
+        // Trigger the event
+        button.Click();
+        
+        Console.WriteLine("\\nUnsubscribing one handler...");
+        button.Clicked -= AnotherHandler;
+        
+        button.Click();
+    }
+    
+    static void Button_Clicked(object sender, EventArgs e)
+    {
+        Console.WriteLine("Button_Clicked handler executed");
+    }
+    
+    static void AnotherHandler(object sender, EventArgs e)
+    {
+        Console.WriteLine("AnotherHandler executed");
+    }
+}`}
+  title="Basic Event Example"
+/>
+
+## Custom Event Arguments
+
+<CodeEditor 
+  language="csharp"
+  code={`using System;
+
+// Custom EventArgs class
+class PriceChangedEventArgs : EventArgs
+{
+    public decimal OldPrice { get; set; }
+    public decimal NewPrice { get; set; }
+    public decimal Change => NewPrice - OldPrice;
+    public decimal PercentageChange => (Change / OldPrice) * 100;
+}
+
+class Product
+{
+    private decimal price;
+    
+    public string Name { get; set; }
+    
+    public decimal Price
+    {
+        get => price;
+        set
+        {
+            if (price != value)
+            {
+                decimal oldPrice = price;
+                price = value;
+                OnPriceChanged(new PriceChangedEventArgs 
+                { 
+                    OldPrice = oldPrice, 
+                    NewPrice = value 
+                });
+            }
+        }
+    }
+    
+    // Event with custom EventArgs
+    public event EventHandler<PriceChangedEventArgs> PriceChanged;
+    
+    protected virtual void OnPriceChanged(PriceChangedEventArgs e)
+    {
+        PriceChanged?.Invoke(this, e);
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        Product product = new Product 
+        { 
+            Name = "Laptop", 
+            Price = 1000 
+        };
+        
+        // Subscribe to event
+        product.PriceChanged += Product_PriceChanged;
+        product.PriceChanged += NotifyCustomers;
+        
+        Console.WriteLine($"Initial price: \${product.Price}\\n");
+        
+        // Change price (triggers event)
+        product.Price = 899.99m;
+        
+        product.Price = 950m;
+    }
+    
+    static void Product_PriceChanged(object sender, PriceChangedEventArgs e)
+    {
+        Product product = sender as Product;
+        Console.WriteLine($"Price changed for {product.Name}:");
+        Console.WriteLine($"  Old: \${e.OldPrice}");
+        Console.WriteLine($"  New: \${e.NewPrice}");
+        Console.WriteLine($"  Change: \${e.Change:F2} ({e.PercentageChange:F1}%)\\n");
+    }
+    
+    static void NotifyCustomers(object sender, PriceChangedEventArgs e)
+    {
+        Console.WriteLine("📧 Notifying customers about price change...\\n");
+    }
+}`}
+  title="Custom Event Arguments"
+/>
+
+## Real-World Example: Stock Market
+
+<CodeEditor 
+  language="csharp"
+  code={`using System;
+using System.Collections.Generic;
+
+class StockEventArgs : EventArgs
+{
+    public string Symbol { get; set; }
+    public decimal Price { get; set; }
+    public decimal Change { get; set; }
+}
+
+class Stock
+{
+    private decimal price;
+    
+    public string Symbol { get; set; }
+    public decimal Price
+    {
+        get => price;
+        set
+        {
+            decimal oldPrice = price;
+            price = value;
+            decimal change = value - oldPrice;
+            
+            if (Math.Abs(change) > 0)
+            {
+                OnPriceChanged(new StockEventArgs 
+                { 
+                    Symbol = Symbol, 
+                    Price = value, 
+                    Change = change 
+                });
+                
+                // Trigger alert if big change
+                if (Math.Abs(change / oldPrice) > 0.05m)
+                {
+                    OnPriceAlert(new StockEventArgs 
+                    { 
+                        Symbol = Symbol, 
+                        Price = value, 
+                        Change = change 
+                    });
+                }
+            }
+        }
+    }
+    
+    public event EventHandler<StockEventArgs> PriceChanged;
+    public event EventHandler<StockEventArgs> PriceAlert;
+    
+    protected virtual void OnPriceChanged(StockEventArgs e)
+    {
+        PriceChanged?.Invoke(this, e);
+    }
+    
+    protected virtual void OnPriceAlert(StockEventArgs e)
+    {
+        PriceAlert?.Invoke(this, e);
+    }
+}
+
+class Portfolio
+{
+    private List<Stock> stocks = new List<Stock>();
+    
+    public void AddStock(Stock stock)
+    {
+        stocks.Add(stock);
+        stock.PriceChanged += Stock_PriceChanged;
+        stock.PriceAlert += Stock_PriceAlert;
+        Console.WriteLine($"Added {stock.Symbol} to portfolio");
+    }
+    
+    private void Stock_PriceChanged(object sender, StockEventArgs e)
+    {
+        string direction = e.Change > 0 ? "▲" : "▼";
+        Console.WriteLine($"{e.Symbol}: \${e.Price} {direction} \${Math.Abs(e.Change):F2}");
+    }
+    
+    private void Stock_PriceAlert(object sender, StockEventArgs e)
+    {
+        string alertType = e.Change > 0 ? "SPIKE" : "DROP";
+        Console.WriteLine($"⚠️  ALERT: {e.Symbol} {alertType} - Now \${e.Price}");
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        Portfolio portfolio = new Portfolio();
+        
+        Stock apple = new Stock { Symbol = "AAPL", Price = 150 };
+        Stock google = new Stock { Symbol = "GOOGL", Price = 2800 };
+        
+        portfolio.AddStock(apple);
+        portfolio.AddStock(google);
+        
+        Console.WriteLine("\\nSimulating price changes...\\n");
+        
+        apple.Price = 152;
+        google.Price = 2850;
+        apple.Price = 145;  // Big drop - triggers alert
+        google.Price = 2950;  // Big spike - triggers alert
+    }
+}`}
+  title="Stock Market System"
+/>
+
+## Event Accessors
+
+<CodeEditor 
+  language="csharp"
+  code={`using System;
+using System.Collections.Generic;
+
+class VideoPlayer
+{
+    private EventHandler playing;
+    private List<string> eventLog = new List<string>();
+    
+    // Event with custom add/remove accessors
+    public event EventHandler Playing
+    {
+        add
+        {
+            Console.WriteLine("Subscriber added to Playing event");
+            eventLog.Add($"Subscribed: {value.Method.Name}");
+            playing += value;
+        }
+        remove
+        {
+            Console.WriteLine("Subscriber removed from Playing event");
+            eventLog.Add($"Unsubscribed: {value.Method.Name}");
+            playing -= value;
+        }
+    }
+    
+    public void Play()
+    {
+        Console.WriteLine("\\n▶️  Playing video...");
+        playing?.Invoke(this, EventArgs.Empty);
+    }
+    
+    public void ShowLog()
+    {
+        Console.WriteLine("\\nEvent Log:");
+        foreach (var entry in eventLog)
+        {
+            Console.WriteLine($"  - {entry}");
+        }
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        VideoPlayer player = new VideoPlayer();
+        
+        player.Playing += HandlePlaying;
+        player.Playing += LogPlaying;
+        
+        player.Play();
+        
+        player.Playing -= LogPlaying;
+        
+        player.Play();
+        
+        player.ShowLog();
+    }
+    
+    static void HandlePlaying(object sender, EventArgs e)
+    {
+        Console.WriteLine("HandlePlaying: Video is playing");
+    }
+    
+    static void LogPlaying(object sender, EventArgs e)
+    {
+        Console.WriteLine("LogPlaying: Logged video play event");
+    }
+}`}
+  title="Event Accessors"
+/>
+
+## Anonymous Methods and Lambdas with Events
+
+<CodeEditor 
+  language="csharp"
+  code={`using System;
+
+class Timer
+{
+    public event EventHandler Tick;
+    public event EventHandler<int> SecondPassed;
+    
+    public void Start(int seconds)
+    {
+        for (int i = 1; i <= seconds; i++)
+        {
+            Console.WriteLine($"Second: {i}");
+            SecondPassed?.Invoke(this, i);
+            
+            if (i == seconds)
+            {
+                Tick?.Invoke(this, EventArgs.Empty);
+            }
+        }
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        Timer timer = new Timer();
+        
+        // Subscribe with lambda expression
+        timer.SecondPassed += (sender, second) => 
+        {
+            if (second % 2 == 0)
+                Console.WriteLine($"  -> Even second: {second}");
+        };
+        
+        // Another lambda subscriber
+        timer.SecondPassed += (sender, second) =>
+        {
+            if (second == 3)
+                Console.WriteLine("  -> Halfway there!");
+        };
+        
+        // Subscribe to Tick event
+        timer.Tick += (sender, e) => 
+        {
+            Console.WriteLine("\\n✓ Timer completed!");
+        };
+        
+        Console.WriteLine("Starting 5-second timer:\\n");
+        timer.Start(5);
+    }
+}`}
+  title="Events with Lambda Expressions"
+/>
+
+## Publisher-Subscriber Pattern
+
+<CodeEditor 
+  language="csharp"
+  code={`using System;
+
+class NewsAgency
+{
+    private string latestNews;
+    
+    public event EventHandler<string> NewsPublished;
+    
+    public void PublishNews(string news)
+    {
+        latestNews = news;
+        Console.WriteLine($"\\n📰 Publishing: {news}");
+        OnNewsPublished(news);
+    }
+    
+    protected virtual void OnNewsPublished(string news)
+    {
+        NewsPublished?.Invoke(this, news);
+    }
+}
+
+class NewsSubscriber
+{
+    private string name;
+    
+    public NewsSubscriber(string name)
+    {
+        this.name = name;
+    }
+    
+    public void Subscribe(NewsAgency agency)
+    {
+        agency.NewsPublished += ReceiveNews;
+        Console.WriteLine($"{name} subscribed to news");
+    }
+    
+    public void Unsubscribe(NewsAgency agency)
+    {
+        agency.NewsPublished -= ReceiveNews;
+        Console.WriteLine($"{name} unsubscribed from news");
+    }
+    
+    private void ReceiveNews(object sender, string news)
+    {
+        Console.WriteLine($"  📱 {name} received: {news}");
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        NewsAgency cnn = new NewsAgency();
+        
+        NewsSubscriber alice = new NewsSubscriber("Alice");
+        NewsSubscriber bob = new NewsSubscriber("Bob");
+        NewsSubscriber charlie = new NewsSubscriber("Charlie");
+        
+        alice.Subscribe(cnn);
+        bob.Subscribe(cnn);
+        
+        cnn.PublishNews("Breaking: Technology advances!");
+        
+        charlie.Subscribe(cnn);
+        
+        cnn.PublishNews("Update: New C# version released");
+        
+        bob.Unsubscribe(cnn);
+        
+        cnn.PublishNews("Final: Event handling mastered!");
+    }
+}`}
+  title="Publisher-Subscriber Pattern"
+/>
+
+## Best Practices
+
+1. **Use `EventHandler<T>`** - Standard pattern for custom events
+2. **Check for null** - Always use `?.Invoke()` or null check
+3. **Protected virtual On methods** - For raising events
+4. **Unsubscribe when done** - Prevent memory leaks
+5. **Don't return values** - Events should be void
+6. **Name events as verbs/states** - Clicked, Changed, Closing
+
+## Key Takeaways
+
+- **Events** enable loose coupling through publisher-subscriber pattern
+- Built on **delegates** with += and -= operators
+- Use **`EventHandler<T>`** for custom event arguments
+- Always **check for null** before raising events
+- Events are one-way communication from publisher to subscribers
+- Essential for **GUI programming** and **asynchronous patterns**
+
+## Next Steps
+
+Next: **Lambda Expressions** - write concise inline functions!

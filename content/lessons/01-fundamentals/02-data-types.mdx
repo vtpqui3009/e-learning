@@ -1,0 +1,169 @@
+---
+title: "Data Types in C#"
+description: "Explore the fundamental data types available in C#"
+order: 2
+difficulty: "beginner"
+estimatedTime: "15 minutes"
+keywords: ["data types", "int", "string", "bool", "value types", "reference types"]
+---
+
+# Data Types in C#
+
+C# is a strongly-typed language, meaning every variable must have a specific data type. Understanding data types is crucial for writing efficient and bug-free code.
+
+## Value Types vs Reference Types
+
+C# has two main categories of data types:
+
+- **Value Types**: Store the actual data (int, double, bool, struct, enum)
+- **Reference Types**: Store a reference to the data (string, class, interface, array)
+
+## Common Value Types
+
+### Integer Types
+
+```csharp
+int age = 30;              // 32-bit integer (-2 billion to 2 billion)
+long population = 8000000000L;  // 64-bit integer
+short temperature = -15;    // 16-bit integer
+byte fileSize = 255;        // 8-bit unsigned integer (0-255)
+```
+
+### Floating-Point Types
+
+```csharp
+float price = 19.99f;       // 32-bit floating point (7 digits precision)
+double pi = 3.14159265359;  // 64-bit floating point (15-16 digits)
+decimal money = 1234.56m;   // 128-bit for financial calculations
+```
+
+**Important**: Use `decimal` for money and financial calculations to avoid rounding errors!
+
+### Boolean Type
+
+```csharp
+bool isLoggedIn = true;
+bool hasPermission = false;
+```
+
+### Character Type
+
+```csharp
+char grade = 'A';
+char symbol = '@';
+```
+
+## Common Reference Types
+
+### String
+
+```csharp
+string firstName = "John";
+string lastName = "Doe";
+string fullName = firstName + " " + lastName;  // "John Doe"
+```
+
+Strings are **immutable** in C# - once created, they cannot be changed. Operations that appear to modify a string actually create a new string.
+
+## Type Conversion
+
+### Implicit Conversion (Safe)
+
+```csharp
+int smallNumber = 100;
+long bigNumber = smallNumber;  // int to long - safe
+
+float f = 10.5f;
+double d = f;  // float to double - safe
+```
+
+### Explicit Conversion (May Lose Data)
+
+```csharp
+double pi = 3.14159;
+int roundedPi = (int)pi;  // Result: 3 (decimal part lost!)
+
+long bigValue = 1000000000L;
+int smallValue = (int)bigValue;  // May overflow if too large
+```
+
+### Using Convert Class
+
+```csharp
+string ageText = "25";
+int age = Convert.ToInt32(ageText);
+
+double price = 19.99;
+string priceText = Convert.ToString(price);
+```
+
+### Using Parse and TryParse
+
+```csharp
+// Parse - throws exception if conversion fails
+string numberText = "123";
+int number = int.Parse(numberText);
+
+// TryParse - safer, returns bool indicating success
+string input = "abc";
+if (int.TryParse(input, out int result))
+{
+    Console.WriteLine($"Converted: {result}");
+}
+else
+{
+    Console.WriteLine("Conversion failed");
+}
+```
+
+## Nullable Types
+
+Value types cannot normally be null, but you can make them nullable:
+
+```csharp
+int? age = null;  // Nullable int
+double? temperature = 36.5;
+
+if (age.HasValue)
+{
+    Console.WriteLine($"Age: {age.Value}");
+}
+else
+{
+    Console.WriteLine("Age not specified");
+}
+
+// Null-coalescing operator
+int displayAge = age ?? 0;  // Use 0 if age is null
+```
+
+## Type Inference with var
+
+The `var` keyword lets the compiler infer the type:
+
+```csharp
+var name = "Alice";        // Inferred as string
+var count = 42;            // Inferred as int
+var price = 19.99;         // Inferred as double
+var isActive = true;       // Inferred as bool
+```
+
+**Note**: The type is still determined at compile-time, not runtime!
+
+## Key Takeaways
+
+- C# has value types (store data) and reference types (store references)
+- Choose the appropriate numeric type based on range and precision needs
+- Use `decimal` for financial calculations
+- Strings are immutable reference types
+- Always consider type safety when converting between types
+- Use `TryParse` for safer string-to-number conversions
+- Nullable types allow value types to represent "no value"
+
+## Practice Exercises
+
+1. Declare variables for a person's name, age, height (in meters), and whether they're a student
+2. Convert a string "42.5" to a double
+3. Create a nullable integer and check if it has a value before using it
+
+In the next lesson, we'll explore operators and how to perform calculations with these data types!

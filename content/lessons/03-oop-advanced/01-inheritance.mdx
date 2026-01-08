@@ -1,0 +1,301 @@
+---
+title: "Inheritance in C#"
+description: "Master class inheritance and build reusable object hierarchies"
+order: 1
+difficulty: "intermediate"
+estimatedTime: "20 minutes"
+keywords: ["inheritance", "base class", "derived class", "override", "polymorphism"]
+prerequisites: ["02-oop-basics/01-classes-objects"]
+---
+
+# Inheritance in C#
+
+Inheritance is one of the fundamental principles of object-oriented programming. It allows you to create new classes based on existing ones, promoting code reuse and establishing relationships between classes.
+
+## What is Inheritance?
+
+Inheritance enables a class (**derived class** or **child class**) to inherit members (properties, methods, fields) from another class (**base class** or **parent class**).
+
+Think of it like this: A `Dog` inherits characteristics from `Animal` - all dogs are animals, but not all animals are dogs.
+
+## Basic Syntax
+
+```csharp
+// Base class
+public class Animal
+{
+    public string Name { get; set; }
+    public int Age { get; set; }
+
+    public void Eat()
+    {
+        Console.WriteLine($"{Name} is eating.");
+    }
+
+    public void Sleep()
+    {
+        Console.WriteLine($"{Name} is sleeping.");
+    }
+}
+
+// Derived class
+public class Dog : Animal
+{
+    public string Breed { get; set; }
+
+    public void Bark()
+    {
+        Console.WriteLine($"{Name} says: Woof!");
+    }
+}
+
+// Usage
+var dog = new Dog
+{
+    Name = "Buddy",
+    Age = 3,
+    Breed = "Golden Retriever"
+};
+
+dog.Eat();    // Inherited from Animal
+dog.Sleep();  // Inherited from Animal
+dog.Bark();   // Defined in Dog
+```
+
+## The `virtual` and `override` Keywords
+
+To allow derived classes to provide their own implementation of a base class method, use `virtual` in the base class and `override` in the derived class:
+
+```csharp
+public class Animal
+{
+    public string Name { get; set; }
+
+    // Virtual method - can be overridden
+    public virtual void MakeSound()
+    {
+        Console.WriteLine("Some generic animal sound");
+    }
+}
+
+public class Dog : Animal
+{
+    // Override the base class method
+    public override void MakeSound()
+    {
+        Console.WriteLine("Woof! Woof!");
+    }
+}
+
+public class Cat : Animal
+{
+    public override void MakeSound()
+    {
+        Console.WriteLine("Meow!");
+    }
+}
+
+// Usage
+Animal[] animals = { new Dog { Name = "Buddy" }, new Cat { Name = "Whiskers" } };
+
+foreach (var animal in animals)
+{
+    Console.Write($"{animal.Name}: ");
+    animal.MakeSound();  // Calls the appropriate override
+}
+
+// Output:
+// Buddy: Woof! Woof!
+// Whiskers: Meow!
+```
+
+This is **polymorphism** in action!
+
+## The `base` Keyword
+
+Use `base` to call methods or constructors from the base class:
+
+```csharp
+public class Animal
+{
+    public string Name { get; set; }
+
+    public Animal(string name)
+    {
+        Name = name;
+        Console.WriteLine($"Animal {name} created");
+    }
+
+    public virtual void MakeSound()
+    {
+        Console.WriteLine("Generic sound");
+    }
+}
+
+public class Dog : Animal
+{
+    public string Breed { get; set; }
+
+    // Call base class constructor
+    public Dog(string name, string breed) : base(name)
+    {
+        Breed = breed;
+        Console.WriteLine($"Dog {name} created");
+    }
+
+    // Override and extend base behavior
+    public override void MakeSound()
+    {
+        base.MakeSound();  // Call base implementation
+        Console.WriteLine("Plus: Woof!");
+    }
+}
+
+// Usage
+var dog = new Dog("Max", "Labrador");
+// Output:
+// Animal Max created
+// Dog Max created
+
+dog.MakeSound();
+// Output:
+// Generic sound
+// Plus: Woof!
+```
+
+## Access Modifiers and Inheritance
+
+- **`public`**: Accessible from anywhere
+- **`private`**: Only accessible within the same class (NOT inherited)
+- **`protected`**: Accessible within the class and derived classes
+- **`internal`**: Accessible within the same assembly
+- **`protected internal`**: Accessible within the same assembly or derived classes
+
+```csharp
+public class Animal
+{
+    public string Name { get; set; }       // Inherited, publicly accessible
+    private int id;                         // NOT inherited
+    protected int age;                      // Inherited, but not publicly accessible
+
+    public void PublicMethod() { }          // Inherited
+    protected void ProtectedMethod() { }    // Inherited, accessible in derived classes
+    private void PrivateMethod() { }        // NOT inherited
+}
+
+public class Dog : Animal
+{
+    public void ShowInfo()
+    {
+        Console.WriteLine(Name);           // OK - public
+        Console.WriteLine(age);            // OK - protected (accessible here)
+        // Console.WriteLine(id);          // ERROR - private
+
+        PublicMethod();                    // OK
+        ProtectedMethod();                 // OK
+        // PrivateMethod();                // ERROR - private
+    }
+}
+```
+
+## Sealed Classes
+
+Use `sealed` to prevent a class from being inherited:
+
+```csharp
+public sealed class FinalClass
+{
+    // This class cannot be inherited
+}
+
+// This will cause a compile error:
+// public class DerivedClass : FinalClass { }
+```
+
+## Single Inheritance Rule
+
+C# supports **single inheritance only** - a class can inherit from only one base class:
+
+```csharp
+// This is INVALID:
+// public class Dog : Animal, Pet { }
+
+// Use interfaces for multiple inheritance of contracts:
+public class Dog : Animal, IPet, ITrainable
+{
+    // Inherits from one class (Animal)
+    // Implements multiple interfaces
+}
+```
+
+## When to Use Inheritance
+
+**Use inheritance when:**
+- There's a clear "is-a" relationship (Dog IS-A Animal)
+- You want to reuse code from a base class
+- You need polymorphic behavior
+
+**Avoid inheritance when:**
+- There's only a "has-a" relationship (Car HAS-A Engine) - use composition instead
+- The relationship is not truly hierarchical
+- You just want to reuse some methods - consider interfaces or composition
+
+## Common Inheritance Patterns
+
+### Template Method Pattern
+
+```csharp
+public abstract class Game
+{
+    // Template method - defines the algorithm structure
+    public void Play()
+    {
+        Initialize();
+        StartPlay();
+        EndPlay();
+    }
+
+    protected abstract void Initialize();
+    protected abstract void StartPlay();
+    protected abstract void EndPlay();
+}
+
+public class Chess : Game
+{
+    protected override void Initialize()
+    {
+        Console.WriteLine("Chess game initialized");
+    }
+
+    protected override void StartPlay()
+    {
+        Console.WriteLine("Chess game started");
+    }
+
+    protected override void EndPlay()
+    {
+        Console.WriteLine("Chess game ended");
+    }
+}
+```
+
+## Key Takeaways
+
+- Inheritance creates "is-a" relationships between classes
+- Use `:` to inherit from a base class
+- `virtual` allows methods to be overridden
+- `override` provides a new implementation in derived classes
+- `base` accesses base class members and constructors
+- `protected` makes members accessible to derived classes
+- C# supports single inheritance (one base class only)
+- Use `sealed` to prevent inheritance
+- Consider composition over inheritance when appropriate
+
+## Practice Exercise
+
+Create an inheritance hierarchy for vehicles:
+1. Base class: `Vehicle` with properties `Make`, `Model`, `Year` and a virtual method `StartEngine()`
+2. Derived class: `Car` that overrides `StartEngine()` and adds a `NumberOfDoors` property
+3. Derived class: `Motorcycle` that overrides `StartEngine()` and adds a `HasSidecar` property
+
+In the next lesson, we'll explore **polymorphism** and how to leverage inheritance for flexible, maintainable code!

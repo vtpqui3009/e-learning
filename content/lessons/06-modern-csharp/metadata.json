@@ -1,0 +1,8 @@
+{
+  "category": "06-modern-csharp",
+  "title": "Modern C# Features",
+  "description": "Explore async/await, pattern matching, records, and C# 12+ features",
+  "order": 6,
+  "icon": "⚡",
+  "color": "#06b6d4"
+}

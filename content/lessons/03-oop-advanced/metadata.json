@@ -1,0 +1,8 @@
+{
+  "category": "03-oop-advanced",
+  "title": "Advanced OOP Concepts",
+  "description": "Deep dive into inheritance, polymorphism, and interfaces",
+  "order": 3,
+  "icon": "🏗️",
+  "color": "#ec4899"
+}
