@@ -1,0 +1,513 @@
+---
+title: "Collections in C#"
+description: "Master List, Queue, Stack, and HashSet for dynamic data storage"
+order: 2
+difficulty: "beginner"
+estimatedTime: "30 minutes"
+keywords: ["List", "Queue", "Stack", "HashSet", "collections", "generic"]
+prerequisites: ["07-data-structures/01-arrays"]
+---
+
+# Collections in C#
+
+Collections are dynamic data structures that can grow and shrink at runtime. Unlike arrays, you don't need to specify the size upfront. C# provides several collection types in the `System.Collections.Generic` namespace.
+
+## Why Use Collections Instead of Arrays?
+
+| Feature | Arrays | Collections |
+|---------|--------|-------------|
+| Size | Fixed at creation | Dynamic - grows/shrinks |
+| Performance | Slightly faster | Small overhead |
+| Flexibility | Limited | Many built-in methods |
+| Use case | Known size, max performance | Unknown size, flexibility |
+
+## List&lt;T&gt; - The Most Common Collection
+
+`List<T>` is a dynamic array that automatically resizes. It's the most commonly used collection in C#.
+
+<CodeEditor 
+  initialCode={`using System;
+using System.Collections.Generic;
+
+class Program
+{
+    static void Main()
+    {
+        // Create a list
+        List<string> fruits = new List<string>();
+        
+        // Add elements
+        fruits.Add("Apple");
+        fruits.Add("Banana");
+        fruits.Add("Cherry");
+        
+        Console.WriteLine("Fruits:");
+        foreach (string fruit in fruits)
+        {
+            Console.WriteLine($"  - {fruit}");
+        }
+        
+        // Initialize with values
+        List<int> numbers = new List<int> { 1, 2, 3, 4, 5 };
+        Console.WriteLine("\\nNumbers: " + string.Join(", ", numbers));
+        
+        // Access by index (like arrays)
+        Console.WriteLine($"\\nFirst fruit: {fruits[0]}");
+        Console.WriteLine($"Second number: {numbers[1]}");
+        
+        // Get count
+        Console.WriteLine($"\\nFruit count: {fruits.Count}");
+    }
+}`}
+/>
+
+## List&lt;T&gt; Operations
+
+<CodeEditor 
+  initialCode={`using System;
+using System.Collections.Generic;
+
+class Program
+{
+    static void Main()
+    {
+        List<string> names = new List<string> { "Alice", "Bob", "Charlie" };
+        
+        Console.WriteLine("Original: " + string.Join(", ", names));
+        
+        // Add at specific position
+        names.Insert(1, "Betty");  // Insert at index 1
+        Console.WriteLine("After Insert: " + string.Join(", ", names));
+        
+        // Add multiple items
+        names.AddRange(new[] { "Diana", "Eve" });
+        Console.WriteLine("After AddRange: " + string.Join(", ", names));
+        
+        // Remove by value
+        names.Remove("Bob");
+        Console.WriteLine("After Remove Bob: " + string.Join(", ", names));
+        
+        // Remove by index
+        names.RemoveAt(0);
+        Console.WriteLine("After RemoveAt(0): " + string.Join(", ", names));
+        
+        // Check if contains
+        Console.WriteLine($"\\nContains Charlie? {names.Contains("Charlie")}");
+        Console.WriteLine($"Contains Bob? {names.Contains("Bob")}");
+        
+        // Find index
+        int index = names.IndexOf("Diana");
+        Console.WriteLine($"Index of Diana: {index}");
+        
+        // Sort
+        names.Sort();
+        Console.WriteLine("\\nSorted: " + string.Join(", ", names));
+        
+        // Reverse
+        names.Reverse();
+        Console.WriteLine("Reversed: " + string.Join(", ", names));
+        
+        // Clear all
+        names.Clear();
+        Console.WriteLine($"After Clear, Count: {names.Count}");
+    }
+}`}
+/>
+
+## List&lt;T&gt; with Find and Filter
+
+<CodeEditor 
+  initialCode={`using System;
+using System.Collections.Generic;
+
+class Program
+{
+    static void Main()
+    {
+        List<int> numbers = new List<int> { 15, 8, 23, 4, 42, 16, 7, 38 };
+        
+        Console.WriteLine("Numbers: " + string.Join(", ", numbers));
+        
+        // Find first matching element
+        int firstEven = numbers.Find(n => n % 2 == 0);
+        Console.WriteLine($"First even: {firstEven}");
+        
+        // Find last matching element
+        int lastEven = numbers.FindLast(n => n % 2 == 0);
+        Console.WriteLine($"Last even: {lastEven}");
+        
+        // Find all matching elements
+        List<int> allEvens = numbers.FindAll(n => n % 2 == 0);
+        Console.WriteLine($"All evens: {string.Join(", ", allEvens)}");
+        
+        // Find index of matching element
+        int index = numbers.FindIndex(n => n > 20);
+        Console.WriteLine($"Index of first > 20: {index}");
+        
+        // Check if any element matches
+        bool hasLarge = numbers.Exists(n => n > 40);
+        Console.WriteLine($"Any number > 40? {hasLarge}");
+        
+        // Check if all match
+        bool allPositive = numbers.TrueForAll(n => n > 0);
+        Console.WriteLine($"All positive? {allPositive}");
+        
+        // Remove all matching
+        numbers.RemoveAll(n => n < 10);
+        Console.WriteLine($"\\nAfter removing < 10: {string.Join(", ", numbers)}");
+    }
+}`}
+/>
+
+## Stack&lt;T&gt; - Last In, First Out (LIFO)
+
+A Stack is like a stack of plates - you add and remove from the top only.
+
+<CodeEditor 
+  initialCode={`using System;
+using System.Collections.Generic;
+
+class Program
+{
+    static void Main()
+    {
+        Stack<string> browserHistory = new Stack<string>();
+        
+        // Push - add to top
+        browserHistory.Push("google.com");
+        browserHistory.Push("github.com");
+        browserHistory.Push("stackoverflow.com");
+        browserHistory.Push("docs.microsoft.com");
+        
+        Console.WriteLine("Browser History Stack:");
+        Console.WriteLine($"Current page (Peek): {browserHistory.Peek()}");
+        Console.WriteLine($"Total pages: {browserHistory.Count}");
+        
+        // Pop - remove from top
+        Console.WriteLine("\\nGoing back:");
+        while (browserHistory.Count > 0)
+        {
+            string page = browserHistory.Pop();
+            Console.WriteLine($"  Visited: {page}");
+        }
+        
+        // Practical example: Undo functionality
+        Console.WriteLine("\\n=== Undo Example ===");
+        Stack<string> actions = new Stack<string>();
+        
+        actions.Push("Type 'Hello'");
+        actions.Push("Type ' World'");
+        actions.Push("Make text bold");
+        actions.Push("Change font size");
+        
+        Console.WriteLine("Actions performed:");
+        foreach (string action in actions)
+        {
+            Console.WriteLine($"  - {action}");
+        }
+        
+        Console.WriteLine("\\nUndo last 2 actions:");
+        Console.WriteLine($"  Undoing: {actions.Pop()}");
+        Console.WriteLine($"  Undoing: {actions.Pop()}");
+        
+        Console.WriteLine($"\\nRemaining actions: {actions.Count}");
+    }
+}`}
+/>
+
+## Queue&lt;T&gt; - First In, First Out (FIFO)
+
+A Queue is like a line at a store - first person in line is served first.
+
+<CodeEditor 
+  initialCode={`using System;
+using System.Collections.Generic;
+
+class Program
+{
+    static void Main()
+    {
+        Queue<string> printQueue = new Queue<string>();
+        
+        // Enqueue - add to end
+        printQueue.Enqueue("Document1.pdf");
+        printQueue.Enqueue("Report.docx");
+        printQueue.Enqueue("Photo.jpg");
+        printQueue.Enqueue("Spreadsheet.xlsx");
+        
+        Console.WriteLine("Print Queue:");
+        Console.WriteLine($"Next to print (Peek): {printQueue.Peek()}");
+        Console.WriteLine($"Jobs in queue: {printQueue.Count}");
+        
+        // Dequeue - remove from front
+        Console.WriteLine("\\nProcessing print jobs:");
+        while (printQueue.Count > 0)
+        {
+            string job = printQueue.Dequeue();
+            Console.WriteLine($"  Printing: {job}");
+        }
+        
+        // Practical example: Customer service
+        Console.WriteLine("\\n=== Customer Service Queue ===");
+        Queue<string> customers = new Queue<string>();
+        
+        customers.Enqueue("Alice");
+        customers.Enqueue("Bob");
+        customers.Enqueue("Charlie");
+        
+        Console.WriteLine($"Now serving: {customers.Dequeue()}");
+        Console.WriteLine($"Next in line: {customers.Peek()}");
+        
+        customers.Enqueue("Diana");  // New customer arrives
+        Console.WriteLine("Diana joins the queue");
+        
+        Console.WriteLine("\\nRemaining queue:");
+        foreach (string customer in customers)
+        {
+            Console.WriteLine($"  - {customer}");
+        }
+    }
+}`}
+/>
+
+## HashSet&lt;T&gt; - Unique Elements Only
+
+A HashSet stores only unique elements and provides fast lookups.
+
+<CodeEditor 
+  initialCode={`using System;
+using System.Collections.Generic;
+
+class Program
+{
+    static void Main()
+    {
+        HashSet<string> uniqueNames = new HashSet<string>();
+        
+        // Add returns true if added, false if duplicate
+        Console.WriteLine($"Add Alice: {uniqueNames.Add("Alice")}");
+        Console.WriteLine($"Add Bob: {uniqueNames.Add("Bob")}");
+        Console.WriteLine($"Add Alice again: {uniqueNames.Add("Alice")}");  // Duplicate!
+        
+        uniqueNames.Add("Charlie");
+        uniqueNames.Add("Diana");
+        
+        Console.WriteLine($"\\nUnique names ({uniqueNames.Count}):");
+        foreach (string name in uniqueNames)
+        {
+            Console.WriteLine($"  - {name}");
+        }
+        
+        // Fast lookup
+        Console.WriteLine($"\\nContains Bob? {uniqueNames.Contains("Bob")}");
+        Console.WriteLine($"Contains Eve? {uniqueNames.Contains("Eve")}");
+        
+        // Remove duplicates from a list
+        List<int> numbersWithDupes = new List<int> { 1, 2, 2, 3, 3, 3, 4, 4, 5 };
+        HashSet<int> unique = new HashSet<int>(numbersWithDupes);
+        Console.WriteLine($"\\nOriginal: {string.Join(", ", numbersWithDupes)}");
+        Console.WriteLine($"Unique: {string.Join(", ", unique)}");
+    }
+}`}
+/>
+
+## Set Operations with HashSet
+
+<CodeEditor 
+  initialCode={`using System;
+using System.Collections.Generic;
+
+class Program
+{
+    static void Main()
+    {
+        HashSet<int> setA = new HashSet<int> { 1, 2, 3, 4, 5 };
+        HashSet<int> setB = new HashSet<int> { 4, 5, 6, 7, 8 };
+        
+        Console.WriteLine($"Set A: {string.Join(", ", setA)}");
+        Console.WriteLine($"Set B: {string.Join(", ", setB)}");
+        
+        // Union - all elements from both sets
+        HashSet<int> union = new HashSet<int>(setA);
+        union.UnionWith(setB);
+        Console.WriteLine($"\\nUnion (A ∪ B): {string.Join(", ", union)}");
+        
+        // Intersection - only common elements
+        HashSet<int> intersection = new HashSet<int>(setA);
+        intersection.IntersectWith(setB);
+        Console.WriteLine($"Intersection (A ∩ B): {string.Join(", ", intersection)}");
+        
+        // Difference - elements in A but not in B
+        HashSet<int> difference = new HashSet<int>(setA);
+        difference.ExceptWith(setB);
+        Console.WriteLine($"Difference (A - B): {string.Join(", ", difference)}");
+        
+        // Symmetric Difference - elements in either but not both
+        HashSet<int> symmetric = new HashSet<int>(setA);
+        symmetric.SymmetricExceptWith(setB);
+        Console.WriteLine($"Symmetric Diff: {string.Join(", ", symmetric)}");
+        
+        // Subset checks
+        HashSet<int> small = new HashSet<int> { 2, 3 };
+        Console.WriteLine($"\\nIs {{2,3}} subset of A? {small.IsSubsetOf(setA)}");
+        Console.WriteLine($"Is A superset of {{2,3}}? {setA.IsSupersetOf(small)}");
+    }
+}`}
+/>
+
+## LinkedList&lt;T&gt; - Efficient Insert/Remove
+
+LinkedList provides efficient insertions and removals at any position.
+
+<CodeEditor 
+  initialCode={`using System;
+using System.Collections.Generic;
+
+class Program
+{
+    static void Main()
+    {
+        LinkedList<string> playlist = new LinkedList<string>();
+        
+        // Add to end
+        playlist.AddLast("Song A");
+        playlist.AddLast("Song B");
+        playlist.AddLast("Song C");
+        
+        // Add to beginning
+        playlist.AddFirst("Intro");
+        
+        Console.WriteLine("Playlist:");
+        foreach (string song in playlist)
+        {
+            Console.WriteLine($"  ♪ {song}");
+        }
+        
+        // Find a node and insert before/after
+        LinkedListNode<string> nodeB = playlist.Find("Song B");
+        playlist.AddAfter(nodeB, "Song B.5");
+        playlist.AddBefore(nodeB, "Song A.5");
+        
+        Console.WriteLine("\\nAfter insertions:");
+        foreach (string song in playlist)
+        {
+            Console.WriteLine($"  ♪ {song}");
+        }
+        
+        // Access first and last
+        Console.WriteLine($"\\nFirst: {playlist.First.Value}");
+        Console.WriteLine($"Last: {playlist.Last.Value}");
+        
+        // Remove
+        playlist.Remove("Song B.5");
+        playlist.RemoveFirst();
+        playlist.RemoveLast();
+        
+        Console.WriteLine("\\nAfter removals:");
+        foreach (string song in playlist)
+        {
+            Console.WriteLine($"  ♪ {song}");
+        }
+    }
+}`}
+/>
+
+## Practical Example: Task Manager
+
+<CodeEditor 
+  initialCode={`using System;
+using System.Collections.Generic;
+
+class Task
+{
+    public string Name { get; set; }
+    public int Priority { get; set; }
+    public bool IsComplete { get; set; }
+    
+    public Task(string name, int priority)
+    {
+        Name = name;
+        Priority = priority;
+        IsComplete = false;
+    }
+    
+    public override string ToString()
+    {
+        string status = IsComplete ? "✓" : "○";
+        return $"{status} [{Priority}] {Name}";
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        List<Task> tasks = new List<Task>
+        {
+            new Task("Write documentation", 2),
+            new Task("Fix critical bug", 1),
+            new Task("Review pull request", 3),
+            new Task("Update dependencies", 2),
+            new Task("Deploy to production", 1)
+        };
+        
+        Console.WriteLine("=== Task Manager ===\\n");
+        
+        // Sort by priority
+        tasks.Sort((a, b) => a.Priority.CompareTo(b.Priority));
+        
+        Console.WriteLine("Tasks sorted by priority:");
+        foreach (var task in tasks)
+        {
+            Console.WriteLine($"  {task}");
+        }
+        
+        // Complete some tasks
+        tasks[0].IsComplete = true;
+        tasks[1].IsComplete = true;
+        
+        // Filter incomplete tasks
+        List<Task> pending = tasks.FindAll(t => !t.IsComplete);
+        
+        Console.WriteLine($"\\nPending tasks ({pending.Count}):");
+        foreach (var task in pending)
+        {
+            Console.WriteLine($"  {task}");
+        }
+        
+        // High priority incomplete
+        List<Task> urgent = tasks.FindAll(t => !t.IsComplete && t.Priority == 1);
+        Console.WriteLine($"\\nUrgent incomplete: {urgent.Count}");
+    }
+}`}
+/>
+
+## Choosing the Right Collection
+
+| Collection | Use When | Performance |
+|------------|----------|-------------|
+| `List<T>` | General purpose, indexed access | O(1) access, O(n) insert/delete |
+| `Stack<T>` | LIFO needed (undo, parsing) | O(1) push/pop |
+| `Queue<T>` | FIFO needed (processing order) | O(1) enqueue/dequeue |
+| `HashSet<T>` | Unique elements, fast lookup | O(1) add/contains |
+| `LinkedList<T>` | Frequent insert/delete at any position | O(1) insert/delete |
+
+## Key Takeaways
+
+- Collections provide **dynamic sizing** - grow and shrink as needed
+- `List<T>` is the **most common** choice for general use
+- `Stack<T>` for **LIFO** (Last In, First Out) - undo, browser history
+- `Queue<T>` for **FIFO** (First In, First Out) - processing queues
+- `HashSet<T>` for **unique elements** and fast lookups
+- All generic collections are **type-safe** (`List<int>`, `Stack<string>`)
+- Use `Count` property (not `Length`) to get element count
+
+## Best Practices
+
+1. **Use the right collection** for your use case
+2. **Initialize with capacity** if you know approximate size: `new List<int>(100)`
+3. **Prefer generic collections** over non-generic (avoid `ArrayList`)
+4. **Use LINQ** for complex queries on collections
+5. **Consider thread-safety** for multi-threaded scenarios
+
+In the next lesson, we'll explore dictionaries for key-value storage!

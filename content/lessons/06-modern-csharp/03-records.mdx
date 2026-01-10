@@ -1,157 +1,73 @@
 ---
 title: "Records"
-description: "Master record types for immutable data with value semantics"
+description: "Create immutable data types with built-in equality and more"
 order: 3
-difficulty: "advanced"
-tags: ["records", "immutable", "value-equality", "modern-csharp"]
-duration: "30 minutes"
+difficulty: "intermediate"
+tags: ["records", "immutable", "with expressions", "value equality"]
+duration: "25 minutes"
 ---
 
 # Records
 
-Records are reference types with value-based equality and built-in functionality for immutable data. They're perfect for DTOs, domain models, and data transfer objects.
+Records are a powerful feature introduced in C# 9 that provide a concise syntax for creating immutable data types with built-in value equality, deconstruction, and more.
 
-## Basic Record
+## Basic Record Syntax
 
 <CodeEditor 
-  language="csharp"
-  code={`using System;
+  initialCode={`using System;
 
-// Record declaration
+// Record declaration - most concise form
 record Person(string FirstName, string LastName, int Age);
 
-class Program
-{
-    static void Main()
-    {
-        // Create record instance
-        Person person1 = new Person("John", "Doe", 30);
-        Person person2 = new Person("John", "Doe", 30);
-        Person person3 = new Person("Jane", "Smith", 25);
-        
-        // Value-based equality (not reference equality!)
-        Console.WriteLine($"person1 == person2: {person1 == person2}");  // True!
-        Console.WriteLine($"person1 == person3: {person1 == person3}");  // False
-        
-        // ToString() is automatically implemented
-        Console.WriteLine($"\\nperson1: {person1}");
-        Console.WriteLine($"person3: {person3}");
-        
-        // Deconstruction is built-in
-        var (firstName, lastName, age) = person1;
-        Console.WriteLine($"\\nDeconstructed: {firstName} {lastName}, age {age}");
-    }
-}`}
-  title="Basic Record"
-/>
-
-## with Expression - Non-Destructive Mutation
-
-<CodeEditor 
-  language="csharp"
-  code={`using System;
-
-record Person(string Name, int Age, string City);
+// Equivalent to a class with:
+// - Properties: FirstName, LastName, Age
+// - Constructor with all properties
+// - Value equality
+// - ToString() override
+// - Deconstruction support
 
 class Program
 {
     static void Main()
     {
-        Person person = new Person("Alice", 25, "New York");
-        Console.WriteLine($"Original: {person}");
+        // Create record instances
+        var person1 = new Person("John", "Doe", 30);
+        var person2 = new Person("Jane", "Smith", 25);
+        var person3 = new Person("John", "Doe", 30);
         
-        // Create modified copy with 'with' expression
-        Person olderPerson = person with { Age = 26 };
-        Console.WriteLine($"Modified: {olderPerson}");
+        // ToString is automatically generated
+        Console.WriteLine("People:");
+        Console.WriteLine($"  {person1}");
+        Console.WriteLine($"  {person2}");
+        Console.WriteLine($"  {person3}");
         
-        // Original is unchanged
-        Console.WriteLine($"Original unchanged: {person}");
-        
-        // Modify multiple properties
-        Person relocated = person with 
-        { 
-            City = "Boston",
-            Age = 30
-        };
-        Console.WriteLine($"\\nRelocated: {relocated}");
-        
-        // Chain with expressions
-        Person final = person
-            with { Age = 27 }
-            with { City = "Chicago" };
-        Console.WriteLine($"Chained: {final}");
+        // Value equality (not reference equality)
+        Console.WriteLine("\\nEquality Checks:");
+        Console.WriteLine($"  person1 == person3: {person1 == person3}");  // True!
+        Console.WriteLine($"  person1 == person2: {person1 == person2}");  // False
+        Console.WriteLine($"  ReferenceEquals: {ReferenceEquals(person1, person3)}");  // False
     }
 }`}
-  title="with Expression"
 />
 
-## Record vs Class
+## Value Equality vs Reference Equality
 
 <CodeEditor 
-  language="csharp"
-  code={`using System;
+  initialCode={`using System;
 
-// Class with similar properties
-class PersonClass
+// Record with value equality
+record Product(string Name, decimal Price);
+
+// Class with reference equality
+class ProductClass
 {
-    public string Name { get; init; }
-    public int Age { get; init; }
+    public string Name { get; set; }
+    public decimal Price { get; set; }
     
-    public PersonClass(string name, int age)
+    public ProductClass(string name, decimal price)
     {
         Name = name;
-        Age = age;
-    }
-}
-
-// Record - much more concise!
-record PersonRecord(string Name, int Age);
-
-class Program
-{
-    static void Main()
-    {
-        // Classes use reference equality
-        var class1 = new PersonClass("Alice", 25);
-        var class2 = new PersonClass("Alice", 25);
-        Console.WriteLine($"Class equality: {class1 == class2}");  // False
-        Console.WriteLine($"Class1: {class1}");  // Type name only
-        
-        // Records use value equality
-        var record1 = new PersonRecord("Alice", 25);
-        var record2 = new PersonRecord("Alice", 25);
-        Console.WriteLine($"\\nRecord equality: {record1 == record2}");  // True!
-        Console.WriteLine($"Record1: {record1}");  // Nice ToString()
-        
-        // Records have built-in copy constructor
-        var record3 = record1 with { Age = 26 };
-        Console.WriteLine($"Modified copy: {record3}");
-    }
-}`}
-  title="Record vs Class"
-/>
-
-## Record Properties and Methods
-
-<CodeEditor 
-  language="csharp"
-  code={`using System;
-
-record Person(string FirstName, string LastName, int Age)
-{
-    // Computed property
-    public string FullName => $"{FirstName} {LastName}";
-    
-    // Additional property with default value
-    public string Email { get; init; } = "";
-    
-    // Method
-    public bool IsAdult() => Age >= 18;
-    
-    // Override ToString() if needed
-    public override string ToString()
-    {
-        return $"{FullName} ({Age}) - {Email}";
+        Price = price;
     }
 }
 
@@ -159,370 +75,460 @@ class Program
 {
     static void Main()
     {
-        Person person = new Person("John", "Doe", 25)
-        {
-            Email = "john.doe@example.com"
-        };
+        // Records - value equality
+        var record1 = new Product("Laptop", 999.99m);
+        var record2 = new Product("Laptop", 999.99m);
         
-        Console.WriteLine(person);
-        Console.WriteLine($"Full name: {person.FullName}");
-        Console.WriteLine($"Is adult: {person.IsAdult()}");
+        Console.WriteLine("=== RECORDS (Value Equality) ===");
+        Console.WriteLine($"record1: {record1}");
+        Console.WriteLine($"record2: {record2}");
+        Console.WriteLine($"record1 == record2: {record1 == record2}");  // True
+        Console.WriteLine($"record1.Equals(record2): {record1.Equals(record2)}");  // True
+        Console.WriteLine($"Same reference?: {ReferenceEquals(record1, record2)}");  // False
         
-        // with expression works with additional properties
-        Person withNewEmail = person with 
-        { 
-            Email = "john.new@example.com" 
-        };
-        Console.WriteLine($"\\nNew email: {withNewEmail}");
+        // Classes - reference equality
+        var class1 = new ProductClass("Laptop", 999.99m);
+        var class2 = new ProductClass("Laptop", 999.99m);
+        
+        Console.WriteLine("\\n=== CLASSES (Reference Equality) ===");
+        Console.WriteLine($"class1: {class1.Name}, {class1.Price}");
+        Console.WriteLine($"class2: {class2.Name}, {class2.Price}");
+        Console.WriteLine($"class1 == class2: {class1 == class2}");  // False!
+        Console.WriteLine($"class1.Equals(class2): {class1.Equals(class2)}");  // False!
+        Console.WriteLine($"Same reference?: {ReferenceEquals(class1, class2)}");  // False
     }
 }`}
-  title="Record Properties and Methods"
 />
 
-## Record Inheritance
+## With Expressions - Non-Destructive Mutation
 
 <CodeEditor 
-  language="csharp"
-  code={`using System;
+  initialCode={`using System;
 
-// Base record
-record Person(string Name, int Age);
+record Person(string FirstName, string LastName, int Age);
 
-// Derived records
-record Student(string Name, int Age, string School, double GPA) 
-    : Person(Name, Age);
+record Address(string Street, string City, string Country);
 
-record Employee(string Name, int Age, string Company, decimal Salary) 
-    : Person(Name, Age);
+record Employee(string Name, string Department, decimal Salary, Address Address);
 
 class Program
 {
     static void Main()
     {
-        Student student = new Student("Alice", 20, "MIT", 3.9);
-        Employee employee = new Employee("Bob", 30, "TechCorp", 85000);
+        // Original record
+        var original = new Person("John", "Doe", 30);
+        Console.WriteLine($"Original: {original}");
         
-        Console.WriteLine($"Student: {student}");
+        // Create copy with one property changed
+        var older = original with { Age = 31 };
+        Console.WriteLine($"After birthday: {older}");
+        
+        // Original is unchanged (immutable)
+        Console.WriteLine($"Original still: {original}");
+        
+        // Change multiple properties
+        var married = original with { LastName = "Smith", Age = 31 };
+        Console.WriteLine($"Married: {married}");
+        
+        Console.WriteLine("\\n=== Nested Records ===");
+        
+        // Nested record example
+        var address = new Address("123 Main St", "New York", "USA");
+        var employee = new Employee("Alice", "Engineering", 75000m, address);
         Console.WriteLine($"Employee: {employee}");
         
-        // Polymorphism works
-        Person[] people = { student, employee };
+        // Change salary
+        var promoted = employee with { Salary = 85000m };
+        Console.WriteLine($"Promoted: {promoted}");
         
-        Console.WriteLine("\\nAll people:");
-        foreach (var person in people)
-        {
-            Console.WriteLine($"  {person.Name}, age {person.Age}");
-            
-            // Pattern matching with records
-            string description = person switch
-            {
-                Student s => $"Student at {s.School}, GPA: {s.GPA}",
-                Employee e => $"Works at {e.Company}, Salary: \${e.Salary}",
-                _ => "Person"
-            };
-            Console.WriteLine($"    {description}");
-        }
+        // Change nested property (need to create new Address)
+        var relocated = employee with 
+        { 
+            Address = employee.Address with { City = "Los Angeles" } 
+        };
+        Console.WriteLine($"Relocated: {relocated}");
     }
 }`}
-  title="Record Inheritance"
 />
 
-## Record Struct (C# 10+)
+## Record Types: record vs record class vs record struct
 
 <CodeEditor 
-  language="csharp"
-  code={`using System;
+  initialCode={`using System;
 
-// Record struct - value type with record features
+// record (same as record class) - reference type
+record PersonRecord(string Name, int Age);
+
+// record struct (C# 10+) - value type
 record struct Point(int X, int Y);
 
-// Mutable record struct
-record struct MutablePoint(int X, int Y)
-{
-    public int X { get; set; } = X;
-    public int Y { get; set; } = Y;
-}
-
-// Readonly record struct
-readonly record struct ReadonlyPoint(int X, int Y);
+// readonly record struct - immutable value type
+readonly record struct ImmutablePoint(int X, int Y);
 
 class Program
 {
     static void Main()
     {
-        // Regular record struct (immutable by default)
-        Point p1 = new Point(10, 20);
-        Point p2 = new Point(10, 20);
+        // Record class - reference type
+        var person1 = new PersonRecord("John", 30);
+        var person2 = person1;
+        Console.WriteLine("=== record class (reference type) ===");
+        Console.WriteLine($"Same reference: {ReferenceEquals(person1, person2)}");  // True
+        Console.WriteLine($"Value equal: {person1 == person2}");  // True
         
-        Console.WriteLine($"p1: {p1}");
-        Console.WriteLine($"p1 == p2: {p1 == p2}");  // Value equality
+        // Record struct - value type
+        var point1 = new Point(10, 20);
+        var point2 = point1;  // Creates a copy
+        Console.WriteLine("\\n=== record struct (value type) ===");
+        Console.WriteLine($"point1: {point1}");
+        Console.WriteLine($"point2: {point2}");
+        Console.WriteLine($"Value equal: {point1 == point2}");  // True
         
-        // with expression works
-        Point p3 = p1 with { X = 30 };
-        Console.WriteLine($"Modified: {p3}");
+        // Record struct is mutable by default
+        point2.X = 100;  // Modifies the copy
+        Console.WriteLine($"After modifying point2.X:");
+        Console.WriteLine($"point1: {point1}");  // Unchanged
+        Console.WriteLine($"point2: {point2}");  // Changed
         
-        // Mutable record struct
-        MutablePoint mp = new MutablePoint(5, 10);
-        Console.WriteLine($"\\nMutable before: {mp}");
-        mp.X = 15;  // Can modify
-        Console.WriteLine($"Mutable after: {mp}");
+        // Readonly record struct is immutable
+        var immutablePoint = new ImmutablePoint(5, 5);
+        // immutablePoint.X = 10;  // Error! Cannot modify
+        Console.WriteLine($"\\n=== readonly record struct ===");
+        Console.WriteLine($"Immutable point: {immutablePoint}");
         
-        // Deconstruction
-        var (x, y) = p1;
-        Console.WriteLine($"\\nDeconstructed: X={x}, Y={y}");
+        var movedPoint = immutablePoint with { X = 15 };
+        Console.WriteLine($"Moved point: {movedPoint}");
     }
 }`}
-  title="Record Struct"
 />
 
-## Positional Records with Validation
+## Deconstruction
 
 <CodeEditor 
-  language="csharp"
-  code={`using System;
+  initialCode={`using System;
 
-record Person(string Name, int Age)
-{
-    // Validation in property setters
-    public string Name { get; init; } = 
-        !string.IsNullOrWhiteSpace(Name) 
-        ? Name 
-        : throw new ArgumentException("Name cannot be empty");
-    
-    public int Age { get; init; } = 
-        Age >= 0 && Age <= 150 
-        ? Age 
-        : throw new ArgumentException("Age must be between 0 and 150");
-}
+record Person(string FirstName, string LastName, int Age);
 
-record Product(string Name, decimal Price)
+record Rectangle(int Width, int Height)
 {
-    public string Name { get; init; } = 
-        !string.IsNullOrWhiteSpace(Name)
-        ? Name
-        : throw new ArgumentException("Product name required");
-    
-    public decimal Price { get; init; } = 
-        Price > 0
-        ? Price
-        : throw new ArgumentException("Price must be positive");
-    
-    // Additional computed property
-    public decimal PriceWithTax => Price * 1.10m;
+    public int Area => Width * Height;
+    public int Perimeter => 2 * (Width + Height);
 }
 
 class Program
 {
     static void Main()
     {
-        try
+        var person = new Person("John", "Doe", 30);
+        
+        // Deconstruct into individual variables
+        var (first, last, age) = person;
+        Console.WriteLine($"Deconstructed: {first} {last}, age {age}");
+        
+        // Use in tuple pattern
+        var people = new[]
         {
-            Person person = new Person("Alice", 25);
-            Console.WriteLine($"Valid person: {person}");
-            
-            Product product = new Product("Laptop", 999.99m);
-            Console.WriteLine($"Valid product: {product}");
-            Console.WriteLine($"  With tax: \${product.PriceWithTax:F2}");
-            
-            // This will throw
-            Person invalid = new Person("", 25);
-        }
-        catch (ArgumentException ex)
+            new Person("Alice", "Smith", 25),
+            new Person("Bob", "Jones", 35),
+            new Person("Charlie", "Brown", 45)
+        };
+        
+        Console.WriteLine("\\nPeople by age group:");
+        foreach (var (firstName, lastName, personAge) in people)
         {
-            Console.WriteLine($"\\nValidation error: {ex.Message}");
+            string group = personAge switch
+            {
+                < 30 => "Young",
+                < 40 => "Middle",
+                _ => "Senior"
+            };
+            Console.WriteLine($"  {firstName} {lastName}: {group}");
         }
         
-        try
+        // Works great with LINQ
+        var rect = new Rectangle(10, 5);
+        var (w, h) = rect;
+        Console.WriteLine($"\\nRectangle: {w}x{h}");
+        Console.WriteLine($"Area: {rect.Area}");
+        Console.WriteLine($"Perimeter: {rect.Perimeter}");
+    }
+}`}
+/>
+
+## Adding Behavior to Records
+
+<CodeEditor 
+  initialCode={`using System;
+
+record Temperature(double Celsius)
+{
+    // Computed property
+    public double Fahrenheit => Celsius * 9 / 5 + 32;
+    public double Kelvin => Celsius + 273.15;
+    
+    // Methods
+    public bool IsFreezing => Celsius <= 0;
+    public bool IsBoiling => Celsius >= 100;
+    
+    public string GetDescription()
+    {
+        return Celsius switch
         {
-            // This will also throw
-            Product invalidProduct = new Product("Phone", -50);
+            < 0 => "Freezing",
+            < 10 => "Cold",
+            < 20 => "Cool",
+            < 30 => "Warm",
+            < 40 => "Hot",
+            _ => "Extreme"
+        };
+    }
+    
+    // Static factory methods
+    public static Temperature FromFahrenheit(double f) => 
+        new Temperature((f - 32) * 5 / 9);
+    
+    public static Temperature FromKelvin(double k) => 
+        new Temperature(k - 273.15);
+}
+
+class Program
+{
+    static void Main()
+    {
+        var temp1 = new Temperature(25);
+        Console.WriteLine($"Temperature: {temp1}");
+        Console.WriteLine($"  Fahrenheit: {temp1.Fahrenheit:F1}°F");
+        Console.WriteLine($"  Kelvin: {temp1.Kelvin:F1}K");
+        Console.WriteLine($"  Description: {temp1.GetDescription()}");
+        Console.WriteLine($"  Is Freezing: {temp1.IsFreezing}");
+        
+        // Use factory methods
+        var temp2 = Temperature.FromFahrenheit(32);
+        Console.WriteLine($"\\nFrom 32°F: {temp2}");
+        Console.WriteLine($"  Is Freezing: {temp2.IsFreezing}");
+        
+        var temp3 = Temperature.FromKelvin(373.15);
+        Console.WriteLine($"\\nFrom 373.15K: {temp3}");
+        Console.WriteLine($"  Is Boiling: {temp3.IsBoiling}");
+    }
+}`}
+/>
+
+## Inheritance with Records
+
+<CodeEditor 
+  initialCode={`using System;
+
+// Base record
+abstract record Shape(string Color);
+
+// Derived records
+record Circle(string Color, double Radius) : Shape(Color)
+{
+    public double Area => Math.PI * Radius * Radius;
+    public double Circumference => 2 * Math.PI * Radius;
+}
+
+record Rectangle(string Color, double Width, double Height) : Shape(Color)
+{
+    public double Area => Width * Height;
+    public double Perimeter => 2 * (Width + Height);
+}
+
+class Program
+{
+    static void Main()
+    {
+        Shape[] shapes = {
+            new Circle("Red", 5),
+            new Rectangle("Blue", 10, 5),
+            new Circle("Green", 3)
+        };
+        
+        Console.WriteLine("Shapes:");
+        foreach (var shape in shapes)
+        {
+            Console.WriteLine($"  {shape}");
+            
+            // Pattern matching with records
+            var info = shape switch
+            {
+                Circle c => $"    Circle area: {c.Area:F2}",
+                Rectangle r => $"    Rectangle area: {r.Area:F2}",
+                _ => "    Unknown shape"
+            };
+            Console.WriteLine(info);
         }
-        catch (ArgumentException ex)
+        
+        // With expression preserves derived type
+        var circle = new Circle("Red", 5);
+        var biggerCircle = circle with { Radius = 10 };
+        Console.WriteLine($"\\nOriginal: {circle}");
+        Console.WriteLine($"Bigger: {biggerCircle}");
+        
+        // Equality works across inheritance
+        var circle1 = new Circle("Blue", 3);
+        var circle2 = new Circle("Blue", 3);
+        Console.WriteLine($"\\ncircle1 == circle2: {circle1 == circle2}");  // True
+    }
+}`}
+/>
+
+## Records as DTOs (Data Transfer Objects)
+
+<CodeEditor 
+  initialCode={`using System;
+using System.Collections.Generic;
+
+// API Response records
+record ApiResponse<T>(bool Success, string Message, T Data);
+
+record UserDto(int Id, string Username, string Email, DateTime CreatedAt);
+
+record OrderDto(
+    int OrderId, 
+    int UserId, 
+    List<OrderItemDto> Items, 
+    decimal Total,
+    DateTime OrderDate
+);
+
+record OrderItemDto(int ProductId, string ProductName, int Quantity, decimal Price);
+
+class Program
+{
+    static void Main()
+    {
+        // Simulate API responses
+        var user = new UserDto(1, "john_doe", "john@example.com", DateTime.Now);
+        var userResponse = new ApiResponse<UserDto>(true, "User found", user);
+        
+        Console.WriteLine("=== User API Response ===");
+        Console.WriteLine($"Success: {userResponse.Success}");
+        Console.WriteLine($"Message: {userResponse.Message}");
+        Console.WriteLine($"Data: {userResponse.Data}");
+        
+        // Order with items
+        var items = new List<OrderItemDto>
         {
-            Console.WriteLine($"Validation error: {ex.Message}");
+            new OrderItemDto(1, "Laptop", 1, 999.99m),
+            new OrderItemDto(2, "Mouse", 2, 29.99m),
+            new OrderItemDto(3, "Keyboard", 1, 79.99m)
+        };
+        
+        var order = new OrderDto(
+            OrderId: 1001,
+            UserId: 1,
+            Items: items,
+            Total: items.Sum(i => i.Price * i.Quantity),
+            OrderDate: DateTime.Now
+        );
+        
+        var orderResponse = new ApiResponse<OrderDto>(true, "Order retrieved", order);
+        
+        Console.WriteLine("\\n=== Order API Response ===");
+        Console.WriteLine($"Order ID: {orderResponse.Data.OrderId}");
+        Console.WriteLine($"Total: ${'{'}orderResponse.Data.Total:F2{'}'}");
+        Console.WriteLine("Items:");
+        foreach (var item in orderResponse.Data.Items)
+        {
+            Console.WriteLine($"  - {item.ProductName} x{item.Quantity}: ${'{'}item.Price * item.Quantity:F2{'}'}");
         }
     }
 }`}
-  title="Record with Validation"
 />
 
-## Real-World Example: Domain Models
+## Records in Collections
 
 <CodeEditor 
-  language="csharp"
-  code={`using System;
+  initialCode={`using System;
 using System.Collections.Generic;
 using System.Linq;
 
-// Domain records
-record Address(string Street, string City, string State, string ZipCode);
-
-record Customer(int Id, string Name, string Email, Address Address);
-
-record OrderItem(string ProductName, int Quantity, decimal UnitPrice)
-{
-    public decimal TotalPrice => Quantity * UnitPrice;
-}
-
-record Order(int OrderId, int CustomerId, DateTime OrderDate, List<OrderItem> Items)
-{
-    public decimal Subtotal => Items.Sum(item => item.TotalPrice);
-    public decimal Tax => Subtotal * 0.08m;
-    public decimal Total => Subtotal + Tax;
-}
+record Product(string Name, string Category, decimal Price);
 
 class Program
 {
     static void Main()
     {
-        // Create customer
-        var address = new Address(
-            "123 Main St",
-            "Boston",
-            "MA",
-            "02101"
-        );
-        
-        var customer = new Customer(
-            1,
-            "Alice Johnson",
-            "alice@example.com",
-            address
-        );
-        
-        Console.WriteLine($"Customer: {customer.Name}");
-        Console.WriteLine($"Location: {customer.Address.City}, {customer.Address.State}");
-        
-        // Create order
-        var items = new List<OrderItem>
+        var products = new List<Product>
         {
-            new OrderItem("Laptop", 1, 999.99m),
-            new OrderItem("Mouse", 2, 25.00m),
-            new OrderItem("Keyboard", 1, 79.99m)
+            new Product("Laptop", "Electronics", 999.99m),
+            new Product("Phone", "Electronics", 699.99m),
+            new Product("Tablet", "Electronics", 499.99m),
+            new Product("Desk", "Furniture", 299.99m),
+            new Product("Chair", "Furniture", 199.99m),
+            new Product("Laptop", "Electronics", 999.99m)  // Duplicate
         };
         
-        var order = new Order(
-            1001,
-            customer.Id,
-            DateTime.Now,
-            items
-        );
+        Console.WriteLine("All products:");
+        products.ForEach(p => Console.WriteLine($"  {p}"));
         
-        Console.WriteLine($"\\nOrder #{order.OrderId} - {order.OrderDate:yyyy-MM-dd}");
-        Console.WriteLine("Items:");
-        foreach (var item in order.Items)
+        // Distinct works with value equality
+        var uniqueProducts = products.Distinct().ToList();
+        Console.WriteLine($"\\nUnique products ({uniqueProducts.Count}):");
+        uniqueProducts.ForEach(p => Console.WriteLine($"  {p}"));
+        
+        // HashSet with records
+        var productSet = new HashSet<Product>(products);
+        Console.WriteLine($"\\nHashSet count: {productSet.Count}");
+        
+        // Contains works correctly
+        var searchProduct = new Product("Phone", "Electronics", 699.99m);
+        Console.WriteLine($"Contains Phone: {productSet.Contains(searchProduct)}");
+        
+        // GroupBy
+        Console.WriteLine("\\nProducts by category:");
+        var byCategory = products.GroupBy(p => p.Category);
+        foreach (var group in byCategory)
         {
-            Console.WriteLine($"  {item.ProductName}: {item.Quantity} x \${item.UnitPrice} = \${item.TotalPrice}");
+            Console.WriteLine($"  {group.Key}:");
+            foreach (var product in group)
+            {
+                Console.WriteLine($"    {product.Name}: ${'{'}product.Price{'}'}");
+            }
         }
-        Console.WriteLine($"\\nSubtotal: \${order.Subtotal:F2}");
-        Console.WriteLine($"Tax: \${order.Tax:F2}");
-        Console.WriteLine($"Total: \${order.Total:F2}");
         
-        // Update customer address
-        var newAddress = customer.Address with { City = "Cambridge" };
-        var relocatedCustomer = customer with { Address = newAddress };
+        // Dictionary with records as keys
+        var inventory = new Dictionary<Product, int>
+        {
+            [new Product("Laptop", "Electronics", 999.99m)] = 50,
+            [new Product("Phone", "Electronics", 699.99m)] = 100
+        };
         
-        Console.WriteLine($"\\nCustomer relocated to: {relocatedCustomer.Address.City}");
+        var lookupKey = new Product("Laptop", "Electronics", 999.99m);
+        Console.WriteLine($"\\nLaptop inventory: {inventory[lookupKey]}");
     }
 }`}
-  title="Domain Model with Records"
 />
-
-## When to Use Records
-
-**Use Records for:**
-- DTOs (Data Transfer Objects)
-- Domain models
-- Value objects
-- Immutable data
-- Configuration objects
-- API responses/requests
-
-**Use Classes for:**
-- Entities with identity
-- Mutable state management
-- Complex behavior
-- When reference equality needed
-
-<CodeEditor 
-  language="csharp"
-  code={`using System;
-
-// Good use of record - DTO/Value object
-record UserDto(int Id, string Username, string Email);
-
-// Good use of record - Configuration
-record AppConfig(string DatabaseUrl, int MaxConnections, bool EnableLogging);
-
-// Good use of class - Entity with behavior
-class ShoppingCart
-{
-    private List<string> items = new List<string>();
-    public int Id { get; set; }
-    
-    public void AddItem(string item)
-    {
-        items.Add(item);
-    }
-    
-    public int Count => items.Count;
-}
-
-class Program
-{
-    static void Main()
-    {
-        // Records for data
-        UserDto user1 = new UserDto(1, "alice", "alice@example.com");
-        UserDto user2 = new UserDto(1, "alice", "alice@example.com");
-        
-        Console.WriteLine($"Users equal: {user1 == user2}");  // True
-        
-        AppConfig config = new AppConfig(
-            "mongodb://localhost",
-            100,
-            true
-        );
-        Console.WriteLine($"Config: {config}");
-        
-        // Class for entities with behavior
-        ShoppingCart cart = new ShoppingCart { Id = 1 };
-        cart.AddItem("Laptop");
-        cart.AddItem("Mouse");
-        Console.WriteLine($"\\nCart items: {cart.Count}");
-    }
-}`}
-  title="When to Use Records"
-/>
-
-## Best Practices
-
-1. **Use for immutable data** - Records are naturally immutable
-2. **Value objects** - Perfect for money, coordinates, etc.
-3. **DTOs and API models** - Clean, concise data structures
-4. **with for updates** - Non-destructive modifications
-5. **Validate in properties** - Ensure data integrity
-6. **Prefer init over set** - Maintain immutability
-7. **Use record struct** - For small value types
 
 ## Key Takeaways
 
-- **Records** provide value-based equality by default
-- **with expression** enables non-destructive mutation
-- Built-in **ToString()**, **GetHashCode()**, **Equals()**
-- **Positional syntax** for concise declarations
-- **Record struct** combines value type with record features
-- Perfect for **DTOs**, **domain models**, and **value objects**
-- Support **inheritance** and **pattern matching**
-- Make immutable data **easy and natural**
+- **Records** provide immutable data types with minimal boilerplate
+- **Value equality** is built-in (unlike classes)
+- **With expressions** enable non-destructive mutation
+- **Deconstruction** allows easy property extraction
+- **record class** (reference type) vs **record struct** (value type)
+- **Inheritance** works with records
+- Perfect for **DTOs**, **domain models**, and **configuration objects**
 
-## Congratulations! 🎉
+## When to Use Records
 
-You've completed all the C# lessons! You now have a comprehensive understanding of:
-- C# Fundamentals
-- Object-Oriented Programming
-- Delegates, Events, and Lambda Expressions
-- LINQ for data querying
-- Modern C# features (Async/Await, Pattern Matching, Records)
+| Use Records When | Use Classes When |
+|------------------|------------------|
+| Data should be immutable | Data needs to be mutable |
+| Value equality is needed | Identity equality is needed |
+| Creating DTOs or value objects | Complex behavior is primary |
+| Using pattern matching | Entity objects with changing state |
 
-Keep practicing and building projects to solidify your knowledge!
+## Best Practices
+
+1. **Prefer immutability** - use records for data that shouldn't change
+2. **Use with expressions** instead of mutation
+3. **Consider record struct** for small, frequently created data
+4. **Use positional syntax** for simple records
+5. **Add behavior sparingly** - records are primarily for data
+
+## Next Module
+
+Congratulations! You've completed the Modern C# module. Continue to **Data Structures** to learn about arrays, collections, and dictionaries!

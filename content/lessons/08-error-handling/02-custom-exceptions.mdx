@@ -1,0 +1,624 @@
+---
+title: "Custom Exceptions"
+description: "Create your own exception types for domain-specific error handling"
+order: 2
+difficulty: "intermediate"
+estimatedTime: "20 minutes"
+keywords: ["custom exception", "exception class", "error handling", "domain exceptions"]
+prerequisites: ["08-error-handling/01-exceptions"]
+---
+
+# Custom Exceptions in C#
+
+While C# provides many built-in exception types, sometimes you need to create your own to represent domain-specific errors. Custom exceptions make your code more expressive and easier to debug.
+
+## Why Create Custom Exceptions?
+
+Custom exceptions are useful when:
+- Built-in exceptions don't clearly describe your error
+- You need to include additional error information
+- You want to distinguish between different error types in your domain
+- You need to catch and handle specific business logic errors
+
+## Creating a Basic Custom Exception
+
+<CodeEditor 
+  initialCode={`using System;
+
+// Custom exception class
+public class InsufficientFundsException : Exception
+{
+    public InsufficientFundsException() 
+        : base("Insufficient funds for this transaction")
+    {
+    }
+    
+    public InsufficientFundsException(string message) 
+        : base(message)
+    {
+    }
+    
+    public InsufficientFundsException(string message, Exception innerException) 
+        : base(message, innerException)
+    {
+    }
+}
+
+class BankAccount
+{
+    public string AccountNumber { get; }
+    public decimal Balance { get; private set; }
+    
+    public BankAccount(string accountNumber, decimal initialBalance)
+    {
+        AccountNumber = accountNumber;
+        Balance = initialBalance;
+    }
+    
+    public void Withdraw(decimal amount)
+    {
+        if (amount > Balance)
+        {
+            throw new InsufficientFundsException(
+                $"Cannot withdraw ${'{'}amount{'}'}. Current balance: ${'{'}Balance{'}'}");
+        }
+        Balance -= amount;
+        Console.WriteLine($"Withdrew ${'{'}amount{'}'}. New balance: ${'{'}Balance{'}'}");
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        BankAccount account = new BankAccount("12345", 100);
+        
+        try
+        {
+            account.Withdraw(50);   // Success
+            account.Withdraw(75);   // Fails - insufficient funds
+        }
+        catch (InsufficientFundsException ex)
+        {
+            Console.WriteLine($"\\nTransaction Error: {ex.Message}");
+        }
+    }
+}`}
+/>
+
+## Custom Exception with Additional Properties
+
+<CodeEditor 
+  initialCode={`using System;
+
+public class InsufficientFundsException : Exception
+{
+    public decimal RequestedAmount { get; }
+    public decimal CurrentBalance { get; }
+    public decimal Shortfall => RequestedAmount - CurrentBalance;
+    
+    public InsufficientFundsException(decimal requested, decimal balance)
+        : base($"Insufficient funds. Requested: ${'{'}requested{'}'}, Available: ${'{'}balance{'}'}")
+    {
+        RequestedAmount = requested;
+        CurrentBalance = balance;
+    }
+}
+
+public class InvalidAgeException : Exception
+{
+    public int ProvidedAge { get; }
+    public int MinAge { get; }
+    public int MaxAge { get; }
+    
+    public InvalidAgeException(int age, int min = 0, int max = 150)
+        : base($"Invalid age: {age}. Must be between {min} and {max}")
+    {
+        ProvidedAge = age;
+        MinAge = min;
+        MaxAge = max;
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        // InsufficientFundsException with properties
+        try
+        {
+            decimal balance = 100;
+            decimal withdrawal = 250;
+            
+            if (withdrawal > balance)
+            {
+                throw new InsufficientFundsException(withdrawal, balance);
+            }
+        }
+        catch (InsufficientFundsException ex)
+        {
+            Console.WriteLine("=== Insufficient Funds ===");
+            Console.WriteLine($"Message: {ex.Message}");
+            Console.WriteLine($"Requested: ${'{'}ex.RequestedAmount{'}'}");
+            Console.WriteLine($"Available: ${'{'}ex.CurrentBalance{'}'}");
+            Console.WriteLine($"Shortfall: ${'{'}ex.Shortfall{'}'}");
+        }
+        
+        // InvalidAgeException with properties
+        Console.WriteLine();
+        try
+        {
+            int age = -5;
+            if (age < 0 || age > 150)
+            {
+                throw new InvalidAgeException(age);
+            }
+        }
+        catch (InvalidAgeException ex)
+        {
+            Console.WriteLine("=== Invalid Age ===");
+            Console.WriteLine($"Message: {ex.Message}");
+            Console.WriteLine($"Provided: {ex.ProvidedAge}");
+            Console.WriteLine($"Valid range: {ex.MinAge} - {ex.MaxAge}");
+        }
+    }
+}`}
+/>
+
+## Exception Hierarchy for a Domain
+
+<CodeEditor 
+  initialCode={`using System;
+
+// Base exception for all order-related errors
+public class OrderException : Exception
+{
+    public string OrderId { get; }
+    
+    public OrderException(string orderId, string message) 
+        : base(message)
+    {
+        OrderId = orderId;
+    }
+    
+    public OrderException(string orderId, string message, Exception inner) 
+        : base(message, inner)
+    {
+        OrderId = orderId;
+    }
+}
+
+// Specific order exceptions
+public class OrderNotFoundException : OrderException
+{
+    public OrderNotFoundException(string orderId) 
+        : base(orderId, $"Order '{orderId}' was not found")
+    {
+    }
+}
+
+public class OrderAlreadyShippedException : OrderException
+{
+    public DateTime ShippedDate { get; }
+    
+    public OrderAlreadyShippedException(string orderId, DateTime shippedDate) 
+        : base(orderId, $"Order '{orderId}' was already shipped on {shippedDate:d}")
+    {
+        ShippedDate = shippedDate;
+    }
+}
+
+public class InvalidOrderStateException : OrderException
+{
+    public string CurrentState { get; }
+    public string AttemptedAction { get; }
+    
+    public InvalidOrderStateException(string orderId, string state, string action) 
+        : base(orderId, $"Cannot {action} order '{orderId}' in state '{state}'")
+    {
+        CurrentState = state;
+        AttemptedAction = action;
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        string[] orderIds = { "ORD-001", "ORD-002", "ORD-003" };
+        
+        foreach (string orderId in orderIds)
+        {
+            try
+            {
+                CancelOrder(orderId);
+            }
+            catch (OrderNotFoundException ex)
+            {
+                Console.WriteLine($"[Not Found] {ex.Message}");
+            }
+            catch (OrderAlreadyShippedException ex)
+            {
+                Console.WriteLine($"[Already Shipped] {ex.Message}");
+                Console.WriteLine($"  Shipped on: {ex.ShippedDate:d}");
+            }
+            catch (InvalidOrderStateException ex)
+            {
+                Console.WriteLine($"[Invalid State] {ex.Message}");
+                Console.WriteLine($"  State: {ex.CurrentState}, Action: {ex.AttemptedAction}");
+            }
+            catch (OrderException ex)
+            {
+                // Catch any other order-related exception
+                Console.WriteLine($"[Order Error] {ex.Message}");
+            }
+            Console.WriteLine();
+        }
+    }
+    
+    static void CancelOrder(string orderId)
+    {
+        // Simulate different scenarios
+        switch (orderId)
+        {
+            case "ORD-001":
+                throw new OrderNotFoundException(orderId);
+            case "ORD-002":
+                throw new OrderAlreadyShippedException(orderId, DateTime.Now.AddDays(-2));
+            case "ORD-003":
+                throw new InvalidOrderStateException(orderId, "Processing", "cancel");
+        }
+    }
+}`}
+/>
+
+## Validation Exceptions with Multiple Errors
+
+<CodeEditor 
+  initialCode={`using System;
+using System.Collections.Generic;
+
+public class ValidationException : Exception
+{
+    public Dictionary<string, List<string>> Errors { get; }
+    
+    public ValidationException(Dictionary<string, List<string>> errors)
+        : base("One or more validation errors occurred")
+    {
+        Errors = errors ?? new Dictionary<string, List<string>>();
+    }
+    
+    public bool HasErrors => Errors.Count > 0;
+    
+    public void AddError(string field, string message)
+    {
+        if (!Errors.ContainsKey(field))
+        {
+            Errors[field] = new List<string>();
+        }
+        Errors[field].Add(message);
+    }
+}
+
+class UserValidator
+{
+    public static void Validate(string username, string email, string password)
+    {
+        var errors = new Dictionary<string, List<string>>();
+        
+        // Validate username
+        if (string.IsNullOrWhiteSpace(username))
+        {
+            AddError(errors, "username", "Username is required");
+        }
+        else if (username.Length < 3)
+        {
+            AddError(errors, "username", "Username must be at least 3 characters");
+        }
+        
+        // Validate email
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            AddError(errors, "email", "Email is required");
+        }
+        else if (!email.Contains("@"))
+        {
+            AddError(errors, "email", "Email must contain @");
+        }
+        
+        // Validate password
+        if (string.IsNullOrWhiteSpace(password))
+        {
+            AddError(errors, "password", "Password is required");
+        }
+        else
+        {
+            if (password.Length < 8)
+            {
+                AddError(errors, "password", "Password must be at least 8 characters");
+            }
+            if (!System.Text.RegularExpressions.Regex.IsMatch(password, "[0-9]"))
+            {
+                AddError(errors, "password", "Password must contain a number");
+            }
+        }
+        
+        if (errors.Count > 0)
+        {
+            throw new ValidationException(errors);
+        }
+    }
+    
+    private static void AddError(Dictionary<string, List<string>> errors, 
+                                  string field, string message)
+    {
+        if (!errors.ContainsKey(field))
+        {
+            errors[field] = new List<string>();
+        }
+        errors[field].Add(message);
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        Console.WriteLine("=== User Registration Validation ===\\n");
+        
+        // Test with invalid data
+        try
+        {
+            UserValidator.Validate("ab", "invalid-email", "weak");
+        }
+        catch (ValidationException ex)
+        {
+            Console.WriteLine("Validation Failed:");
+            foreach (var field in ex.Errors)
+            {
+                Console.WriteLine($"\\n  {field.Key}:");
+                foreach (var error in field.Value)
+                {
+                    Console.WriteLine($"    - {error}");
+                }
+            }
+        }
+        
+        Console.WriteLine("\\n--- Valid Registration ---");
+        try
+        {
+            UserValidator.Validate("johndoe", "john@email.com", "Password123");
+            Console.WriteLine("Registration successful!");
+        }
+        catch (ValidationException ex)
+        {
+            Console.WriteLine("Validation failed");
+        }
+    }
+}`}
+/>
+
+## Real-World Example: E-Commerce System
+
+<CodeEditor 
+  initialCode={`using System;
+using System.Collections.Generic;
+
+// Domain exceptions
+public class ProductException : Exception
+{
+    public string ProductId { get; }
+    public ProductException(string productId, string message) : base(message)
+    {
+        ProductId = productId;
+    }
+}
+
+public class ProductNotFoundException : ProductException
+{
+    public ProductNotFoundException(string productId)
+        : base(productId, $"Product '{productId}' not found") { }
+}
+
+public class OutOfStockException : ProductException
+{
+    public int RequestedQuantity { get; }
+    public int AvailableQuantity { get; }
+    
+    public OutOfStockException(string productId, int requested, int available)
+        : base(productId, $"Product '{productId}': requested {requested}, only {available} available")
+    {
+        RequestedQuantity = requested;
+        AvailableQuantity = available;
+    }
+}
+
+// Simple product and cart
+class Product
+{
+    public string Id { get; set; }
+    public string Name { get; set; }
+    public decimal Price { get; set; }
+    public int Stock { get; set; }
+}
+
+class ShoppingCart
+{
+    private Dictionary<string, Product> _products = new Dictionary<string, Product>
+    {
+        { "P001", new Product { Id = "P001", Name = "Laptop", Price = 999.99m, Stock = 5 } },
+        { "P002", new Product { Id = "P002", Name = "Mouse", Price = 29.99m, Stock = 0 } },
+        { "P003", new Product { Id = "P003", Name = "Keyboard", Price = 79.99m, Stock = 10 } }
+    };
+    
+    private List<(string productId, int quantity)> _cartItems = new List<(string, int)>();
+    
+    public void AddToCart(string productId, int quantity)
+    {
+        // Check if product exists
+        if (!_products.TryGetValue(productId, out Product product))
+        {
+            throw new ProductNotFoundException(productId);
+        }
+        
+        // Check stock
+        if (product.Stock < quantity)
+        {
+            throw new OutOfStockException(productId, quantity, product.Stock);
+        }
+        
+        _cartItems.Add((productId, quantity));
+        Console.WriteLine($"Added {quantity}x {product.Name} to cart");
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        ShoppingCart cart = new ShoppingCart();
+        
+        var orders = new[]
+        {
+            ("P001", 2),   // Laptop - should work
+            ("P999", 1),   // Invalid product
+            ("P002", 3),   // Mouse - out of stock
+            ("P003", 5)    // Keyboard - should work
+        };
+        
+        Console.WriteLine("=== Adding Items to Cart ===\\n");
+        
+        foreach (var (productId, quantity) in orders)
+        {
+            try
+            {
+                cart.AddToCart(productId, quantity);
+            }
+            catch (ProductNotFoundException ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+            }
+            catch (OutOfStockException ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+                if (ex.AvailableQuantity > 0)
+                {
+                    Console.WriteLine($"  Suggestion: Only {ex.AvailableQuantity} available");
+                }
+            }
+            catch (ProductException ex)
+            {
+                Console.WriteLine($"Product error: {ex.Message}");
+            }
+        }
+    }
+}`}
+/>
+
+## Best Practices for Custom Exceptions
+
+<CodeEditor 
+  initialCode={`using System;
+using System.Runtime.Serialization;
+
+// ✅ GOOD: Follow the exception naming convention
+public class CustomerNotFoundException : Exception
+{
+    // ✅ GOOD: Include relevant context
+    public int CustomerId { get; }
+    
+    // ✅ GOOD: Provide multiple constructors
+    public CustomerNotFoundException() { }
+    
+    public CustomerNotFoundException(int customerId)
+        : base($"Customer with ID {customerId} was not found")
+    {
+        CustomerId = customerId;
+    }
+    
+    public CustomerNotFoundException(string message) : base(message) { }
+    
+    public CustomerNotFoundException(string message, Exception innerException)
+        : base(message, innerException) { }
+}
+
+// ✅ GOOD: Create a base exception for your domain
+public abstract class DomainException : Exception
+{
+    public DateTime OccurredAt { get; } = DateTime.UtcNow;
+    public string CorrelationId { get; set; }
+    
+    protected DomainException(string message) : base(message) { }
+    protected DomainException(string message, Exception inner) : base(message, inner) { }
+}
+
+public class PaymentFailedException : DomainException
+{
+    public string PaymentProvider { get; }
+    public string ErrorCode { get; }
+    
+    public PaymentFailedException(string provider, string errorCode, string message)
+        : base(message)
+    {
+        PaymentProvider = provider;
+        ErrorCode = errorCode;
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        try
+        {
+            throw new PaymentFailedException(
+                "Stripe", 
+                "card_declined", 
+                "The card was declined by the issuing bank"
+            )
+            {
+                CorrelationId = Guid.NewGuid().ToString()
+            };
+        }
+        catch (PaymentFailedException ex)
+        {
+            Console.WriteLine("Payment Error Details:");
+            Console.WriteLine($"  Message: {ex.Message}");
+            Console.WriteLine($"  Provider: {ex.PaymentProvider}");
+            Console.WriteLine($"  Error Code: {ex.ErrorCode}");
+            Console.WriteLine($"  Occurred: {ex.OccurredAt}");
+            Console.WriteLine($"  Correlation ID: {ex.CorrelationId}");
+        }
+    }
+}`}
+/>
+
+## Key Takeaways
+
+- Custom exceptions should **inherit from Exception** (or a more specific type)
+- **End class names with "Exception"** - e.g., `InsufficientFundsException`
+- Include **meaningful context** through properties
+- Provide **standard constructors** (parameterless, message, message+inner)
+- Create **exception hierarchies** for complex domains
+- Use custom exceptions for **domain-specific errors**, not general programming errors
+
+## When to Use Custom Exceptions
+
+| Use Custom Exception | Use Built-in Exception |
+|---------------------|------------------------|
+| Domain-specific errors | General programming errors |
+| Need additional properties | Standard error info is enough |
+| Want to catch specific error types | Generic error handling is fine |
+| Multiple related error types | Single error scenario |
+
+## Custom Exception Checklist
+
+1. ✅ Name ends with "Exception"
+2. ✅ Inherits from Exception or appropriate base
+3. ✅ Has parameterless constructor
+4. ✅ Has message constructor
+5. ✅ Has message + innerException constructor
+6. ✅ Includes relevant context properties
+7. ✅ Uses clear, descriptive error messages
+
+In the next module, we'll learn about generics for writing flexible, reusable code!

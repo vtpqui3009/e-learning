@@ -19,11 +19,33 @@ Async/await enables:
 - **Improved performance** - Handle multiple operations concurrently
 - **Cleaner code** - Avoid callback hell
 
+<AsyncFlowChart
+  title="Async/Await Execution Flow"
+  steps={[
+    { id: "1", label: "Main Method Starts", type: "sync", description: "Program begins execution" },
+    { id: "2", label: "Call GetMessageAsync()", type: "async", description: "Async method is invoked" },
+    { id: "3", label: "Task.Delay(2000)", type: "await", description: "Awaiting 2-second delay" },
+    { id: "4", label: "Thread Released", type: "callback", description: "Thread returns to pool during wait" },
+    { id: "5", label: "Delay Complete", type: "await", description: "After 2 seconds, execution resumes" },
+    { id: "6", label: "Return Message", type: "async", description: "Method returns result" },
+    { id: "7", label: "Print Result", type: "sync", description: "Display message to console" },
+    { id: "8", label: "Program Ends", type: "sync", description: "Execution complete" }
+  ]}
+  connections={[
+    { from: "1", to: "2", label: "calls" },
+    { from: "2", to: "3", label: "awaits" },
+    { from: "3", to: "4", label: "releases" },
+    { from: "4", to: "5", label: "timer completes" },
+    { from: "5", to: "6", label: "continues" },
+    { from: "6", to: "7", label: "returns" },
+    { from: "7", to: "8", label: "finishes" }
+  ]}
+/>
+
 ## Basic Async Method
 
 <CodeEditor 
-  language="csharp"
-  code={`using System;
+  initialCode={`using System;
 using System.Threading.Tasks;
 
 class Program
@@ -50,14 +72,12 @@ class Program
         return "Hello from async method!";
     }
 }`}
-  title="Basic Async/Await"
 />
 
 ## Task and Task&lt;T&gt;
 
 <CodeEditor 
-  language="csharp"
-  code={`using System;
+  initialCode={`using System;
 using System.Threading.Tasks;
 
 class Program
@@ -96,14 +116,12 @@ class Program
         return "Data retrieved successfully";
     }
 }`}
-  title="Task and Task&lt;T&gt;"
 />
 
 ## Running Multiple Tasks Concurrently
 
 <CodeEditor 
-  language="csharp"
-  code={`using System;
+  initialCode={`using System;
 using System.Threading.Tasks;
 using System.Diagnostics;
 
@@ -161,14 +179,12 @@ class Program
         return n * n;
     }
 }`}
-  title="Concurrent Tasks"
 />
 
 ## Task.WhenAny - First to Complete
 
 <CodeEditor 
-  language="csharp"
-  code={`using System;
+  initialCode={`using System;
 using System.Threading.Tasks;
 
 class Program
@@ -201,14 +217,12 @@ class Program
         return server;
     }
 }`}
-  title="Task.WhenAny"
 />
 
 ## Exception Handling
 
 <CodeEditor 
-  language="csharp"
-  code={`using System;
+  initialCode={`using System;
 using System.Threading.Tasks;
 
 class Program
@@ -270,14 +284,12 @@ class Program
         Console.WriteLine("Operation completed successfully");
     }
 }`}
-  title="Exception Handling"
 />
 
 ## CancellationToken
 
 <CodeEditor 
-  language="csharp"
-  code={`using System;
+  initialCode={`using System;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -344,14 +356,12 @@ class Program
         Console.WriteLine($"Processed {count} items before cancellation");
     }
 }`}
-  title="Cancellation Support"
 />
 
 ## ConfigureAwait
 
 <CodeEditor 
-  language="csharp"
-  code={`using System;
+  initialCode={`using System;
 using System.Threading.Tasks;
 
 class Program
@@ -385,14 +395,12 @@ class Program
         Console.WriteLine($"After delay: {System.Threading.Thread.CurrentThread.ManagedThreadId}");
     }
 }`}
-  title="ConfigureAwait"
 />
 
 ## Real-World Example: API Client
 
 <CodeEditor 
-  language="csharp"
-  code={`using System;
+  initialCode={`using System;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Linq;
@@ -475,7 +483,6 @@ class Program
         Console.WriteLine($"Loaded {users.Length} users in {watch.ElapsedMilliseconds}ms");
     }
 }`}
-  title="API Client Example"
 />
 
 ## Best Practices

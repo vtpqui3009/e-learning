@@ -1,106 +1,84 @@
 ---
 title: "Constructors"
-description: "Learn how to initialize objects properly with constructors"
+description: "Learn how to initialize objects properly using constructors"
 order: 4
 difficulty: "intermediate"
 tags: ["oop", "constructors", "initialization"]
-duration: "30 minutes"
+duration: "25 minutes"
 ---
 
-# Constructors
+# Constructors in C#
 
-Constructors are special methods that are called when an object is created. They initialize the object's state and ensure it's ready to use.
+Constructors are special methods that initialize new instances of a class. They ensure objects start in a valid state with all necessary data.
 
 ## What is a Constructor?
 
-A constructor is a special method that:
-- Has the **same name as the class**
-- Has **no return type** (not even `void`)
-- Is called **automatically** when an object is created
-- Initializes the object's fields
+A constructor is a method that:
+- Has the **same name** as the class
+- Has **no return type** (not even void)
+- Is called automatically when creating an object with `new`
 
-### Basic Constructor
+## Default Constructor
 
 <CodeEditor 
-  language="csharp"
-  code={`using System;
+  initialCode={`using System;
 
 class Person
 {
     public string Name;
     public int Age;
     
-    // Constructor
+    // Default constructor (no parameters)
+    public Person()
+    {
+        Name = "Unknown";
+        Age = 0;
+        Console.WriteLine("Default constructor called");
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        // Calls the default constructor
+        Person person = new Person();
+        
+        Console.WriteLine($"Name: {person.Name}");
+        Console.WriteLine($"Age: {person.Age}");
+    }
+}`}
+/>
+
+## Parameterized Constructors
+
+Accept parameters to initialize the object with specific values:
+
+<CodeEditor 
+  initialCode={`using System;
+
+class Person
+{
+    public string Name;
+    public int Age;
+    public string Email;
+    
+    // Parameterized constructor
     public Person(string name, int age)
     {
         Name = name;
         Age = age;
-        Console.WriteLine($"Created person: {Name}, age {Age}");
+        Email = "";
+        Console.WriteLine($"Created person: {name}, age {age}");
     }
-}
-
-class Program
-{
-    static void Main()
-    {
-        // Constructor is called automatically
-        Person person1 = new Person("Alice", 25);
-        Person person2 = new Person("Bob", 30);
-        
-        Console.WriteLine($"\\n{person1.Name} is {person1.Age} years old");
-        Console.WriteLine($"{person2.Name} is {person2.Age} years old");
-    }
-}`}
-  title="Basic Constructor Example"
-/>
-
-## Default Constructor
-
-If you don't define any constructor, C# provides a default parameterless constructor:
-
-<CodeEditor 
-  language="csharp"
-  code={`using System;
-
-class Point
-{
-    public int X;
-    public int Y;
     
-    // No constructor defined - C# provides default constructor
-}
-
-class Program
-{
-    static void Main()
+    // Constructor with all parameters
+    public Person(string name, int age, string email)
     {
-        Point p = new Point();  // Uses default constructor
-        Console.WriteLine($"Point: ({p.X}, {p.Y})");  // (0, 0)
-        
-        p.X = 10;
-        p.Y = 20;
-        Console.WriteLine($"Point: ({p.X}, {p.Y})");  // (10, 20)
-    }
-}`}
-  title="Default Constructor"
-/>
-
-**Important**: If you define ANY constructor, the default constructor is NO LONGER provided automatically!
-
-<CodeEditor 
-  language="csharp"
-  code={`using System;
-
-class Car
-{
-    public string Brand;
-    public string Model;
-    
-    // Custom constructor
-    public Car(string brand, string model)
-    {
-        Brand = brand;
-        Model = model;
+        Name = name;
+        Age = age;
+        Email = email;
+        Console.WriteLine($"Created person with email: {name}");
     }
 }
 
@@ -108,29 +86,38 @@ class Program
 {
     static void Main()
     {
-        Car car1 = new Car("Toyota", "Camry");  // OK
-        // Car car2 = new Car();  // ERROR! No parameterless constructor
+        Person person1 = new Person("John", 30);
+        Console.WriteLine($"  Email: '{person1.Email}'");
         
-        Console.WriteLine($"{car1.Brand} {car1.Model}");
+        Console.WriteLine();
+        
+        Person person2 = new Person("Jane", 25, "jane@example.com");
+        Console.WriteLine($"  Email: '{person2.Email}'");
     }
 }`}
-  title="Custom Constructor Removes Default"
 />
 
 ## Constructor Overloading
 
-You can define multiple constructors with different parameters:
+Multiple constructors with different parameters:
 
 <CodeEditor 
-  language="csharp"
-  code={`using System;
+  initialCode={`using System;
 
 class Rectangle
 {
-    public double Width;
-    public double Height;
+    public double Width { get; set; }
+    public double Height { get; set; }
     
-    // Constructor 1: Square (one parameter)
+    // Default - unit square
+    public Rectangle()
+    {
+        Width = 1;
+        Height = 1;
+        Console.WriteLine("Created unit square");
+    }
+    
+    // Square constructor
     public Rectangle(double size)
     {
         Width = size;
@@ -138,7 +125,7 @@ class Rectangle
         Console.WriteLine($"Created square: {size}x{size}");
     }
     
-    // Constructor 2: Rectangle (two parameters)
+    // Full constructor
     public Rectangle(double width, double height)
     {
         Width = width;
@@ -146,78 +133,68 @@ class Rectangle
         Console.WriteLine($"Created rectangle: {width}x{height}");
     }
     
-    // Constructor 3: Default (no parameters)
-    public Rectangle()
-    {
-        Width = 1;
-        Height = 1;
-        Console.WriteLine("Created unit rectangle: 1x1");
-    }
-    
-    public double GetArea()
-    {
-        return Width * Height;
-    }
+    public double Area => Width * Height;
 }
 
 class Program
 {
     static void Main()
     {
-        Rectangle square = new Rectangle(5);
-        Rectangle rect = new Rectangle(4, 6);
-        Rectangle unit = new Rectangle();
+        Rectangle r1 = new Rectangle();
+        Console.WriteLine($"  Area: {r1.Area}\\n");
         
-        Console.WriteLine($"\\nSquare area: {square.GetArea()}");
-        Console.WriteLine($"Rectangle area: {rect.GetArea()}");
-        Console.WriteLine($"Unit area: {unit.GetArea()}");
+        Rectangle r2 = new Rectangle(5);
+        Console.WriteLine($"  Area: {r2.Area}\\n");
+        
+        Rectangle r3 = new Rectangle(10, 5);
+        Console.WriteLine($"  Area: {r3.Area}");
     }
 }`}
-  title="Constructor Overloading"
 />
 
-## Constructor Chaining (this keyword)
+## Constructor Chaining
 
-Use `this()` to call another constructor in the same class:
+Call one constructor from another using `this`:
 
 <CodeEditor 
-  language="csharp"
-  code={`using System;
+  initialCode={`using System;
 
 class Employee
 {
-    public int Id;
-    public string Name;
-    public string Department;
-    public decimal Salary;
+    public int Id { get; set; }
+    public string Name { get; set; }
+    public string Department { get; set; }
+    public decimal Salary { get; set; }
     
-    // Main constructor
+    // Primary constructor with all parameters
     public Employee(int id, string name, string department, decimal salary)
     {
         Id = id;
         Name = name;
         Department = department;
         Salary = salary;
-        Console.WriteLine($"Created employee: {Name} in {Department}");
+        Console.WriteLine($"Created: {name} in {department}");
     }
     
-    // Convenience constructor - sets default department
-    public Employee(int id, string name, decimal salary) 
+    // Chain to primary constructor with default department
+    public Employee(int id, string name, decimal salary)
         : this(id, name, "General", salary)
     {
-        Console.WriteLine("Using default department");
+        Console.WriteLine("  (Used default department)");
     }
     
-    // Convenience constructor - sets default salary
-    public Employee(int id, string name) 
+    // Chain with default salary too
+    public Employee(int id, string name)
         : this(id, name, "General", 50000)
     {
-        Console.WriteLine("Using default department and salary");
+        Console.WriteLine("  (Used default salary)");
     }
     
-    public void Display()
+    // Copy constructor
+    public Employee(Employee other)
+        : this(other.Id, other.Name, other.Department, other.Salary)
     {
-        Console.WriteLine($"ID: {Id}, Name: {Name}, Dept: {Department}, Salary: \${Salary}");
+        Console.WriteLine("  (Copied from another employee)");
     }
 }
 
@@ -225,60 +202,63 @@ class Program
 {
     static void Main()
     {
-        Employee emp1 = new Employee(101, "Alice", "Engineering", 80000);
-        emp1.Display();
-        
+        var emp1 = new Employee(1, "Alice", "Engineering", 75000);
         Console.WriteLine();
-        Employee emp2 = new Employee(102, "Bob", 60000);
-        emp2.Display();
         
+        var emp2 = new Employee(2, "Bob", 60000);
         Console.WriteLine();
-        Employee emp3 = new Employee(103, "Charlie");
-        emp3.Display();
+        
+        var emp3 = new Employee(3, "Charlie");
+        Console.WriteLine();
+        
+        var emp4 = new Employee(emp1);
+        emp4.Id = 4;
+        emp4.Name = "Alice Clone";
     }
 }`}
-  title="Constructor Chaining"
 />
 
 ## Validation in Constructors
 
-Constructors should validate input and ensure the object is in a valid state:
-
 <CodeEditor 
-  language="csharp"
-  code={`using System;
+  initialCode={`using System;
 
 class BankAccount
 {
     public string AccountNumber { get; }
-    public string Owner { get; }
+    public string OwnerName { get; }
     public decimal Balance { get; private set; }
     
-    public BankAccount(string accountNumber, string owner, decimal initialBalance)
+    public BankAccount(string accountNumber, string ownerName, decimal initialBalance)
     {
-        // Validation
+        // Validate account number
         if (string.IsNullOrWhiteSpace(accountNumber))
-            throw new ArgumentException("Account number cannot be empty");
-            
-        if (string.IsNullOrWhiteSpace(owner))
-            throw new ArgumentException("Owner name cannot be empty");
-            
+        {
+            throw new ArgumentException("Account number is required");
+        }
+        
+        if (accountNumber.Length < 6)
+        {
+            throw new ArgumentException("Account number must be at least 6 characters");
+        }
+        
+        // Validate owner name
+        if (string.IsNullOrWhiteSpace(ownerName))
+        {
+            throw new ArgumentException("Owner name is required");
+        }
+        
+        // Validate balance
         if (initialBalance < 0)
+        {
             throw new ArgumentException("Initial balance cannot be negative");
+        }
         
         AccountNumber = accountNumber;
-        Owner = owner;
+        OwnerName = ownerName;
         Balance = initialBalance;
         
-        Console.WriteLine($"Account created: {AccountNumber} for {Owner} with \${Balance}");
-    }
-    
-    public void Deposit(decimal amount)
-    {
-        if (amount <= 0)
-            throw new ArgumentException("Deposit amount must be positive");
-        Balance += amount;
-        Console.WriteLine($"Deposited \${amount}. New balance: \${Balance}");
+        Console.WriteLine($"Account created: {accountNumber} for {ownerName}");
     }
 }
 
@@ -286,114 +266,70 @@ class Program
 {
     static void Main()
     {
+        // Valid account
         try
         {
-            BankAccount account1 = new BankAccount("ACC001", "John Doe", 1000);
-            account1.Deposit(500);
-            
-            // This will throw an exception
-            BankAccount account2 = new BankAccount("ACC002", "", 500);
+            var account1 = new BankAccount("123456", "John Doe", 1000);
+            Console.WriteLine($"Balance: ${'{'}account1.Balance{'}'}\n");
         }
         catch (ArgumentException ex)
         {
-            Console.WriteLine($"\\nError creating account: {ex.Message}");
+            Console.WriteLine($"Error: {ex.Message}\\n");
         }
-    }
-}`}
-  title="Constructor Validation"
-/>
-
-## Private Constructors
-
-Private constructors prevent instantiation from outside the class:
-
-<CodeEditor 
-  language="csharp"
-  code={`using System;
-
-class DatabaseConnection
-{
-    private static DatabaseConnection instance;
-    
-    public string ConnectionString { get; }
-    public bool IsConnected { get; private set; }
-    
-    // Private constructor - cannot create instances from outside
-    private DatabaseConnection(string connectionString)
-    {
-        ConnectionString = connectionString;
-        IsConnected = true;
-        Console.WriteLine("Database connection established");
-    }
-    
-    // Static method to get the single instance (Singleton pattern)
-    public static DatabaseConnection GetInstance(string connectionString)
-    {
-        if (instance == null)
+        
+        // Invalid: short account number
+        try
         {
-            instance = new DatabaseConnection(connectionString);
+            var account2 = new BankAccount("123", "Jane", 500);
         }
-        return instance;
-    }
-    
-    public void ExecuteQuery(string query)
-    {
-        Console.WriteLine($"Executing: {query}");
-    }
-}
-
-class Program
-{
-    static void Main()
-    {
-        // Cannot do this - constructor is private:
-        // DatabaseConnection db = new DatabaseConnection("...");
+        catch (ArgumentException ex)
+        {
+            Console.WriteLine($"Error: {ex.Message}\\n");
+        }
         
-        // Must use static method
-        DatabaseConnection db1 = DatabaseConnection.GetInstance("Server=localhost;Database=mydb");
-        DatabaseConnection db2 = DatabaseConnection.GetInstance("Server=other");
-        
-        Console.WriteLine($"\\nSame instance? {db1 == db2}");  // True - Singleton!
-        
-        db1.ExecuteQuery("SELECT * FROM Users");
+        // Invalid: negative balance
+        try
+        {
+            var account3 = new BankAccount("789012", "Bob", -100);
+        }
+        catch (ArgumentException ex)
+        {
+            Console.WriteLine($"Error: {ex.Message}");
+        }
     }
 }`}
-  title="Private Constructor (Singleton Pattern)"
 />
 
 ## Static Constructors
 
-Static constructors initialize static members and run once per type:
+Initialize static members of a class:
 
 <CodeEditor 
-  language="csharp"
-  code={`using System;
+  initialCode={`using System;
 
 class Configuration
 {
+    // Static fields
     public static string AppName { get; private set; }
     public static string Version { get; private set; }
     public static DateTime StartTime { get; private set; }
     
-    // Static constructor - runs once when class is first used
+    // Static constructor - called once before first use
     static Configuration()
     {
-        Console.WriteLine("Static constructor called - initializing configuration");
+        Console.WriteLine("Static constructor called");
         AppName = "My Application";
         Version = "1.0.0";
         StartTime = DateTime.Now;
     }
     
-    // Instance constructor
+    // Instance members
+    public string InstanceId { get; }
+    
     public Configuration()
     {
-        Console.WriteLine("Instance constructor called");
-    }
-    
-    public static void DisplayInfo()
-    {
-        Console.WriteLine($"App: {AppName} v{Version}");
-        Console.WriteLine($"Started: {StartTime:HH:mm:ss}");
+        InstanceId = Guid.NewGuid().ToString().Substring(0, 8);
+        Console.WriteLine($"Instance constructor called: {InstanceId}");
     }
 }
 
@@ -401,102 +337,65 @@ class Program
 {
     static void Main()
     {
-        Console.WriteLine("Program started\\n");
+        Console.WriteLine("Before accessing Configuration...");
         
-        // Static constructor runs before first access
-        Configuration.DisplayInfo();
-        
-        Console.WriteLine("\\nCreating instances...");
-        Configuration config1 = new Configuration();
-        Configuration config2 = new Configuration();
-        
-        Console.WriteLine("\\nAccessing static members again...");
-        Configuration.DisplayInfo();  // Static constructor doesn't run again
-    }
-}`}
-  title="Static Constructor"
-/>
-
-## Constructor with Properties
-
-Modern C# allows combining constructors with property initializers:
-
-<CodeEditor 
-  language="csharp"
-  code={`using System;
-using System.Collections.Generic;
-
-class Product
-{
-    public string Name { get; init; }
-    public decimal Price { get; init; }
-    public string Category { get; init; }
-    public List<string> Tags { get; init; } = new List<string>();
-    
-    // Constructor for required properties
-    public Product(string name, decimal price, string category)
-    {
-        if (string.IsNullOrWhiteSpace(name))
-            throw new ArgumentException("Name is required");
-        if (price <= 0)
-            throw new ArgumentException("Price must be positive");
-            
-        Name = name;
-        Price = price;
-        Category = category;
-        
-        Console.WriteLine($"Product created: {Name}");
-    }
-    
-    public void Display()
-    {
-        Console.WriteLine($"Name: {Name}");
-        Console.WriteLine($"Price: \${Price}");
-        Console.WriteLine($"Category: {Category}");
-        if (Tags.Count > 0)
-            Console.WriteLine($"Tags: {string.Join(", ", Tags)}");
-    }
-}
-
-class Program
-{
-    static void Main()
-    {
-        // Using constructor
-        Product product1 = new Product("Laptop", 999.99m, "Electronics");
-        product1.Display();
-        
+        // Accessing static property triggers static constructor
+        Console.WriteLine($"App: {Configuration.AppName}");
+        Console.WriteLine($"Version: {Configuration.Version}");
         Console.WriteLine();
         
-        // Using constructor + object initializer
-        Product product2 = new Product("Book", 29.99m, "Education")
-        {
-            Tags = new List<string> { "Programming", "C#", "Beginner" }
-        };
-        product2.Display();
+        // Create instances - static constructor only runs once
+        var config1 = new Configuration();
+        var config2 = new Configuration();
+        
+        Console.WriteLine($"\\nStart time: {Configuration.StartTime}");
     }
 }`}
-  title="Constructor with Property Initializers"
 />
 
-## Record Types (C# 9+)
+## Private Constructors
 
-Records provide built-in constructors for immutable data:
+Prevent direct instantiation (used with factory patterns):
 
 <CodeEditor 
-  language="csharp"
-  code={`using System;
+  initialCode={`using System;
+using System.Collections.Generic;
 
-// Record with positional constructor
-record Person(string FirstName, string LastName, int Age)
+class Logger
 {
-    // Additional computed property
-    public string FullName => $"{FirstName} {LastName}";
+    private static Logger instance;
+    private List<string> logs = new List<string>();
     
-    // Additional constructor
-    public Person(string firstName, string lastName) 
-        : this(firstName, lastName, 0)
+    // Private constructor - cannot be called from outside
+    private Logger()
     {
+        Console.WriteLine("Logger instance created");
+    }
+    
+    // Factory method to get the single instance (Singleton pattern)
+    public static Logger GetInstance()
+    {
+        if (instance == null)
+        {
+            instance = new Logger();
+        }
+        return instance;
+    }
+    
+    public void Log(string message)
+    {
+        string entry = $"[{DateTime.Now:HH:mm:ss}] {message}";
+        logs.Add(entry);
+        Console.WriteLine(entry);
+    }
+    
+    public void ShowAll()
+    {
+        Console.WriteLine("\\nAll logs:");
+        foreach (var log in logs)
+        {
+            Console.WriteLine($"  {log}");
+        }
     }
 }
 
@@ -504,87 +403,197 @@ class Program
 {
     static void Main()
     {
-        // Using positional constructor
-        Person person1 = new Person("John", "Doe", 30);
-        Console.WriteLine($"{person1.FullName}, age {person1.Age}");
+        // Cannot do: var logger = new Logger(); // Compile error!
         
-        // Using additional constructor
-        Person person2 = new Person("Jane", "Smith");
-        Console.WriteLine($"{person2.FullName}, age {person2.Age}");
+        // Must use factory method
+        Logger logger1 = Logger.GetInstance();
+        logger1.Log("Application started");
         
-        // Using with-expression to create copy with changes
-        Person person3 = person1 with { Age = 31 };
-        Console.WriteLine($"\\nBirthday! {person3.FullName}, age {person3.Age}");
+        Logger logger2 = Logger.GetInstance();
+        logger2.Log("User logged in");
         
-        // Records provide value equality
-        Person person4 = new Person("John", "Doe", 30);
-        Console.WriteLine($"\\nperson1 == person4? {person1 == person4}");  // True!
+        // Both references point to same instance
+        Console.WriteLine($"\\nSame instance: {logger1 == logger2}");
+        
+        logger1.ShowAll();
     }
 }`}
-  title="Record Constructors"
 />
 
-## Best Practices
-
-1. **Validate parameters** - Ensure the object is in a valid state
-2. **Use constructor chaining** - Avoid code duplication
-3. **Initialize all fields** - Don't leave fields in an undefined state
-4. **Keep constructors simple** - Complex logic should go in methods
-5. **Use readonly/init properties** when appropriate - For immutable objects
-6. **Provide meaningful constructors** - Make object creation intuitive
-
-## Real-World Example
+## Expression-Bodied Constructors
 
 <CodeEditor 
-  language="csharp"
-  code={`using System;
+  initialCode={`using System;
+
+class Point
+{
+    public double X { get; }
+    public double Y { get; }
+    
+    // Expression-bodied constructor
+    public Point(double x, double y) => (X, Y) = (x, y);
+    
+    public double DistanceFromOrigin => Math.Sqrt(X * X + Y * Y);
+    
+    public override string ToString() => $"({X}, {Y})";
+}
+
+class Temperature
+{
+    public double Celsius { get; }
+    
+    // Simple expression-bodied constructor
+    public Temperature(double celsius) => Celsius = celsius;
+    
+    public double Fahrenheit => Celsius * 9 / 5 + 32;
+    public double Kelvin => Celsius + 273.15;
+    
+    public override string ToString() => $"{Celsius}°C";
+}
+
+class Program
+{
+    static void Main()
+    {
+        var point = new Point(3, 4);
+        Console.WriteLine($"Point: {point}");
+        Console.WriteLine($"Distance from origin: {point.DistanceFromOrigin}");
+        
+        var temp = new Temperature(25);
+        Console.WriteLine($"\\nTemperature: {temp}");
+        Console.WriteLine($"Fahrenheit: {temp.Fahrenheit}°F");
+        Console.WriteLine($"Kelvin: {temp.Kelvin}K");
+    }
+}`}
+/>
+
+## Primary Constructors (C# 12)
+
+<CodeEditor 
+  initialCode={`using System;
+
+// Primary constructor syntax (C# 12+)
+// Parameters become available throughout the class
+class Person(string name, int age)
+{
+    public string Name { get; } = name;
+    public int Age { get; } = age;
+    
+    public void Greet()
+    {
+        // Can access primary constructor parameters
+        Console.WriteLine($"Hello, I'm {name} and I'm {age} years old.");
+    }
+}
+
+// Traditional approach for comparison
+class PersonTraditional
+{
+    public string Name { get; }
+    public int Age { get; }
+    
+    public PersonTraditional(string name, int age)
+    {
+        Name = name;
+        Age = age;
+    }
+    
+    public void Greet()
+    {
+        Console.WriteLine($"Hello, I'm {Name} and I'm {Age} years old.");
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        var person = new Person("Alice", 28);
+        Console.WriteLine($"Name: {person.Name}");
+        Console.WriteLine($"Age: {person.Age}");
+        person.Greet();
+    }
+}`}
+/>
+
+## Complete Example: Order System
+
+<CodeEditor 
+  initialCode={`using System;
+using System.Collections.Generic;
+
+class OrderItem
+{
+    public string ProductName { get; }
+    public decimal Price { get; }
+    public int Quantity { get; }
+    
+    public OrderItem(string productName, decimal price, int quantity = 1)
+    {
+        if (string.IsNullOrWhiteSpace(productName))
+            throw new ArgumentException("Product name required");
+        if (price < 0)
+            throw new ArgumentException("Price cannot be negative");
+        if (quantity < 1)
+            throw new ArgumentException("Quantity must be at least 1");
+            
+        ProductName = productName;
+        Price = price;
+        Quantity = quantity;
+    }
+    
+    public decimal Total => Price * Quantity;
+}
 
 class Order
 {
-    public string OrderId { get; }
+    private static int nextOrderId = 1000;
+    private List<OrderItem> items = new List<OrderItem>();
+    
+    public int OrderId { get; }
     public string CustomerName { get; }
     public DateTime OrderDate { get; }
-    public decimal TotalAmount { get; private set; }
-    public string Status { get; private set; }
     
-    // Full constructor
-    public Order(string customerName, decimal totalAmount)
+    public Order(string customerName)
     {
         if (string.IsNullOrWhiteSpace(customerName))
-            throw new ArgumentException("Customer name is required");
-        if (totalAmount <= 0)
-            throw new ArgumentException("Total amount must be positive");
+            throw new ArgumentException("Customer name required");
             
-        OrderId = GenerateOrderId();
+        OrderId = nextOrderId++;
         CustomerName = customerName;
         OrderDate = DateTime.Now;
-        TotalAmount = totalAmount;
-        Status = "Pending";
-        
-        Console.WriteLine($"Order {OrderId} created for {CustomerName}");
     }
     
-    private static int orderCounter = 0;
-    
-    private string GenerateOrderId()
+    public void AddItem(string product, decimal price, int qty = 1)
     {
-        orderCounter++;
-        return $"ORD{orderCounter:D6}";
+        items.Add(new OrderItem(product, price, qty));
     }
     
-    public void UpdateStatus(string newStatus)
+    public decimal Total
     {
-        Status = newStatus;
-        Console.WriteLine($"Order {OrderId} status: {Status}");
+        get
+        {
+            decimal sum = 0;
+            foreach (var item in items)
+                sum += item.Total;
+            return sum;
+        }
     }
     
-    public void Display()
+    public void PrintReceipt()
     {
-        Console.WriteLine($"\\n--- Order {OrderId} ---");
+        Console.WriteLine($"Order #{OrderId}");
         Console.WriteLine($"Customer: {CustomerName}");
-        Console.WriteLine($"Date: {OrderDate:yyyy-MM-dd HH:mm:ss}");
-        Console.WriteLine($"Amount: \${TotalAmount:N2}");
-        Console.WriteLine($"Status: {Status}");
+        Console.WriteLine($"Date: {OrderDate:g}");
+        Console.WriteLine("-------------------");
+        
+        foreach (var item in items)
+        {
+            Console.WriteLine($"{item.ProductName} x{item.Quantity} @ ${'{'}item.Price{'}'} = ${'{'}item.Total{'}'}");
+        }
+
+        Console.WriteLine("-------------------");
+        Console.WriteLine($"TOTAL: ${'{'}Total{'}'}");
     }
 }
 
@@ -592,30 +601,34 @@ class Program
 {
     static void Main()
     {
-        Order order1 = new Order("Alice Johnson", 149.99m);
-        order1.Display();
+        var order = new Order("John Smith");
         
-        Order order2 = new Order("Bob Smith", 89.50m);
-        order2.Display();
+        order.AddItem("Laptop", 999.99m);
+        order.AddItem("Mouse", 29.99m, 2);
+        order.AddItem("Keyboard", 79.99m);
         
-        Console.WriteLine("\\nProcessing orders...");
-        order1.UpdateStatus("Processing");
-        order1.UpdateStatus("Shipped");
-        order2.UpdateStatus("Processing");
+        order.PrintReceipt();
     }
 }`}
-  title="Complete Order System Example"
 />
 
 ## Key Takeaways
 
-- **Constructors initialize objects** when they're created
-- Use **overloading** to provide different ways to create objects
-- Use **constructor chaining** (`this()`) to avoid code duplication
-- **Validate parameters** to ensure object integrity
-- **Private constructors** control object creation (Singleton pattern)
+- **Constructors** initialize objects when created with `new`
+- **Default constructors** have no parameters
+- **Parameterized constructors** accept initialization values
+- **Constructor chaining** with `this` avoids code duplication
 - **Static constructors** initialize static members once
+- **Private constructors** enable singleton and factory patterns
+
+## Best Practices
+
+1. **Validate parameters** in constructors
+2. **Use constructor chaining** to avoid duplicating code
+3. **Initialize to valid state** - objects should be usable after construction
+4. **Use readonly/init properties** for immutable data
+5. **Consider factory methods** for complex initialization logic
 
 ## Next Steps
 
-In the next lesson, we'll explore **Static Members** and understand the difference between instance and class-level members!
+Next lesson: **Static Members** - Learn about class-level data and methods!

@@ -4,5 +4,6 @@
   "description": "Deep dive into inheritance, polymorphism, and interfaces",
   "order": 3,
   "icon": "🏗️",
-  "color": "#ec4899"
+  "color": "#ec4899",
+  "lessonCount": 4
 }

@@ -1,0 +1,632 @@
+---
+title: "Integration Testing & Best Practices"
+description: "Learn integration testing and professional testing best practices"
+order: 5
+difficulty: "intermediate"
+tags: ["testing", "integration", "best-practices", "real-world"]
+duration: "40 minutes"
+---
+
+# Integration Testing & Best Practices
+
+Learn to test complete workflows and follow industry best practices!
+
+## What is Integration Testing?
+
+**Unit tests** check individual methods in isolation.
+**Integration tests** check how multiple components work together.
+
+### Example: User Registration System
+
+<CodeEditor
+  initialCode={`using System;
+using System.Collections.Generic;
+using System.Linq;
+using Xunit;
+
+namespace UserManagement
+{
+    // Domain model
+    public class User
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+        public string Email { get; set; }
+        public bool IsActive { get; set; }
+        public DateTime CreatedAt { get; set; }
+    }
+
+    // Service that integrates multiple operations
+    public class UserService
+    {
+        private List<User> users = new List<User>();
+        private int nextId = 1;
+
+        public User CreateUser(string name, string email)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+                throw new ArgumentException("Name cannot be empty");
+
+            if (string.IsNullOrWhiteSpace(email))
+                throw new ArgumentException("Email cannot be empty");
+
+            if (users.Any(u => u.Email == email))
+                throw new InvalidOperationException("Email already exists");
+
+            var user = new User
+            {
+                Id = nextId++,
+                Name = name,
+                Email = email,
+                IsActive = true,
+                CreatedAt = DateTime.Now
+            };
+
+            users.Add(user);
+            return user;
+        }
+
+        public User GetUserById(int id)
+        {
+            return users.FirstOrDefault(u => u.Id == id);
+        }
+
+        public List<User> GetActiveUsers()
+        {
+            return users.Where(u => u.IsActive).ToList();
+        }
+
+        public bool DeactivateUser(int id)
+        {
+            var user = GetUserById(id);
+            if (user == null)
+                return false;
+
+            user.IsActive = false;
+            return true;
+        }
+
+        public int GetUserCount()
+        {
+            return users.Count;
+        }
+    }
+
+    // Integration tests
+    public class UserServiceIntegrationTests
+    {
+        [Fact]
+        public void CreateUser_ValidData_ReturnsUserWithId()
+        {
+            // Arrange
+            var service = new UserService();
+
+            // Act
+            User result = service.CreateUser("Alice", "alice@example.com");
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(1, result.Id);
+            Assert.Equal("Alice", result.Name);
+            Assert.True(result.IsActive);
+            Assert.Equal(1, service.GetUserCount());
+        }
+
+        [Fact]
+        public void CreateUser_DuplicateEmail_ThrowsException()
+        {
+            // Arrange
+            var service = new UserService();
+            service.CreateUser("Alice", "alice@example.com");
+
+            // Act & Assert
+            Assert.Throws<InvalidOperationException>(() =>
+                service.CreateUser("Bob", "alice@example.com")
+            );
+        }
+
+        [Fact]
+        public void CompleteUserWorkflow_Success()
+        {
+            // Arrange
+            var service = new UserService();
+
+            // Act & Assert - Step 1: Create users
+            User alice = service.CreateUser("Alice", "alice@example.com");
+            User bob = service.CreateUser("Bob", "bob@example.com");
+            Assert.Equal(2, service.GetUserCount());
+
+            // Step 2: Verify active users
+            List<User> activeUsers = service.GetActiveUsers();
+            Assert.Equal(2, activeUsers.Count);
+
+            // Step 3: Deactivate one user
+            bool deactivated = service.DeactivateUser(bob.Id);
+            Assert.True(deactivated);
+
+            // Step 4: Verify only one active user remains
+            activeUsers = service.GetActiveUsers();
+            Assert.Single(activeUsers);
+            Assert.Contains(activeUsers, u => u.Name == "Alice");
+
+            // Step 5: Verify deactivated user still exists
+            User deactivatedUser = service.GetUserById(bob.Id);
+            Assert.NotNull(deactivatedUser);
+            Assert.False(deactivatedUser.IsActive);
+        }
+    }
+
+    class Program
+    {
+        static void Main()
+        {
+            Console.WriteLine("Integration tests verify complete workflows!");
+        }
+    }
+}`}
+/>
+
+## Testing Complete Workflows
+
+<CodeEditor
+  initialCode={`using System;
+using System.Collections.Generic;
+using System.Linq;
+using Xunit;
+
+public class Order
+{
+    public int Id { get; set; }
+    public string CustomerName { get; set; }
+    public List<OrderItem> Items { get; set; } = new List<OrderItem>();
+    public string Status { get; set; } = "Pending";
+    public decimal Total { get; set; }
+}
+
+public class OrderItem
+{
+    public string ProductName { get; set; }
+    public decimal Price { get; set; }
+    public int Quantity { get; set; }
+}
+
+public class OrderService
+{
+    private List<Order> orders = new List<Order>();
+    private int nextId = 1;
+
+    public Order CreateOrder(string customerName)
+    {
+        var order = new Order
+        {
+            Id = nextId++,
+            CustomerName = customerName,
+            Status = "Pending"
+        };
+        orders.Add(order);
+        return order;
+    }
+
+    public void AddItem(int orderId, string productName, decimal price, int quantity)
+    {
+        var order = orders.FirstOrDefault(o => o.Id == orderId);
+        if (order == null)
+            throw new InvalidOperationException("Order not found");
+
+        if (order.Status != "Pending")
+            throw new InvalidOperationException("Cannot modify submitted order");
+
+        order.Items.Add(new OrderItem
+        {
+            ProductName = productName,
+            Price = price,
+            Quantity = quantity
+        });
+    }
+
+    public void SubmitOrder(int orderId)
+    {
+        var order = orders.FirstOrDefault(o => o.Id == orderId);
+        if (order == null)
+            throw new InvalidOperationException("Order not found");
+
+        if (!order.Items.Any())
+            throw new InvalidOperationException("Order must have at least one item");
+
+        order.Total = order.Items.Sum(i => i.Price * i.Quantity);
+        order.Status = "Submitted";
+    }
+
+    public Order GetOrder(int orderId)
+    {
+        return orders.FirstOrDefault(o => o.Id == orderId);
+    }
+}
+
+public class OrderWorkflowTests
+{
+    [Fact]
+    public void CompleteOrderWorkflow_Success()
+    {
+        // Arrange
+        var service = new OrderService();
+
+        // Act & Assert
+        // Step 1: Create order
+        Order order = service.CreateOrder("Alice");
+        Assert.NotNull(order);
+        Assert.Equal("Pending", order.Status);
+        Assert.Empty(order.Items);
+
+        // Step 2: Add items
+        service.AddItem(order.Id, "Laptop", 999.99m, 1);
+        service.AddItem(order.Id, "Mouse", 29.99m, 2);
+
+        Order updated = service.GetOrder(order.Id);
+        Assert.Equal(2, updated.Items.Count);
+
+        // Step 3: Submit order
+        service.SubmitOrder(order.Id);
+
+        Order submitted = service.GetOrder(order.Id);
+        Assert.Equal("Submitted", submitted.Status);
+        Assert.Equal(1059.97m, submitted.Total);
+
+        // Step 4: Verify cannot add items after submission
+        Assert.Throws<InvalidOperationException>(() =>
+            service.AddItem(order.Id, "Keyboard", 79.99m, 1)
+        );
+    }
+
+    [Fact]
+    public void SubmitOrder_EmptyOrder_ThrowsException()
+    {
+        // Arrange
+        var service = new OrderService();
+        Order order = service.CreateOrder("Bob");
+
+        // Act & Assert
+        Assert.Throws<InvalidOperationException>(() =>
+            service.SubmitOrder(order.Id)
+        );
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        Console.WriteLine("Workflow tests ensure business logic works end-to-end!");
+    }
+}`}
+/>
+
+## Best Practice: Test Independence
+
+❌ **Bad - Tests depend on each other:**
+```csharp
+private static User testUser;
+
+[Fact]
+public void Test1_CreateUser()
+{
+    testUser = service.CreateUser("Alice", "email");
+}
+
+[Fact]
+public void Test2_UpdateUser()
+{
+    service.UpdateUser(testUser); // Depends on Test1!
+}
+```
+
+✅ **Good - Each test is independent:**
+```csharp
+[Fact]
+public void CreateUser_ValidData_ReturnsUser()
+{
+    var service = new UserService();
+    User user = service.CreateUser("Alice", "email");
+    Assert.NotNull(user);
+}
+
+[Fact]
+public void UpdateUser_ValidUser_UpdatesSuccessfully()
+{
+    var service = new UserService();
+    User user = service.CreateUser("Alice", "email"); // Fresh setup
+    service.UpdateUser(user);
+    Assert.True(true);
+}
+```
+
+## Best Practice: Clear Test Names
+
+❌ **Bad naming:**
+```csharp
+[Fact]
+public void Test1() { }
+
+[Fact]
+public void TestAdd() { }
+
+[Fact]
+public void UserTest() { }
+```
+
+✅ **Good naming:**
+```csharp
+[Fact]
+public void Add_TwoPositiveNumbers_ReturnsSum() { }
+
+[Fact]
+public void CreateUser_DuplicateEmail_ThrowsException() { }
+
+[Fact]
+public void GetActiveUsers_AllInactive_ReturnsEmptyList() { }
+```
+
+## Best Practice: One Assert Per Concept
+
+❌ **Bad - Testing too many things:**
+```csharp
+[Fact]
+public void Calculator_AllMethods_Work()
+{
+    var calc = new Calculator();
+    Assert.Equal(8, calc.Add(5, 3));
+    Assert.Equal(2, calc.Subtract(5, 3));
+    Assert.Equal(15, calc.Multiply(5, 3));
+    Assert.Equal(1.66, calc.Divide(5, 3), 2);
+}
+```
+
+✅ **Good - One concept per test:**
+```csharp
+[Fact]
+public void Add_TwoNumbers_ReturnsSum()
+{
+    var calc = new Calculator();
+    Assert.Equal(8, calc.Add(5, 3));
+}
+
+[Fact]
+public void Subtract_TwoNumbers_ReturnsDifference()
+{
+    var calc = new Calculator();
+    Assert.Equal(2, calc.Subtract(5, 3));
+}
+```
+
+## Common Testing Pitfalls
+
+### Pitfall 1: Testing Implementation Instead of Behavior
+
+<CodeEditor
+  initialCode={`using System;
+using Xunit;
+
+public class UserRepository
+{
+    private int callCount = 0;
+
+    public string GetUserName(int id)
+    {
+        callCount++;
+        return "Alice";
+    }
+
+    public int GetCallCount() => callCount;
+}
+
+// ❌ Bad - Testing implementation details
+public class BadTests
+{
+    [Fact]
+    public void GetUserName_IncreasesCallCount()
+    {
+        var repo = new UserRepository();
+        repo.GetUserName(1);
+        Assert.Equal(1, repo.GetCallCount()); // Testing internal state!
+    }
+}
+
+// ✅ Good - Testing behavior
+public class GoodTests
+{
+    [Fact]
+    public void GetUserName_ValidId_ReturnsUserName()
+    {
+        var repo = new UserRepository();
+        string result = repo.GetUserName(1);
+        Assert.Equal("Alice", result); // Testing output!
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        Console.WriteLine("Test behavior, not implementation!");
+    }
+}`}
+/>
+
+### Pitfall 2: Tests That Are Too Brittle
+
+<CodeEditor
+  initialCode={`using System;
+using System.Collections.Generic;
+using Xunit;
+
+public class ReportGenerator
+{
+    public string GenerateReport(List<string> items)
+    {
+        return $"Report\\nTotal Items: {items.Count}\\nItems: {string.Join(", ", items)}";
+    }
+}
+
+// ❌ Bad - Brittle test (breaks if format changes)
+public class BrittleTest
+{
+    [Fact]
+    public void GenerateReport_Items_ReturnsExactFormat()
+    {
+        var generator = new ReportGenerator();
+        var items = new List<string> { "A", "B", "C" };
+
+        string result = generator.GenerateReport(items);
+
+        // Will break if we add a space or change format
+        Assert.Equal("Report\\nTotal Items: 3\\nItems: A, B, C", result);
+    }
+}
+
+// ✅ Good - Flexible test (checks essentials only)
+public class FlexibleTest
+{
+    [Fact]
+    public void GenerateReport_Items_ContainsAllItems()
+    {
+        var generator = new ReportGenerator();
+        var items = new List<string> { "A", "B", "C" };
+
+        string result = generator.GenerateReport(items);
+
+        // Check important parts, not exact format
+        Assert.Contains("3", result);
+        Assert.Contains("A", result);
+        Assert.Contains("B", result);
+        Assert.Contains("C", result);
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        Console.WriteLine("Make tests robust, not fragile!");
+    }
+}`}
+/>
+
+## Testing Best Practices Summary
+
+### ✅ DO:
+- Write tests before or immediately after writing code
+- Keep tests simple and readable
+- Test one thing per test
+- Use descriptive test names
+- Test edge cases (null, empty, zero, negative)
+- Make tests independent
+- Use Arrange-Act-Assert pattern
+- Run tests frequently
+
+### ❌ DON'T:
+- Test private methods directly (test public interface)
+- Have tests depend on each other
+- Test implementation details
+- Write tests that are too complex
+- Ignore failing tests
+- Skip edge cases
+- Copy-paste test code without understanding
+
+## Real-World Testing Checklist
+
+When writing tests for a new feature:
+
+```csharp
+// 1. Happy path - normal usage
+[Fact]
+public void Feature_NormalInput_WorksCorrectly() { }
+
+// 2. Edge cases
+[Theory]
+[InlineData(null)]
+[InlineData("")]
+[InlineData("   ")]
+public void Feature_EdgeCases_HandlesGracefully(string input) { }
+
+// 3. Error conditions
+[Fact]
+public void Feature_InvalidInput_ThrowsException() { }
+
+// 4. Boundary conditions
+[Theory]
+[InlineData(0)]
+[InlineData(1)]
+[InlineData(int.MaxValue)]
+public void Feature_BoundaryValues_WorksCorrectly(int value) { }
+
+// 5. Integration scenario
+[Fact]
+public void Feature_CompleteWorkflow_Success() { }
+```
+
+## Key Takeaways
+
+- ✅ Integration tests verify components work together
+- ✅ Test complete workflows, not just isolated methods
+- ✅ Keep tests independent and isolated
+- ✅ Use clear, descriptive test names
+- ✅ Test behavior, not implementation details
+- ✅ Make tests robust, not brittle
+- ✅ Follow Arrange-Act-Assert pattern consistently
+- ✅ Run tests frequently during development
+
+## Final Practice Exercise
+
+Create a `LibrarySystem` with:
+- `Book` class (Title, Author, ISBN, IsAvailable)
+- `LibraryService` class with methods:
+  - AddBook
+  - CheckoutBook
+  - ReturnBook
+  - SearchByAuthor
+  - GetAvailableBooks
+
+Write comprehensive tests covering:
+1. Adding books
+2. Checking out books
+3. Returning books
+4. Complete borrow/return workflow
+5. Edge cases (null values, non-existent books)
+6. Business rules (can't checkout unavailable books)
+
+Aim for at least 15 tests!
+
+## Congratulations! 🎉
+
+You've completed the Testing & Test Automation course! You now know:
+
+✅ What automated testing is and why it's important
+✅ How to set up a C# testing environment
+✅ Writing unit tests with Arrange-Act-Assert
+✅ Using `[Fact]` and `[Theory]` attributes
+✅ Common assertions and testing patterns
+✅ Integration testing for complete workflows
+✅ Industry best practices
+✅ Common pitfalls to avoid
+
+## Next Steps
+
+1. **Practice Daily**: Write tests for 30 minutes each day
+2. **Test Real Projects**: Apply testing to actual work
+3. **Learn Advanced Topics**:
+   - Mocking with Moq
+   - API testing with RestSharp
+   - UI testing with Selenium
+   - Test-Driven Development (TDD)
+4. **Join Communities**:
+   - Stack Overflow
+   - Reddit r/csharp
+   - C# Discord servers
+5. **Build Portfolio**:
+   - Create GitHub repo with test examples
+   - Contribute to open source projects
+   - Document your testing approach
+
+**You're now ready to become a professional C# test automation engineer!** 🚀
+
+Keep testing, keep learning, and happy coding!

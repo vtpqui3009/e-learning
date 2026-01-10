@@ -18,6 +18,37 @@ C# has two main categories of data types:
 - **Value Types**: Store the actual data (int, double, bool, struct, enum)
 - **Reference Types**: Store a reference to the data (string, class, interface, array)
 
+<MemoryDiagram
+  title="Value Types vs Reference Types in Memory"
+  stackItems={[
+    { name: "age", type: "value", value: "25" },
+    { name: "price", type: "value", value: "19.99" },
+    { name: "isActive", type: "value", value: "true" },
+    { name: "person", type: "reference", value: "0x1A2B", heapReference: "0x1A2B" },
+    { name: "names", type: "reference", value: "0x3C4D", heapReference: "0x3C4D" }
+  ]}
+  heapObjects={[
+    {
+      id: "0x1A2B",
+      type: "Person",
+      fields: [
+        { name: "Name", value: "\"John\"" },
+        { name: "Age", value: "30" },
+        { name: "Email", value: "\"john@example.com\"" }
+      ]
+    },
+    {
+      id: "0x3C4D",
+      type: "string[]",
+      fields: [
+        { name: "[0]", value: "\"Alice\"" },
+        { name: "[1]", value: "\"Bob\"" },
+        { name: "[2]", value: "\"Charlie\"" }
+      ]
+    }
+  ]}
+/>
+
 ## Common Value Types
 
 ### Integer Types

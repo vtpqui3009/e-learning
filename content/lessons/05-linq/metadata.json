@@ -4,5 +4,6 @@
   "description": "Query and manipulate data with LINQ",
   "order": 5,
   "icon": "🔍",
-  "color": "#f59e0b"
+  "color": "#f59e0b",
+  "lessonCount": 2
 }

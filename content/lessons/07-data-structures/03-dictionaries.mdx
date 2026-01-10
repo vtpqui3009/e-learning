@@ -1,0 +1,558 @@
+---
+title: "Dictionaries in C#"
+description: "Store and retrieve data using key-value pairs with Dictionary<K,V>"
+order: 3
+difficulty: "beginner"
+estimatedTime: "25 minutes"
+keywords: ["dictionary", "key-value", "hashtable", "lookup", "mapping"]
+prerequisites: ["07-data-structures/02-collections"]
+---
+
+# Dictionaries in C#
+
+A Dictionary is a collection that stores data as key-value pairs. It provides extremely fast lookups by key, making it ideal for scenarios where you need to retrieve data based on a unique identifier.
+
+## What is a Dictionary?
+
+Think of a dictionary like a phone book:
+- **Key**: Person's name (must be unique)
+- **Value**: Phone number (the data you want to retrieve)
+
+Key characteristics:
+- Each key must be **unique**
+- Keys and values can be **any type**
+- **O(1) lookup time** - instant access by key
+- **Unordered** - don't rely on insertion order
+
+## Creating and Using Dictionaries
+
+<CodeEditor 
+  initialCode={`using System;
+using System.Collections.Generic;
+
+class Program
+{
+    static void Main()
+    {
+        // Create a dictionary
+        Dictionary<string, int> ages = new Dictionary<string, int>();
+        
+        // Add key-value pairs
+        ages.Add("Alice", 25);
+        ages.Add("Bob", 30);
+        ages.Add("Charlie", 28);
+        
+        // Alternative: indexer syntax
+        ages["Diana"] = 22;
+        ages["Eve"] = 35;
+        
+        // Access by key
+        Console.WriteLine($"Alice's age: {ages["Alice"]}");
+        Console.WriteLine($"Bob's age: {ages["Bob"]}");
+        
+        // Initialize with values
+        Dictionary<string, string> capitals = new Dictionary<string, string>
+        {
+            { "France", "Paris" },
+            { "Japan", "Tokyo" },
+            { "USA", "Washington D.C." },
+            { "Germany", "Berlin" }
+        };
+        
+        Console.WriteLine($"\\nCapital of Japan: {capitals["Japan"]}");
+        Console.WriteLine($"Total countries: {capitals.Count}");
+    }
+}`}
+/>
+
+## Safe Access with TryGetValue
+
+Accessing a non-existent key throws an exception. Use `TryGetValue` or `ContainsKey` to check first:
+
+<CodeEditor 
+  initialCode={`using System;
+using System.Collections.Generic;
+
+class Program
+{
+    static void Main()
+    {
+        Dictionary<string, int> scores = new Dictionary<string, int>
+        {
+            { "Alice", 95 },
+            { "Bob", 87 },
+            { "Charlie", 92 }
+        };
+        
+        // Dangerous - throws KeyNotFoundException if key doesn't exist
+        // Console.WriteLine(scores["Diana"]); // Would throw!
+        
+        // Safe approach 1: ContainsKey
+        string player = "Diana";
+        if (scores.ContainsKey(player))
+        {
+            Console.WriteLine($"{player}'s score: {scores[player]}");
+        }
+        else
+        {
+            Console.WriteLine($"{player} not found");
+        }
+        
+        // Safe approach 2: TryGetValue (preferred)
+        if (scores.TryGetValue("Alice", out int aliceScore))
+        {
+            Console.WriteLine($"Alice's score: {aliceScore}");
+        }
+        
+        if (scores.TryGetValue("Eve", out int eveScore))
+        {
+            Console.WriteLine($"Eve's score: {eveScore}");
+        }
+        else
+        {
+            Console.WriteLine("Eve not found in scores");
+        }
+        
+        // C# 8+ pattern
+        string name = "Bob";
+        var message = scores.TryGetValue(name, out var score)
+            ? $"{name} scored {score}"
+            : $"{name} has no score";
+        Console.WriteLine(message);
+    }
+}`}
+/>
+
+## Dictionary Operations
+
+<CodeEditor 
+  initialCode={`using System;
+using System.Collections.Generic;
+
+class Program
+{
+    static void Main()
+    {
+        Dictionary<string, double> products = new Dictionary<string, double>
+        {
+            { "Apple", 1.50 },
+            { "Banana", 0.75 },
+            { "Orange", 2.00 }
+        };
+        
+        Console.WriteLine("Products:");
+        foreach (var item in products)
+        {
+            Console.WriteLine($"  {item.Key}: ${'{'}item.Value:F2{'}'}");
+        }
+        
+        // Update a value
+        products["Apple"] = 1.75;
+        Console.WriteLine($"\nApple new price: ${'{'}products["Apple"]:F2{'}'}");
+        
+        // Add or update (using indexer)
+        products["Grape"] = 3.00;  // Adds new
+        products["Banana"] = 0.80; // Updates existing
+        
+        // Remove by key
+        bool removed = products.Remove("Orange");
+        Console.WriteLine($"\\nOrange removed: {removed}");
+        
+        // Check count
+        Console.WriteLine($"Products count: {products.Count}");
+        
+        // Get all keys
+        Console.WriteLine("\\nAll products:");
+        foreach (string key in products.Keys)
+        {
+            Console.WriteLine($"  - {key}");
+        }
+        
+        // Get all values
+        Console.WriteLine("\\nAll prices:");
+        foreach (double value in products.Values)
+        {
+            Console.WriteLine($"  ${'{'}value:F2{'}'}");
+        }
+        
+        // Clear all
+        products.Clear();
+        Console.WriteLine($"\\nAfter Clear, count: {products.Count}");
+    }
+}`}
+/>
+
+## Iterating Over Dictionaries
+
+<CodeEditor 
+  initialCode={`using System;
+using System.Collections.Generic;
+
+class Program
+{
+    static void Main()
+    {
+        Dictionary<string, int> inventory = new Dictionary<string, int>
+        {
+            { "Apples", 50 },
+            { "Oranges", 30 },
+            { "Bananas", 45 },
+            { "Grapes", 25 }
+        };
+        
+        // Method 1: foreach with KeyValuePair
+        Console.WriteLine("Using KeyValuePair:");
+        foreach (KeyValuePair<string, int> item in inventory)
+        {
+            Console.WriteLine($"  {item.Key}: {item.Value} units");
+        }
+        
+        // Method 2: foreach with var (cleaner)
+        Console.WriteLine("\\nUsing var:");
+        foreach (var item in inventory)
+        {
+            Console.WriteLine($"  {item.Key}: {item.Value} units");
+        }
+        
+        // Method 3: Deconstruction (C# 7+)
+        Console.WriteLine("\\nUsing deconstruction:");
+        foreach (var (fruit, quantity) in inventory)
+        {
+            Console.WriteLine($"  {fruit}: {quantity} units");
+        }
+        
+        // Iterate keys only
+        Console.WriteLine("\\nKeys only:");
+        foreach (string fruit in inventory.Keys)
+        {
+            Console.WriteLine($"  - {fruit}");
+        }
+        
+        // Iterate values only
+        Console.WriteLine("\\nValues only:");
+        int total = 0;
+        foreach (int qty in inventory.Values)
+        {
+            total += qty;
+        }
+        Console.WriteLine($"  Total inventory: {total} units");
+    }
+}`}
+/>
+
+## Dictionary with Complex Values
+
+<CodeEditor 
+  initialCode={`using System;
+using System.Collections.Generic;
+
+class Student
+{
+    public string Name { get; set; }
+    public int Grade { get; set; }
+    public string Email { get; set; }
+    
+    public Student(string name, int grade, string email)
+    {
+        Name = name;
+        Grade = grade;
+        Email = email;
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        // Dictionary with object values
+        Dictionary<int, Student> students = new Dictionary<int, Student>
+        {
+            { 1001, new Student("Alice", 95, "alice@school.edu") },
+            { 1002, new Student("Bob", 87, "bob@school.edu") },
+            { 1003, new Student("Charlie", 92, "charlie@school.edu") }
+        };
+        
+        // Access student by ID
+        int studentId = 1002;
+        if (students.TryGetValue(studentId, out Student student))
+        {
+            Console.WriteLine($"Student {studentId}:");
+            Console.WriteLine($"  Name: {student.Name}");
+            Console.WriteLine($"  Grade: {student.Grade}");
+            Console.WriteLine($"  Email: {student.Email}");
+        }
+        
+        // Find students with high grades
+        Console.WriteLine("\\nHonor Roll (Grade >= 90):");
+        foreach (var (id, s) in students)
+        {
+            if (s.Grade >= 90)
+            {
+                Console.WriteLine($"  {id}: {s.Name} ({s.Grade})");
+            }
+        }
+        
+        // Dictionary of lists
+        Dictionary<string, List<string>> groups = new Dictionary<string, List<string>>
+        {
+            { "Team A", new List<string> { "Alice", "Bob" } },
+            { "Team B", new List<string> { "Charlie", "Diana", "Eve" } }
+        };
+        
+        Console.WriteLine("\\nTeams:");
+        foreach (var (team, members) in groups)
+        {
+            Console.WriteLine($"  {team}: {string.Join(", ", members)}");
+        }
+    }
+}`}
+/>
+
+## Counting and Grouping
+
+<CodeEditor 
+  initialCode={`using System;
+using System.Collections.Generic;
+
+class Program
+{
+    static void Main()
+    {
+        // Count word frequency
+        string text = "the quick brown fox jumps over the lazy dog the fox";
+        string[] words = text.Split(' ');
+        
+        Dictionary<string, int> wordCount = new Dictionary<string, int>();
+        
+        foreach (string word in words)
+        {
+            if (wordCount.ContainsKey(word))
+            {
+                wordCount[word]++;
+            }
+            else
+            {
+                wordCount[word] = 1;
+            }
+        }
+        
+        Console.WriteLine("Word frequencies:");
+        foreach (var (word, count) in wordCount)
+        {
+            Console.WriteLine($"  '{word}': {count}");
+        }
+        
+        // Shorter using TryGetValue
+        Dictionary<char, int> letterCount = new Dictionary<char, int>();
+        
+        foreach (char c in text.Replace(" ", ""))
+        {
+            letterCount.TryGetValue(c, out int count);
+            letterCount[c] = count + 1;
+        }
+        
+        Console.WriteLine("\\nTop 5 letters:");
+        var sorted = new List<KeyValuePair<char, int>>(letterCount);
+        sorted.Sort((a, b) => b.Value.CompareTo(a.Value));
+        
+        for (int i = 0; i < Math.Min(5, sorted.Count); i++)
+        {
+            Console.WriteLine($"  '{sorted[i].Key}': {sorted[i].Value}");
+        }
+    }
+}`}
+/>
+
+## SortedDictionary and SortedList
+
+When you need keys in sorted order:
+
+<CodeEditor 
+  initialCode={`using System;
+using System.Collections.Generic;
+
+class Program
+{
+    static void Main()
+    {
+        // Regular Dictionary - unordered
+        Dictionary<string, int> regular = new Dictionary<string, int>
+        {
+            { "Zebra", 1 },
+            { "Apple", 2 },
+            { "Mango", 3 }
+        };
+        
+        Console.WriteLine("Regular Dictionary (unordered):");
+        foreach (var item in regular)
+        {
+            Console.WriteLine($"  {item.Key}: {item.Value}");
+        }
+        
+        // SortedDictionary - keys always sorted
+        SortedDictionary<string, int> sorted = new SortedDictionary<string, int>
+        {
+            { "Zebra", 1 },
+            { "Apple", 2 },
+            { "Mango", 3 }
+        };
+        
+        Console.WriteLine("\\nSortedDictionary (sorted by key):");
+        foreach (var item in sorted)
+        {
+            Console.WriteLine($"  {item.Key}: {item.Value}");
+        }
+        
+        // Adding items maintains sort order
+        sorted.Add("Banana", 4);
+        sorted.Add("Cherry", 5);
+        
+        Console.WriteLine("\\nAfter adding more items:");
+        foreach (var item in sorted)
+        {
+            Console.WriteLine($"  {item.Key}: {item.Value}");
+        }
+        
+        // Numeric keys sorted
+        SortedDictionary<int, string> rankings = new SortedDictionary<int, string>
+        {
+            { 3, "Bronze" },
+            { 1, "Gold" },
+            { 2, "Silver" }
+        };
+        
+        Console.WriteLine("\\nRankings (sorted by position):");
+        foreach (var (position, medal) in rankings)
+        {
+            Console.WriteLine($"  {position}: {medal}");
+        }
+    }
+}`}
+/>
+
+## Practical Example: Phone Book Application
+
+<CodeEditor 
+  initialCode={`using System;
+using System.Collections.Generic;
+
+class Contact
+{
+    public string Phone { get; set; }
+    public string Email { get; set; }
+}
+
+class Program
+{
+    static Dictionary<string, Contact> phoneBook = new Dictionary<string, Contact>(
+        StringComparer.OrdinalIgnoreCase  // Case-insensitive keys
+    );
+    
+    static void Main()
+    {
+        // Add contacts
+        AddContact("Alice Smith", "555-1234", "alice@email.com");
+        AddContact("Bob Johnson", "555-5678", "bob@email.com");
+        AddContact("Charlie Brown", "555-9012", "charlie@email.com");
+        
+        Console.WriteLine("=== Phone Book ===\\n");
+        
+        // List all contacts
+        ListContacts();
+        
+        // Search (case-insensitive)
+        Console.WriteLine("\\nSearching for 'alice smith':");
+        SearchContact("alice smith");
+        
+        // Update a contact
+        Console.WriteLine("\\nUpdating Bob's phone...");
+        UpdatePhone("Bob Johnson", "555-0000");
+        SearchContact("Bob Johnson");
+        
+        // Delete a contact
+        Console.WriteLine("\\nDeleting Charlie...");
+        DeleteContact("Charlie Brown");
+        
+        Console.WriteLine("\\nRemaining contacts:");
+        ListContacts();
+    }
+    
+    static void AddContact(string name, string phone, string email)
+    {
+        if (phoneBook.ContainsKey(name))
+        {
+            Console.WriteLine($"Contact '{name}' already exists!");
+            return;
+        }
+        
+        phoneBook[name] = new Contact { Phone = phone, Email = email };
+        Console.WriteLine($"Added: {name}");
+    }
+    
+    static void SearchContact(string name)
+    {
+        if (phoneBook.TryGetValue(name, out Contact contact))
+        {
+            Console.WriteLine($"  Name: {name}");
+            Console.WriteLine($"  Phone: {contact.Phone}");
+            Console.WriteLine($"  Email: {contact.Email}");
+        }
+        else
+        {
+            Console.WriteLine($"  Contact '{name}' not found");
+        }
+    }
+    
+    static void UpdatePhone(string name, string newPhone)
+    {
+        if (phoneBook.TryGetValue(name, out Contact contact))
+        {
+            contact.Phone = newPhone;
+        }
+    }
+    
+    static void DeleteContact(string name)
+    {
+        if (phoneBook.Remove(name))
+        {
+            Console.WriteLine($"Deleted: {name}");
+        }
+    }
+    
+    static void ListContacts()
+    {
+        foreach (var (name, contact) in phoneBook)
+        {
+            Console.WriteLine($"  {name}: {contact.Phone}");
+        }
+    }
+}`}
+/>
+
+## Dictionary vs Other Collections
+
+| Feature | Dictionary | List | HashSet |
+|---------|------------|------|---------|
+| Access by | Key | Index | N/A |
+| Lookup speed | O(1) | O(n) | O(1) |
+| Duplicates | No (keys) | Yes | No |
+| Use case | Key-value mapping | Ordered collection | Unique values |
+
+## Key Takeaways
+
+- Dictionary stores **key-value pairs** with unique keys
+- Use `TryGetValue` or `ContainsKey` to **safely access** values
+- **O(1) performance** for add, remove, and lookup operations
+- Use **deconstruction** `(key, value)` for cleaner iteration
+- `SortedDictionary` maintains keys in **sorted order**
+- Keys must implement `GetHashCode` and `Equals` (built-in types do)
+
+## Best Practices
+
+1. **Use TryGetValue** instead of checking ContainsKey then accessing
+2. **Choose appropriate key type** - strings, ints, enums work well
+3. **Consider case-sensitivity** - use `StringComparer.OrdinalIgnoreCase` when needed
+4. **Initialize with capacity** if you know the size: `new Dictionary<K,V>(1000)`
+5. **Use SortedDictionary** only when you need sorted iteration
+
+In the next module, we'll learn about error handling with exceptions!

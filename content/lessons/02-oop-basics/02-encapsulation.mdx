@@ -33,8 +33,7 @@ C# provides several access modifiers to control visibility:
 The most common encapsulation pattern uses private fields with public methods:
 
 <CodeEditor 
-  language="csharp"
-  code={`using System;
+  initialCode={`using System;
 
 class BankAccount
 {
@@ -64,7 +63,7 @@ class BankAccount
         }
         
         balance += amount;
-        Console.WriteLine($"Deposited \${amount}. New balance: \${balance}");
+        Console.WriteLine($"Deposited ${'{'}amount{'}'}. New balance: ${'{'}balance{'}'}");
         return true;
     }
     
@@ -83,7 +82,7 @@ class BankAccount
         }
         
         balance -= amount;
-        Console.WriteLine($"Withdrew \${amount}. New balance: \${balance}");
+        Console.WriteLine($"Withdrew ${'{'}amount{'}'}. New balance: ${'{'}balance{'}'}");
         return true;
     }
 }
@@ -93,8 +92,8 @@ class Program
     static void Main()
     {
         BankAccount account = new BankAccount("123456", 1000);
-        
-        Console.WriteLine($"Initial balance: \${account.GetBalance()}");
+
+        Console.WriteLine($"Initial balance: ${'{'}account.GetBalance(){'}'}");
         
         account.Deposit(500);
         account.Withdraw(200);
@@ -104,7 +103,6 @@ class Program
         // account.balance = 1000000; // Can't access private field!
     }
 }`}
-  title="Bank Account with Encapsulation"
 />
 
 ## Benefits of Encapsulation
@@ -114,8 +112,7 @@ class Program
 You can validate data before accepting it:
 
 <CodeEditor 
-  language="csharp"
-  code={`using System;
+  initialCode={`using System;
 
 class Person
 {
@@ -151,7 +148,6 @@ class Program
         Console.WriteLine($"Current age: {person.GetAge()}");
     }
 }`}
-  title="Data Validation Example"
 />
 
 ### 2. Internal Implementation Changes
@@ -159,8 +155,7 @@ class Program
 You can change how data is stored internally without affecting external code:
 
 <CodeEditor 
-  language="csharp"
-  code={`using System;
+  initialCode={`using System;
 
 class Temperature
 {
@@ -205,7 +200,6 @@ class Program
         Console.WriteLine($"Temperature: {temp.GetFahrenheit():F1}°F");
     }
 }`}
-  title="Internal Implementation Flexibility"
 />
 
 ### 3. Read-Only Access
@@ -213,8 +207,7 @@ class Program
 You can provide read-only access by only exposing a getter:
 
 <CodeEditor 
-  language="csharp"
-  code={`using System;
+  initialCode={`using System;
 
 class Product
 {
@@ -275,7 +268,6 @@ class Program
         // Cannot change ID or creation date - no setters provided!
     }
 }`}
-  title="Read-Only Fields"
 />
 
 ## Encapsulation with Properties (Preview)
@@ -283,8 +275,7 @@ class Program
 While we'll cover properties in detail in the next lesson, here's a quick preview of how C# provides a cleaner syntax for encapsulation:
 
 <CodeEditor 
-  language="csharp"
-  code={`using System;
+  initialCode={`using System;
 
 class Employee
 {
@@ -333,7 +324,6 @@ class Program
         // emp.EmployeeId = 102; // Compile error!
     }
 }`}
-  title="Properties for Encapsulation"
 />
 
 ## Best Practices
@@ -345,8 +335,7 @@ class Program
 5. **Use meaningful names** - Method names should clearly indicate what they do
 
 <CodeEditor 
-  language="csharp"
-  code={`using System;
+  initialCode={`using System;
 using System.Collections.Generic;
 
 class ShoppingCart
@@ -377,7 +366,7 @@ class ShoppingCart
         
         items.Add(item);
         total += price;
-        Console.WriteLine($"Added {item} - \${price}");
+        Console.WriteLine($"Added {item} - ${'{'}price{'}'}");
     }
     
     // Return copy of items to prevent external modification
@@ -408,7 +397,7 @@ class Program
         cart.AddItem("Notebook", 5.99m);
         
         Console.WriteLine($"\\nTotal items: {cart.GetItemCount()}");
-        Console.WriteLine($"Total cost: \${cart.GetTotal()}");
+        Console.WriteLine($"Total cost: ${'{'}cart.GetTotal(){'}'}");
         
         Console.WriteLine("\\nItems in cart:");
         foreach (var item in cart.GetItems())
@@ -417,7 +406,6 @@ class Program
         }
     }
 }`}
-  title="Complete Encapsulation Example"
 />
 
 ## Key Takeaways

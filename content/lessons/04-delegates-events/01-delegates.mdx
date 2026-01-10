@@ -1,494 +1,487 @@
 ---
-title: "Delegates in C#"
-description: "Master delegates, multicast delegates, and built-in delegate types"
+title: "Delegates"
+description: "Learn how to use delegates for type-safe function references"
 order: 1
-difficulty: "intermediate"
-estimatedTime: "30 minutes"
-keywords: ["delegate", "multicast", "Action", "Func", "Predicate", "callback"]
-prerequisites: ["02-oop-basics/01-classes-objects"]
+difficulty: "advanced"
+tags: ["delegates", "callbacks", "function pointers"]
+duration: "30 minutes"
 ---
 
 # Delegates in C#
 
-Delegates are type-safe function pointers that allow you to pass methods as parameters. They form the foundation for events and many functional programming patterns in C#.
+Delegates are type-safe function pointers that allow you to treat methods as objects. They're fundamental to events, callbacks, and functional programming in C#.
 
-## What are Delegates?
+## What is a Delegate?
 
-A **delegate** is a type that represents references to methods with a particular parameter list and return type. Think of delegates as variables that hold methods instead of values.
+A delegate is a type that represents a reference to a method. It defines the signature (return type and parameters) that methods must match.
 
-Delegates enable:
-- **Callback methods** - Pass methods to other methods
-- **Event handling** - Foundation for the event system
-- **Flexible, extensible code** - Change behavior at runtime
-
-## Basic Delegate Declaration and Usage
+## Basic Delegate Syntax
 
 <CodeEditor 
-  language="csharp"
-  code={`using System;
+  initialCode={`using System;
 
 // Declare a delegate type
-public delegate void MessageDelegate(string message);
+delegate void MessageHandler(string message);
 
 class Program
 {
+    // Methods that match the delegate signature
+    static void PrintToConsole(string message)
+    {
+        Console.WriteLine($"Console: {message}");
+    }
+    
+    static void PrintToUpper(string message)
+    {
+        Console.WriteLine($"UPPER: {message.ToUpper()}");
+    }
+    
+    static void PrintWithTimestamp(string message)
+    {
+        Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] {message}");
+    }
+    
     static void Main()
     {
-        // Create delegate instance pointing to a method
-        MessageDelegate del = PrintMessage;
+        // Create delegate instances
+        MessageHandler handler1 = PrintToConsole;
+        MessageHandler handler2 = PrintToUpper;
+        MessageHandler handler3 = PrintWithTimestamp;
         
-        // Invoke the delegate
-        del("Hello from delegate!");
-        
-        // Point to a different method
-        del = PrintUpperCase;
-        del("Hello again!");
-        
-        // You can also use Invoke() method
-        del.Invoke("Using Invoke method");
-    }
-    
-    static void PrintMessage(string message)
-    {
-        Console.WriteLine($"Message: {message}");
-    }
-    
-    static void PrintUpperCase(string message)
-    {
-        Console.WriteLine($"UPPERCASE: {message.ToUpper()}");
+        // Invoke delegates
+        handler1("Hello World");
+        handler2("Hello World");
+        handler3("Hello World");
     }
 }`}
-  title="Basic Delegate Usage"
 />
 
-## Delegates as Parameters
-
-Delegates are powerful when passed as parameters, enabling callback patterns.
+## Delegates with Return Values
 
 <CodeEditor 
-  language="csharp"
-  code={`using System;
+  initialCode={`using System;
 
-public delegate int MathOperation(int a, int b);
-
-class Calculator
-{
-    public static void PerformOperation(int x, int y, MathOperation operation)
-    {
-        int result = operation(x, y);
-        Console.WriteLine($"Result: {result}");
-    }
-    
-    public static int Add(int a, int b)
-    {
-        Console.Write($"{a} + {b} = ");
-        return a + b;
-    }
-    
-    public static int Subtract(int a, int b)
-    {
-        Console.Write($"{a} - {b} = ");
-        return a - b;
-    }
-    
-    public static int Multiply(int a, int b)
-    {
-        Console.Write($"{a} × {b} = ");
-        return a * b;
-    }
-    
-    public static int Divide(int a, int b)
-    {
-        Console.Write($"{a} ÷ {b} = ");
-        return b != 0 ? a / b : 0;
-    }
-}
+// Delegate that returns a value
+delegate int MathOperation(int a, int b);
 
 class Program
 {
+    static int Add(int a, int b) => a + b;
+    static int Subtract(int a, int b) => a - b;
+    static int Multiply(int a, int b) => a * b;
+    static int Divide(int a, int b) => b != 0 ? a / b : 0;
+    
     static void Main()
     {
-        Console.WriteLine("=== Calculator with Delegates ===\n");
+        // Create delegate instances
+        MathOperation add = Add;
+        MathOperation subtract = Subtract;
+        MathOperation multiply = Multiply;
+        MathOperation divide = Divide;
         
-        Calculator.PerformOperation(10, 5, Calculator.Add);
-        Calculator.PerformOperation(10, 5, Calculator.Subtract);
-        Calculator.PerformOperation(10, 5, Calculator.Multiply);
-        Calculator.PerformOperation(10, 5, Calculator.Divide);
+        int x = 20, y = 5;
+        
+        Console.WriteLine($"Operations on {x} and {y}:");
+        Console.WriteLine($"Add: {add(x, y)}");
+        Console.WriteLine($"Subtract: {subtract(x, y)}");
+        Console.WriteLine($"Multiply: {multiply(x, y)}");
+        Console.WriteLine($"Divide: {divide(x, y)}");
+        
+        // Store delegates in array
+        MathOperation[] operations = { add, subtract, multiply, divide };
+        string[] names = { "Add", "Sub", "Mul", "Div" };
+        
+        Console.WriteLine("\\nAll operations:");
+        for (int i = 0; i < operations.Length; i++)
+        {
+            Console.WriteLine($"  {names[i]}: {operations[i](10, 3)}");
+        }
     }
 }`}
-  title="Delegates as Callback Parameters"
 />
 
 ## Multicast Delegates
 
-A multicast delegate can hold references to multiple methods and invoke them sequentially.
+Delegates can reference multiple methods:
 
 <CodeEditor 
-  language="csharp"
-  code={`using System;
+  initialCode={`using System;
 
-public delegate void NotificationHandler(string message);
-
-class NotificationSystem
-{
-    public static void SendEmail(string message)
-    {
-        Console.WriteLine($"📧 Email sent: {message}");
-    }
-    
-    public static void SendSMS(string message)
-    {
-        Console.WriteLine($"📱 SMS sent: {message}");
-    }
-    
-    public static void SendPushNotification(string message)
-    {
-        Console.WriteLine($"🔔 Push notification sent: {message}");
-    }
-    
-    public static void LogNotification(string message)
-    {
-        Console.WriteLine($"📝 Logged: {message} at {DateTime.Now:HH:mm:ss}");
-    }
-}
+delegate void NotifyHandler(string message);
 
 class Program
 {
+    static void SendEmail(string message)
+    {
+        Console.WriteLine($"Email sent: {message}");
+    }
+    
+    static void SendSMS(string message)
+    {
+        Console.WriteLine($"SMS sent: {message}");
+    }
+    
+    static void LogToFile(string message)
+    {
+        Console.WriteLine($"Logged: {message}");
+    }
+    
+    static void ShowPopup(string message)
+    {
+        Console.WriteLine($"Popup: {message}");
+    }
+    
     static void Main()
     {
-        Console.WriteLine("=== Multicast Delegates ===\n");
+        // Create multicast delegate using +=
+        NotifyHandler notify = SendEmail;
+        notify += SendSMS;
+        notify += LogToFile;
+        notify += ShowPopup;
         
-        // Create multicast delegate
-        NotificationHandler notify = NotificationSystem.SendEmail;
-        notify += NotificationSystem.SendSMS;
-        notify += NotificationSystem.SendPushNotification;
-        notify += NotificationSystem.LogNotification;
+        Console.WriteLine("=== Notifying all handlers ===");
+        notify("Server is down!");
         
-        Console.WriteLine("Sending notification through all channels:");
-        notify("Your order has been shipped!");
+        // Remove a handler
+        Console.WriteLine("\\n=== After removing SMS ===");
+        notify -= SendSMS;
+        notify("Server recovered!");
         
-        Console.WriteLine("\n--- Removing SMS notification ---\n");
-        notify -= NotificationSystem.SendSMS;
-        
-        notify("Your package has been delivered!");
-        
-        Console.WriteLine("\n--- Checking if delegate is null ---");
-        NotificationHandler emptyDelegate = null;
-        
-        // Safe invocation with null check
-        if (emptyDelegate != null)
-        {
-            emptyDelegate("This won't execute");
-        }
-        else
-        {
-            Console.WriteLine("Delegate is null - no notifications sent");
-        }
-        
-        // C# 6+ null-conditional operator
-        emptyDelegate?.Invoke("This also won't execute");
+        // Check for null before invoking
+        Console.WriteLine("\\n=== Safe invocation ===");
+        notify?.Invoke("System update complete");
     }
 }`}
-  title="Multicast Delegates"
 />
 
-## Built-in Delegates: Action
+## Delegates as Parameters
 
-`Action` is a built-in delegate for methods that return void. No need to declare custom delegates! Use `Action<T>` for methods with parameters.
+Pass delegates to methods for callbacks:
 
 <CodeEditor 
-  language="csharp"
-  code={`using System;
+  initialCode={`using System;
 using System.Collections.Generic;
+
+delegate bool NumberFilter(int number);
 
 class Program
 {
-    static void Main()
+    // Method that accepts a delegate
+    static List<int> FilterNumbers(int[] numbers, NumberFilter filter)
     {
-        // Action - no parameters
-        Action greet = () => Console.WriteLine("Hello!");
-        greet();
-        
-        Console.WriteLine();
-        
-        // Action<T> - one parameter
-        Action<string> printMessage = message => Console.WriteLine($"Message: {message}");
-        printMessage("Using Action<T>");
-        
-        Console.WriteLine();
-        
-        // Action<T1, T2> - two parameters
-        Action<string, int> printNameAge = (name, age) => 
-            Console.WriteLine($"{name} is {age} years old");
-        printNameAge("Alice", 30);
-        
-        Console.WriteLine();
-        
-        // Action<T1, T2, T3> - three parameters (up to 16!)
-        Action<string, string, double> printOrder = (product, customer, price) =>
-            Console.WriteLine($"Order: {product} for {customer} - \${price:F2}");
-        printOrder("Laptop", "Bob", 1299.99);
-        
-        Console.WriteLine("\n=== Processing List with Action ===");
-        
-        List<string> names = new List<string> { "Alice", "Bob", "Charlie", "Diana" };
-        
-        // ForEach takes an Action<T>
-        names.ForEach(name => Console.WriteLine($"Hello, {name}!"));
-        
-        Console.WriteLine();
-        
-        // Custom processing method using Action
-        ProcessItems(names, item => Console.WriteLine($"Processing: {item}"));
-    }
-    
-    static void ProcessItems<T>(List<T> items, Action<T> action)
-    {
-        Console.WriteLine("Starting batch processing...");
-        foreach (var item in items)
+        List<int> result = new List<int>();
+        foreach (int n in numbers)
         {
-            action(item);
-        }
-        Console.WriteLine("Batch processing complete!");
-    }
-}`}
-  title="Action Delegate Examples"
-/>
-
-## Built-in Delegates: Func
-
-`Func` is a built-in delegate for methods that return a value. The last type parameter is always the return type.
-
-<CodeEditor 
-  language="csharp"
-  code={`using System;
-using System.Collections.Generic;
-using System.Linq;
-
-class Program
-{
-    static void Main()
-    {
-        // Func<TResult> - no parameters, returns TResult
-        Func<int> getRandomNumber = () => new Random().Next(1, 100);
-        Console.WriteLine($"Random number: {getRandomNumber()}");
-        
-        Console.WriteLine();
-        
-        // Func<T, TResult> - one parameter, returns TResult
-        Func<int, int> square = x => x * x;
-        Console.WriteLine($"Square of 5: {square(5)}");
-        
-        Console.WriteLine();
-        
-        // Func<T1, T2, TResult> - two parameters, returns TResult
-        Func<int, int, int> add = (a, b) => a + b;
-        Console.WriteLine($"10 + 20 = {add(10, 20)}");
-        
-        Console.WriteLine();
-        
-        // Func<T1, T2, T3, TResult> - three parameters, returns TResult
-        Func<string, int, double, string> formatOrder = 
-            (product, quantity, price) => 
-                $"Order: {quantity}x {product} = \${quantity * price:F2}";
-        
-        Console.WriteLine(formatOrder("Widget", 5, 19.99));
-        
-        Console.WriteLine("\n=== Using Func with Collections ===");
-        
-        List<int> numbers = new List<int> { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
-        
-        // Select takes a Func<T, TResult>
-        var squares = numbers.Select(n => n * n);
-        Console.WriteLine("Squares: " + string.Join(", ", squares));
-        
-        var doubled = ApplyTransform(numbers, x => x * 2);
-        Console.WriteLine("Doubled: " + string.Join(", ", doubled));
-        
-        var cubed = ApplyTransform(numbers, x => x * x * x);
-        Console.WriteLine("Cubed: " + string.Join(", ", cubed));
-        
-        Console.WriteLine("\n=== Advanced Func Usage ===");
-        
-        // Func that returns another Func (higher-order function)
-        Func<int, Func<int, int>> multiplier = x => y => x * y;
-        Func<int, int> multiplyBy5 = multiplier(5);
-        Console.WriteLine($"10 * 5 = {multiplyBy5(10)}");
-        
-        // Calculator using Func
-        var result = Calculate(10, 20, (a, b) => a + b);
-        Console.WriteLine($"\nCalculate(10, 20, add) = {result}");
-        
-        result = Calculate(10, 20, (a, b) => a * b);
-        Console.WriteLine($"Calculate(10, 20, multiply) = {result}");
-    }
-    
-    static List<T> ApplyTransform<T>(List<T> items, Func<T, T> transform)
-    {
-        List<T> result = new List<T>();
-        foreach (var item in items)
-        {
-            result.Add(transform(item));
+            if (filter(n))
+            {
+                result.Add(n);
+            }
         }
         return result;
     }
     
-    static int Calculate(int a, int b, Func<int, int, int> operation)
+    // Filter methods
+    static bool IsEven(int n) => n % 2 == 0;
+    static bool IsOdd(int n) => n % 2 != 0;
+    static bool IsPositive(int n) => n > 0;
+    static bool IsGreaterThan5(int n) => n > 5;
+    
+    static void Main()
     {
-        return operation(a, b);
+        int[] numbers = { -3, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+        
+        Console.WriteLine($"Original: {string.Join(", ", numbers)}");
+        
+        var evens = FilterNumbers(numbers, IsEven);
+        Console.WriteLine($"Even: {string.Join(", ", evens)}");
+        
+        var odds = FilterNumbers(numbers, IsOdd);
+        Console.WriteLine($"Odd: {string.Join(", ", odds)}");
+        
+        var positives = FilterNumbers(numbers, IsPositive);
+        Console.WriteLine($"Positive: {string.Join(", ", positives)}");
+        
+        var greaterThan5 = FilterNumbers(numbers, IsGreaterThan5);
+        Console.WriteLine($"Greater than 5: {string.Join(", ", greaterThan5)}");
     }
 }`}
-  title="Func Delegate Examples"
 />
 
-## Built-in Delegates: Predicate
+## Built-in Delegate Types
 
-`Predicate<T>` is a delegate that takes one parameter and returns `bool`. Used for testing conditions.
+C# provides generic delegates: `Action`, `Func`, and `Predicate`:
 
 <CodeEditor 
-  language="csharp"
-  code={`using System;
+  initialCode={`using System;
 using System.Collections.Generic;
 
 class Program
 {
     static void Main()
     {
-        List<int> numbers = new List<int> { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
-        
-        Console.WriteLine("=== Predicate Examples ===\n");
-        
-        // Predicate<T> - takes T, returns bool
-        Predicate<int> isEven = x => x % 2 == 0;
-        Predicate<int> isGreaterThan5 = x => x > 5;
-        Predicate<int> isDivisibleBy3 = x => x % 3 == 0;
-        
-        Console.WriteLine($"Is 4 even? {isEven(4)}");
-        Console.WriteLine($"Is 7 even? {isEven(7)}");
-        Console.WriteLine($"Is 10 > 5? {isGreaterThan5(10)}");
-        Console.WriteLine($"Is 9 divisible by 3? {isDivisibleBy3(9)}");
-        
-        Console.WriteLine("\n=== Finding Elements ===");
-        
-        // Find first element that matches predicate
-        int firstEven = numbers.Find(isEven);
-        Console.WriteLine($"First even number: {firstEven}");
-        
-        // Find last element that matches
-        int lastEven = numbers.FindLast(isEven);
-        Console.WriteLine($"Last even number: {lastEven}");
-        
-        // Find all elements that match
-        List<int> evenNumbers = numbers.FindAll(isEven);
-        Console.WriteLine($"All even numbers: {string.Join(", ", evenNumbers)}");
-        
-        List<int> greaterThan5 = numbers.FindAll(isGreaterThan5);
-        Console.WriteLine($"Numbers > 5: {string.Join(", ", greaterThan5)}");
-        
-        Console.WriteLine("\n=== Complex Predicates ===");
-        
-        List<Person> people = new List<Person>
+        // Action - void return, up to 16 parameters
+        Action sayHello = () => Console.WriteLine("Hello!");
+        Action<string> greet = name => Console.WriteLine($"Hello, {name}!");
+        Action<string, int> greetTimes = (name, times) =>
         {
-            new Person { Name = "Alice", Age = 25, City = "New York" },
-            new Person { Name = "Bob", Age = 30, City = "London" },
-            new Person { Name = "Charlie", Age = 35, City = "New York" },
-            new Person { Name = "Diana", Age = 28, City = "Paris" },
-            new Person { Name = "Eve", Age = 32, City = "London" }
+            for (int i = 0; i < times; i++)
+                Console.WriteLine($"Hello, {name}!");
         };
         
-        Predicate<Person> isFromNewYork = p => p.City == "New York";
-        Predicate<Person> isOver30 = p => p.Age > 30;
-        Predicate<Person> isYoungAdult = p => p.Age >= 25 && p.Age <= 30;
+        Console.WriteLine("=== Action ===");
+        sayHello();
+        greet("Alice");
+        greetTimes("Bob", 3);
         
-        var newYorkers = people.FindAll(isFromNewYork);
-        Console.WriteLine("People from New York:");
-        newYorkers.ForEach(p => Console.WriteLine($"  - {p.Name}, {p.Age}"));
+        // Func - has return value, last type is return type
+        Func<int> getRandomNumber = () => new Random().Next(100);
+        Func<int, int> square = x => x * x;
+        Func<int, int, int> add = (a, b) => a + b;
+        Func<string, string> toUpper = s => s.ToUpper();
         
-        var over30 = people.FindAll(isOver30);
-        Console.WriteLine("\nPeople over 30:");
-        over30.ForEach(p => Console.WriteLine($"  - {p.Name}, {p.Age}"));
+        Console.WriteLine("\\n=== Func ===");
+        Console.WriteLine($"Random: {getRandomNumber()}");
+        Console.WriteLine($"Square of 5: {square(5)}");
+        Console.WriteLine($"3 + 4 = {add(3, 4)}");
+        Console.WriteLine($"Upper: {toUpper("hello")}");
         
-        var youngAdults = people.FindAll(isYoungAdult);
-        Console.WriteLine("\nYoung adults (25-30):");
-        youngAdults.ForEach(p => Console.WriteLine($"  - {p.Name}, {p.Age}"));
+        // Predicate - returns bool, single parameter
+        Predicate<int> isPositive = n => n > 0;
+        Predicate<string> isNullOrEmpty = s => string.IsNullOrEmpty(s);
         
-        Console.WriteLine("\n=== Combining Predicates ===");
+        Console.WriteLine("\\n=== Predicate ===");
+        Console.WriteLine($"Is 5 positive? {isPositive(5)}");
+        Console.WriteLine($"Is -3 positive? {isPositive(-3)}");
+        Console.WriteLine($"Is '' empty? {isNullOrEmpty("")}");
         
-        // Combine predicates
-        var newYorkOver30 = people.FindAll(p => isFromNewYork(p) && isOver30(p));
-        Console.WriteLine($"From New York AND over 30: {newYorkOver30.Count} people");
-        
-        // Remove elements matching predicate
-        people.RemoveAll(p => p.Age < 28);
-        Console.WriteLine($"\nAfter removing under 28: {people.Count} people remaining");
+        // Using Predicate with List.FindAll
+        var numbers = new List<int> { 1, -2, 3, -4, 5, -6 };
+        var positives = numbers.FindAll(isPositive);
+        Console.WriteLine($"Positives: {string.Join(", ", positives)}");
+    }
+}`}
+/>
+
+## Delegates with Instance Methods
+
+<CodeEditor 
+  initialCode={`using System;
+using System.Collections.Generic;
+
+delegate void ProcessItem(string item);
+
+class Logger
+{
+    public string Prefix { get; set; }
+    
+    public Logger(string prefix)
+    {
+        Prefix = prefix;
+    }
+    
+    public void Log(string item)
+    {
+        Console.WriteLine($"[{Prefix}] {item}");
     }
 }
 
-class Person
+class Processor
+{
+    private List<string> items = new List<string>();
+    private ProcessItem processDelegate;
+    
+    public void AddItem(string item) => items.Add(item);
+    
+    public void SetProcessor(ProcessItem processor)
+    {
+        processDelegate = processor;
+    }
+    
+    public void ProcessAll()
+    {
+        foreach (var item in items)
+        {
+            processDelegate?.Invoke(item);
+        }
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        // Create instances with their own state
+        Logger infoLogger = new Logger("INFO");
+        Logger errorLogger = new Logger("ERROR");
+        
+        Processor processor = new Processor();
+        processor.AddItem("Item 1");
+        processor.AddItem("Item 2");
+        processor.AddItem("Item 3");
+        
+        // Use instance method as delegate
+        Console.WriteLine("=== Info Logger ===");
+        processor.SetProcessor(infoLogger.Log);
+        processor.ProcessAll();
+        
+        Console.WriteLine("\\n=== Error Logger ===");
+        processor.SetProcessor(errorLogger.Log);
+        processor.ProcessAll();
+        
+        // Multicast with instance methods
+        Console.WriteLine("\\n=== Both Loggers ===");
+        ProcessItem combined = infoLogger.Log;
+        combined += errorLogger.Log;
+        
+        combined("Combined message");
+    }
+}`}
+/>
+
+## Callback Pattern
+
+<CodeEditor 
+  initialCode={`using System;
+using System.Threading;
+
+class FileDownloader
+{
+    public delegate void DownloadCompleted(string filename, bool success);
+    public delegate void ProgressUpdated(int percentage);
+    
+    public void Download(string url, DownloadCompleted onComplete, ProgressUpdated onProgress = null)
+    {
+        Console.WriteLine($"Starting download: {url}");
+        
+        // Simulate download progress
+        for (int i = 0; i <= 100; i += 20)
+        {
+            Thread.Sleep(200);  // Simulate work
+            onProgress?.Invoke(i);
+        }
+        
+        // Simulate completion
+        string filename = "file_" + new Random().Next(1000) + ".zip";
+        bool success = new Random().Next(10) > 1;  // 90% success rate
+        
+        onComplete(filename, success);
+    }
+}
+
+class Program
+{
+    static void OnDownloadComplete(string filename, bool success)
+    {
+        if (success)
+            Console.WriteLine($"\\nDownload complete: {filename}");
+        else
+            Console.WriteLine($"\\nDownload failed: {filename}");
+    }
+    
+    static void OnProgressUpdate(int percentage)
+    {
+        Console.Write($"\\rProgress: {percentage}%");
+    }
+    
+    static void Main()
+    {
+        FileDownloader downloader = new FileDownloader();
+        
+        Console.WriteLine("=== Download with callbacks ===\\n");
+        
+        downloader.Download(
+            "https://example.com/file.zip",
+            OnDownloadComplete,
+            OnProgressUpdate
+        );
+        
+        Console.WriteLine("\\n\\n=== Download with lambda ===\\n");
+        
+        downloader.Download(
+            "https://example.com/data.zip",
+            (file, ok) => Console.WriteLine($"\\nResult: {file} - {(ok ? "OK" : "Failed")}"),
+            p => Console.Write($"\\r[{new string('=', p / 5)}{new string(' ', 20 - p / 5)}] {p}%")
+        );
+    }
+}`}
+/>
+
+## Complete Example: Event System
+
+<CodeEditor 
+  initialCode={`using System;
+using System.Collections.Generic;
+
+delegate void GameEventHandler(string eventName, object data);
+
+class EventManager
+{
+    private Dictionary<string, List<GameEventHandler>> handlers = 
+        new Dictionary<string, List<GameEventHandler>>();
+    
+    public void Subscribe(string eventName, GameEventHandler handler)
+    {
+        if (!handlers.ContainsKey(eventName))
+        {
+            handlers[eventName] = new List<GameEventHandler>();
+        }
+        handlers[eventName].Add(handler);
+        Console.WriteLine($"Subscribed to '{eventName}'");
+    }
+    
+    public void Unsubscribe(string eventName, GameEventHandler handler)
+    {
+        if (handlers.ContainsKey(eventName))
+        {
+            handlers[eventName].Remove(handler);
+            Console.WriteLine($"Unsubscribed from '{eventName}'");
+        }
+    }
+    
+    public void Emit(string eventName, object data = null)
+    {
+        Console.WriteLine($"\\n>>> Emitting '{eventName}'");
+        
+        if (handlers.ContainsKey(eventName))
+        {
+            foreach (var handler in handlers[eventName])
+            {
+                handler(eventName, data);
+            }
+        }
+    }
+}
+
+class Player
 {
     public string Name { get; set; }
-    public int Age { get; set; }
-    public string City { get; set; }
-}`}
-  title="Predicate Delegate Examples"
-/>
-
-## Real-World Example: Data Processing Pipeline
-
-<CodeEditor 
-  language="csharp"
-  code={`using System;
-using System.Collections.Generic;
-using System.Linq;
-
-public class DataProcessor
-{
-    // Generic data validation
-    public static List<T> Validate<T>(List<T> data, Predicate<T> isValid)
+    public int Health { get; set; } = 100;
+    
+    public void OnDamage(string eventName, object data)
     {
-        Console.WriteLine($"Validating {data.Count} items...");
-        var valid = data.FindAll(isValid);
-        Console.WriteLine($"✓ {valid.Count} items passed validation");
-        return valid;
+        int damage = (int)data;
+        Health -= damage;
+        Console.WriteLine($"  {Name} took {damage} damage. Health: {Health}");
     }
     
-    // Generic data transformation
-    public static List<TResult> Transform<TSource, TResult>(
-        List<TSource> data, 
-        Func<TSource, TResult> transformer)
+    public void OnHeal(string eventName, object data)
     {
-        Console.WriteLine($"Transforming {data.Count} items...");
-        return data.Select(transformer).ToList();
-    }
-    
-    // Generic data processing
-    public static void Process<T>(List<T> data, Action<T> processor)
-    {
-        Console.WriteLine($"Processing {data.Count} items...");
-        data.ForEach(processor);
-        Console.WriteLine("✓ Processing complete");
-    }
-    
-    // Generic filtering
-    public static List<T> Filter<T>(List<T> data, Predicate<T> condition)
-    {
-        Console.WriteLine($"Filtering {data.Count} items...");
-        var filtered = data.FindAll(condition);
-        Console.WriteLine($"✓ {filtered.Count} items match criteria");
-        return filtered;
+        int amount = (int)data;
+        Health += amount;
+        Console.WriteLine($"  {Name} healed {amount}. Health: {Health}");
     }
 }
 
-public class Order
+class UI
 {
-    public int Id { get; set; }
-    public string Customer { get; set; }
-    public decimal Amount { get; set; }
-    public string Status { get; set; }
-    
-    public override string ToString()
+    public void OnScoreChanged(string eventName, object data)
     {
-        return $"Order #{Id}: {Customer} - \${Amount:F2} ({Status})";
+        Console.WriteLine($"  [UI] Score updated: {data}");
+    }
+    
+    public void OnGameEvent(string eventName, object data)
+    {
+        Console.WriteLine($"  [UI] Event notification: {eventName}");
     }
 }
 
@@ -496,182 +489,47 @@ class Program
 {
     static void Main()
     {
-        Console.WriteLine("=== Order Processing Pipeline ===\n");
+        EventManager events = new EventManager();
+        Player player = new Player { Name = "Hero" };
+        UI ui = new UI();
         
-        // Sample data
-        List<Order> orders = new List<Order>
-        {
-            new Order { Id = 1, Customer = "Alice", Amount = 150.50m, Status = "Pending" },
-            new Order { Id = 2, Customer = "Bob", Amount = 75.25m, Status = "Pending" },
-            new Order { Id = 3, Customer = "Charlie", Amount = 300.00m, Status = "Pending" },
-            new Order { Id = 4, Customer = "Diana", Amount = 50.00m, Status = "Pending" },
-            new Order { Id = 5, Customer = "Eve", Amount = 200.75m, Status = "Pending" }
-        };
+        // Subscribe to events
+        events.Subscribe("damage", player.OnDamage);
+        events.Subscribe("heal", player.OnHeal);
+        events.Subscribe("score", ui.OnScoreChanged);
+        events.Subscribe("damage", ui.OnGameEvent);
+        events.Subscribe("heal", ui.OnGameEvent);
         
-        // Step 1: Validate (amount must be > 0 and customer not empty)
-        var validOrders = DataProcessor.Validate(
-            orders,
-            order => order.Amount > 0 && !string.IsNullOrEmpty(order.Customer)
-        );
+        // Emit events
+        events.Emit("damage", 25);
+        events.Emit("score", 100);
+        events.Emit("heal", 15);
+        events.Emit("damage", 10);
         
-        Console.WriteLine();
-        
-        // Step 2: Filter (only orders over $100)
-        var largeOrders = DataProcessor.Filter(
-            validOrders,
-            order => order.Amount >= 100
-        );
-        
-        Console.WriteLine();
-        
-        // Step 3: Transform (apply discount)
-        var discountedOrders = DataProcessor.Transform(
-            largeOrders,
-            order => new Order
-            {
-                Id = order.Id,
-                Customer = order.Customer,
-                Amount = order.Amount * 0.9m, // 10% discount
-                Status = "Discounted"
-            }
-        );
-        
-        Console.WriteLine();
-        
-        // Step 4: Process (update status and log)
-        DataProcessor.Process(
-            discountedOrders,
-            order =>
-            {
-                order.Status = "Processed";
-                Console.WriteLine($"  Processed: {order}");
-            }
-        );
-        
-        Console.WriteLine();
-        
-        // Summary
-        decimal total = discountedOrders.Sum(o => o.Amount);
-        Console.WriteLine($"\n=== Summary ===");
-        Console.WriteLine($"Total orders processed: {discountedOrders.Count}");
-        Console.WriteLine($"Total amount: \${total:F2}");
-        Console.WriteLine($"Average order: \${total / discountedOrders.Count:F2}");
+        Console.WriteLine($"\\nFinal health: {player.Health}");
     }
 }`}
-  title="Real-World Data Processing Pipeline"
 />
-
-## Delegate Comparison and Best Practices
-
-<CodeEditor 
-  language="csharp"
-  code={`using System;
-using System.Collections.Generic;
-
-class Program
-{
-    // Custom delegate (old style)
-    public delegate bool ValidationDelegate(string input);
-    
-    static void Main()
-    {
-        Console.WriteLine("=== Delegate Comparison ===\n");
-        
-        string testString = "Hello123";
-        
-        // Method 1: Custom delegate
-        ValidationDelegate customValidator = HasMinLength;
-        Console.WriteLine($"Custom delegate: {customValidator(testString)}");
-        
-        // Method 2: Predicate<T> (recommended for boolean tests)
-        Predicate<string> predicateValidator = HasMinLength;
-        Console.WriteLine($"Predicate: {predicateValidator(testString)}");
-        
-        // Method 3: Func<T, bool> (most flexible)
-        Func<string, bool> funcValidator = HasMinLength;
-        Console.WriteLine($"Func: {funcValidator(testString)}");
-        
-        Console.WriteLine("\n=== Best Practices ===\n");
-        
-        // ✓ GOOD: Use built-in delegates
-        ProcessData(new List<int> { 1, 2, 3 }, x => x * 2);
-        
-        // ✓ GOOD: Named methods for reusability
-        ProcessData(new List<int> { 1, 2, 3 }, DoubleValue);
-        
-        // ✓ GOOD: Null-conditional operator
-        Action<string> logger = null;
-        logger?.Invoke("This is safe");
-        
-        // ✓ GOOD: Clear delegate names
-        Func<int, int, int> calculateTotal = (price, quantity) => price * quantity;
-        
-        // ✓ GOOD: Use appropriate delegate type
-        Predicate<int> isPositive = x => x > 0;  // For boolean tests
-        Action<string> log = msg => Console.WriteLine(msg);  // For void methods
-        Func<int, string> format = x => $"Value: {x}";  // For methods with return
-        
-        Console.WriteLine("\n=== Delegate Chaining ===");
-        
-        // Create a processing pipeline
-        Func<int, int> addTen = x => x + 10;
-        Func<int, int> multiplyByTwo = x => x * 2;
-        Func<int, int> square = x => x * x;
-        
-        int value = 5;
-        value = addTen(value);
-        Console.WriteLine($"After adding 10: {value}");
-        
-        value = multiplyByTwo(value);
-        Console.WriteLine($"After multiplying by 2: {value}");
-        
-        value = square(value);
-        Console.WriteLine($"After squaring: {value}");
-    }
-    
-    static bool HasMinLength(string input)
-    {
-        return input.Length >= 5;
-    }
-    
-    static int DoubleValue(int x)
-    {
-        return x * 2;
-    }
-    
-    static void ProcessData(List<int> data, Func<int, int> transform)
-    {
-        Console.WriteLine("Processing: " + string.Join(", ", data));
-        for (int i = 0; i < data.Count; i++)
-        {
-            data[i] = transform(data[i]);
-        }
-        Console.WriteLine("Result: " + string.Join(", ", data));
-    }
-}`}
-  title="Delegate Comparison and Best Practices"
-/>
-
-## Best Practices
-
-1. **Prefer built-in delegates** - Use `Action`, `Func`, and `Predicate` instead of custom delegates
-2. **Use meaningful names** - Even for lambda expressions, use descriptive variable names
-3. **Keep delegates simple** - Complex logic should be in named methods
-4. **Check for null** - Always use null-conditional operator `?.Invoke()` or null checks
-5. **Use appropriate delegate type** - `Predicate` for tests, `Action` for void, `Func` for return values
-6. **Avoid long parameter lists** - Limit to 3-4 parameters for readability
-7. **Document delegate parameters** - Especially for public APIs
 
 ## Key Takeaways
 
-- **Delegates** are type-safe function pointers that hold references to methods
-- **Multicast delegates** can invoke multiple methods sequentially using `+=` and `-=`
-- **Action** delegates are for methods with no return value (void)
-- **Func** delegates are for methods with a return value (last type parameter)
-- **Predicate** delegates are specialized for boolean test methods
-- Delegates enable **callback patterns**, **event handling**, and **functional programming**
-- Built-in delegates (`Action`, `Func`, `Predicate`) are preferred over custom delegates
-- Delegates support **lambda expressions** for concise inline method definitions
-- Use **null-conditional operator** (`?.Invoke()`) for safe delegate invocation
+- **Delegates** are type-safe function references
+- They can reference **static** or **instance** methods
+- **Multicast delegates** can invoke multiple methods
+- Use **Action**, **Func**, and **Predicate** for common patterns
+- Delegates enable the **callback pattern**
+- They're the foundation for **events** in C#
 
-Delegates are fundamental to C# and enable powerful programming patterns. They form the foundation for events, LINQ, and asynchronous programming, making them essential for modern C# development.
+## Delegate Cheat Sheet
+
+| Type | Description | Example |
+|------|-------------|---------|
+| `Action` | No return, no params | `Action a = () => {};` |
+| `Action<T>` | No return, 1 param | `Action<int> a = x => {};` |
+| `Func<TResult>` | Returns T, no params | `Func<int> f = () => 5;` |
+| `Func<T,TResult>` | Takes T, returns TResult | `Func<int,int> f = x => x*2;` |
+| `Predicate<T>` | Takes T, returns bool | `Predicate<int> p = x => x > 0;` |
+
+## Next Steps
+
+Next lesson: **Events** - Learn how to use the event pattern for loose coupling!

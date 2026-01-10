@@ -4,12 +4,20 @@ import matter from "gray-matter";
 import { compileMDX } from "next-mdx-remote/rsc";
 import type { LessonMetadata, CategoryMetadata, LessonTree } from "@/types/lesson";
 import { CodeEditor } from "@/components/lesson/CodeEditor";
+import { CodeComparison } from "@/components/lesson/CodeComparison";
+import { InheritanceTree } from "@/components/visualizations/InheritanceTree";
+import { MemoryDiagram } from "@/components/visualizations/MemoryDiagram";
+import { AsyncFlowChart } from "@/components/visualizations/AsyncFlowChart";
 
 const contentDirectory = path.join(process.cwd(), "content", "lessons");
 
 // MDX components that can be used in lessons
 const mdxComponents = {
   CodeEditor,
+  CodeComparison,
+  InheritanceTree,
+  MemoryDiagram,
+  AsyncFlowChart,
 };
 
 /**

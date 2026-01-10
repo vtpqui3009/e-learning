@@ -1,0 +1,324 @@
+---
+title: "Introduction to Testing"
+description: "Learn what automated testing is and why it's important"
+order: 1
+difficulty: "beginner"
+tags: ["testing", "automation", "unit-tests", "introduction"]
+duration: "20 minutes"
+---
+
+# Introduction to Testing
+
+Welcome to Test Automation with C#! This course will teach you how to write automated tests, even if you've only done manual testing before.
+
+## What is Automated Testing?
+
+Automated testing means writing code that tests other code. Instead of manually clicking buttons and checking results, you write test scripts that do it automatically.
+
+**Manual Testing** (what you might be doing now):
+1. Open the application
+2. Click a button
+3. Enter some data
+4. Check if the result is correct
+5. Repeat for every feature... every time!
+
+**Automated Testing** (what you'll learn):
+1. Write a test script once
+2. Run it automatically
+3. Get results in seconds
+4. Run thousands of tests in minutes
+
+## Types of Tests
+
+### 1. Unit Tests
+Test individual methods or classes in isolation.
+
+**Example**: Testing if a calculator's Add method works correctly.
+
+<CodeEditor
+  initialCode={`using System;
+
+// The code we want to test
+class Calculator
+{
+    public int Add(int a, int b)
+    {
+        return a + b;
+    }
+}
+
+// Simple test (we'll make this better later!)
+class Program
+{
+    static void Main()
+    {
+        var calc = new Calculator();
+        int result = calc.Add(5, 3);
+
+        if (result == 8)
+        {
+            Console.WriteLine("✓ Test PASSED: Add(5, 3) = 8");
+        }
+        else
+        {
+            Console.WriteLine($"✗ Test FAILED: Expected 8, got {result}");
+        }
+    }
+}`}
+/>
+
+### 2. Integration Tests
+Test how different parts of your application work together.
+
+**Example**: Testing if your code can save data to a database and retrieve it correctly.
+
+### 3. End-to-End (E2E) Tests
+Test the entire application from start to finish.
+
+**Example**: Testing a complete user registration flow from opening the app to receiving a confirmation email.
+
+### 4. API Tests
+Test web services and APIs.
+
+**Example**: Testing if your REST API returns the correct data when you send a request.
+
+## Why Learn C# for Testing?
+
+✅ **Industry Standard**: Many companies use C# for test automation
+✅ **Great for .NET Apps**: Perfect for testing .NET applications
+✅ **Powerful Tools**: Excellent testing frameworks (xUnit, NUnit, MSTest)
+✅ **Career Growth**: High demand for C# test automation engineers
+✅ **Versatile**: Can test APIs, desktop apps, and web applications
+
+## What You'll Learn in This Course
+
+### Lesson 1: Introduction to Testing (You are here!)
+- What is automated testing
+- Types of tests
+- Why C# for testing
+
+### Lesson 2: Setting Up Your Environment
+- Installing .NET SDK
+- Creating your first test project
+- Understanding project structure
+
+### Lesson 3: Writing Your First Tests
+- The Arrange-Act-Assert pattern
+- Writing unit tests with xUnit
+- Running and debugging tests
+
+### Lesson 4: Advanced Testing Patterns
+- Testing multiple scenarios with Theory
+- Testing exceptions
+- Testing collections and strings
+
+### Lesson 5: Integration Testing & Best Practices
+- Testing services and workflows
+- Best practices for writing good tests
+- Common pitfalls to avoid
+
+## Real-World Testing Example
+
+Let's see a real example of why automated tests are valuable:
+
+<CodeEditor
+  initialCode={`using System;
+using System.Collections.Generic;
+
+// A shopping cart class that we need to test
+class ShoppingCart
+{
+    private List<decimal> items = new List<decimal>();
+
+    public void AddItem(decimal price)
+    {
+        if (price <= 0)
+        {
+            throw new ArgumentException("Price must be positive");
+        }
+        items.Add(price);
+    }
+
+    public decimal GetTotal()
+    {
+        decimal total = 0;
+        foreach (var price in items)
+        {
+            total += price;
+        }
+        return total;
+    }
+
+    public int GetItemCount()
+    {
+        return items.Count;
+    }
+}
+
+// Manual testing (tedious and error-prone)
+class Program
+{
+    static void Main()
+    {
+        Console.WriteLine("=== Manual Testing ===\\n");
+
+        var cart = new ShoppingCart();
+
+        // Test 1: Adding items
+        cart.AddItem(10.99m);
+        cart.AddItem(5.50m);
+        cart.AddItem(3.25m);
+
+        decimal total = cart.GetTotal();
+        int count = cart.GetItemCount();
+
+        Console.WriteLine($"Items: {count}");
+        Console.WriteLine($"Total: ${'{'}total{'}'}");
+        Console.WriteLine($"Expected total: $19.74");
+
+        if (total == 19.74m)
+        {
+            Console.WriteLine("✓ Total calculation PASSED");
+        }
+        else
+        {
+            Console.WriteLine("✗ Total calculation FAILED");
+        }
+
+        // Test 2: Testing negative price
+        Console.WriteLine("\\n=== Testing Negative Price ===");
+        try
+        {
+            cart.AddItem(-5.00m);
+            Console.WriteLine("✗ Should have thrown exception!");
+        }
+        catch (ArgumentException)
+        {
+            Console.WriteLine("✓ Correctly rejected negative price");
+        }
+
+        Console.WriteLine("\\nImagine doing this for 100+ features... manually... every time!");
+    }
+}`}
+/>
+
+**Problems with manual testing:**
+- ❌ Time-consuming (minutes per test)
+- ❌ Error-prone (humans make mistakes)
+- ❌ Can't test every scenario every time
+- ❌ Boring and repetitive
+- ❌ Hard to test edge cases
+
+**Benefits of automated testing:**
+- ✅ Fast (thousands of tests in seconds)
+- ✅ Consistent (same test every time)
+- ✅ Comprehensive (test all scenarios)
+- ✅ Instant feedback (know immediately if something broke)
+- ✅ Confidence (refactor code safely)
+
+## The Testing Mindset
+
+As a manual tester transitioning to automation, you already have valuable skills:
+
+**Your Manual Testing Skills:**
+- ✓ Finding bugs
+- ✓ Understanding user workflows
+- ✓ Thinking about edge cases
+- ✓ Writing test cases
+
+**What You'll Add:**
+- ✓ Writing test code
+- ✓ Using testing frameworks
+- ✓ Automating repetitive tests
+- ✓ Integrating tests into CI/CD
+
+You're not replacing your testing skills—you're supercharging them!
+
+## What Makes a Good Test?
+
+A good automated test should be:
+
+1. **Fast**: Runs in milliseconds, not minutes
+2. **Isolated**: Doesn't depend on other tests
+3. **Repeatable**: Same result every time
+4. **Self-checking**: Automatically determines pass/fail
+5. **Clear**: Easy to understand what it's testing
+
+### Good Test Example
+
+<CodeEditor
+  initialCode={`using System;
+
+class StringValidator
+{
+    public bool IsValidEmail(string email)
+    {
+        if (string.IsNullOrWhiteSpace(email))
+            return false;
+
+        return email.Contains("@") && email.Contains(".");
+    }
+}
+
+// Good test characteristics
+class Program
+{
+    static void Main()
+    {
+        var validator = new StringValidator();
+
+        // Test 1: Valid email
+        bool test1 = validator.IsValidEmail("user@example.com");
+        Console.WriteLine($"Test 1 - Valid email: {(test1 ? "PASS" : "FAIL")}");
+
+        // Test 2: Invalid email (no @)
+        bool test2 = !validator.IsValidEmail("userexample.com");
+        Console.WriteLine($"Test 2 - No @ symbol: {(test2 ? "PASS" : "FAIL")}");
+
+        // Test 3: Empty string
+        bool test3 = !validator.IsValidEmail("");
+        Console.WriteLine($"Test 3 - Empty string: {(test3 ? "PASS" : "FAIL")}");
+
+        // Test 4: Null value
+        bool test4 = !validator.IsValidEmail(null);
+        Console.WriteLine($"Test 4 - Null value: {(test4 ? "PASS" : "FAIL")}");
+
+        Console.WriteLine("\\nAll tests completed in milliseconds!");
+    }
+}`}
+/>
+
+## Common Testing Terms
+
+- **Test Case**: A single test that checks one thing
+- **Test Suite**: A collection of test cases
+- **Assertion**: A check that something is true
+- **Test Runner**: Tool that executes tests
+- **Test Framework**: Library that helps write tests (xUnit, NUnit, MSTest)
+- **Mock**: A fake object used in testing
+- **Arrange-Act-Assert**: Pattern for structuring tests
+
+## What's Next?
+
+Now that you understand what testing is and why it's important, let's set up your testing environment!
+
+In the next lesson, you'll:
+- Install the .NET SDK
+- Set up Visual Studio Code
+- Create your first test project
+- Run your first automated test
+
+**Ready to start writing automated tests? Let's go!** 🚀
+
+## Key Takeaways
+
+- ✅ Automated testing runs tests automatically using code
+- ✅ Unit tests check individual methods work correctly
+- ✅ Integration tests check components work together
+- ✅ C# is excellent for test automation
+- ✅ Good tests are fast, isolated, and repeatable
+- ✅ You already have testing skills—now add automation!
+
+## Next Steps
+
+Continue to **Setting Up Your Environment** to install the tools and create your first test project!

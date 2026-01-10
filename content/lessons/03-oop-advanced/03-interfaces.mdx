@@ -1,79 +1,64 @@
 ---
 title: "Interfaces"
-description: "Define contracts and achieve multiple inheritance with interfaces"
+description: "Learn how to define and implement contracts with interfaces"
 order: 3
-difficulty: "advanced"
-tags: ["oop", "interfaces", "contracts", "abstraction"]
+difficulty: "intermediate"
+tags: ["oop", "interfaces", "contracts", "polymorphism"]
 duration: "30 minutes"
 ---
 
-# Interfaces
+# Interfaces in C#
 
-Interfaces define contracts that classes must implement. They specify *what* a class must do, but not *how* it does it.
+Interfaces define a contract that classes must implement. They specify what a class must do, but not how it does it.
 
 ## What is an Interface?
 
-An interface:
-- Defines a contract (set of methods/properties)
-- Contains **no implementation** (until C# 8)
-- Can be implemented by any class
-- Enables **multiple inheritance**
-- Named with 'I' prefix by convention
+An interface is a completely abstract type that contains only method signatures, properties, events, and indexers - no implementation code.
+
+## Basic Interface Syntax
 
 <CodeEditor 
-  language="csharp"
-  code={`using System;
+  initialCode={`using System;
 
-// Interface definition
-interface IDrawable
+// Interface definition - starts with 'I' by convention
+interface IAnimal
 {
-    void Draw();
-    void SetColor(string color);
+    // Method signatures (no body)
+    void MakeSound();
+    void Move();
+    
+    // Property signature
+    string Name { get; set; }
 }
 
-// Class implementing interface
-class Circle : IDrawable
+// Class implements the interface
+class Dog : IAnimal
 {
-    public double Radius { get; set; }
-    private string color = "Black";
+    public string Name { get; set; }
     
-    public Circle(double radius)
+    public void MakeSound()
     {
-        Radius = radius;
+        Console.WriteLine($"{Name} barks: Woof!");
     }
     
-    // Must implement all interface members
-    public void Draw()
+    public void Move()
     {
-        Console.WriteLine($"Drawing a {color} circle with radius {Radius}");
-    }
-    
-    public void SetColor(string color)
-    {
-        this.color = color;
+        Console.WriteLine($"{Name} runs on four legs");
     }
 }
 
-class Rectangle : IDrawable
+class Bird : IAnimal
 {
-    public double Width { get; set; }
-    public double Height { get; set; }
-    private string color = "Black";
+    public string Name { get; set; }
     
-    public Rectangle(double width, double height)
+    public void MakeSound()
     {
-        Width = width;
-        Height = height;
+        Console.WriteLine($"{Name} chirps: Tweet!");
     }
     
-    public void Draw()
+    public void Move()
     {
-        Console.WriteLine($"Drawing a {color} rectangle: {Width}x{Height}");
-    }
-    
-    public void SetColor(string color)
-    {
-        this.color = color;
+        Console.WriteLine($"{Name} flies through the air");
     }
 }
 
@@ -81,83 +66,88 @@ class Program
 {
     static void Main()
     {
-        IDrawable shape1 = new Circle(5);
-        IDrawable shape2 = new Rectangle(4, 6);
+        // Can use interface type for variables
+        IAnimal dog = new Dog { Name = "Rex" };
+        IAnimal bird = new Bird { Name = "Tweety" };
         
-        shape1.SetColor("Red");
-        shape1.Draw();
+        dog.MakeSound();
+        dog.Move();
         
-        shape2.SetColor("Blue");
-        shape2.Draw();
+        Console.WriteLine();
+        
+        bird.MakeSound();
+        bird.Move();
     }
 }`}
-  title="Basic Interface"
 />
 
-## Multiple Interfaces
+## Multiple Interface Implementation
 
 A class can implement multiple interfaces:
 
 <CodeEditor 
-  language="csharp"
-  code={`using System;
+  initialCode={`using System;
 
-interface IMovable
+interface ISwimmable
 {
-    void Move(int x, int y);
-    int GetX();
-    int GetY();
+    void Swim();
 }
 
-interface IResizable
+interface IFlyable
 {
-    void Resize(double factor);
-    double GetSize();
+    void Fly();
 }
 
-interface IDrawable
+interface IWalkable
 {
-    void Draw();
+    void Walk();
 }
 
-class Shape : IMovable, IResizable, IDrawable
+// Duck can do it all!
+class Duck : ISwimmable, IFlyable, IWalkable
 {
-    private int x, y;
-    private double size;
-    private string name;
+    public string Name { get; set; }
     
-    public Shape(string name, double size)
+    public void Swim()
     {
-        this.name = name;
-        this.size = size;
-        this.x = 0;
-        this.y = 0;
+        Console.WriteLine($"{Name} paddles across the water");
     }
     
-    // IMovable implementation
-    public void Move(int x, int y)
+    public void Fly()
     {
-        this.x = x;
-        this.y = y;
-        Console.WriteLine($"{name} moved to ({x}, {y})");
+        Console.WriteLine($"{Name} takes off into the sky");
     }
     
-    public int GetX() => x;
-    public int GetY() => y;
-    
-    // IResizable implementation
-    public void Resize(double factor)
+    public void Walk()
     {
-        size *= factor;
-        Console.WriteLine($"{name} resized to \${size:F2}");
+        Console.WriteLine($"{Name} waddles along");
+    }
+}
+
+// Fish can only swim
+class Fish : ISwimmable
+{
+    public string Name { get; set; }
+    
+    public void Swim()
+    {
+        Console.WriteLine($"{Name} swims gracefully");
+    }
+}
+
+// Eagle can fly and walk
+class Eagle : IFlyable, IWalkable
+{
+    public string Name { get; set; }
+    
+    public void Fly()
+    {
+        Console.WriteLine($"{Name} soars majestically");
     }
     
-    public double GetSize() => size;
-    
-    // IDrawable implementation
-    public void Draw()
+    public void Walk()
     {
-        Console.WriteLine($"Drawing {name} at ({x}, {y}) with size \${size:F2}");
+        Console.WriteLine($"{Name} hops around");
     }
 }
 
@@ -165,31 +155,49 @@ class Program
 {
     static void Main()
     {
-        Shape shape = new Shape("Circle", 10);
+        Duck duck = new Duck { Name = "Donald" };
+        Fish fish = new Fish { Name = "Nemo" };
+        Eagle eagle = new Eagle { Name = "Sam" };
         
-        shape.Draw();
-        shape.Move(50, 100);
-        shape.Resize(1.5);
-        shape.Draw();
+        Console.WriteLine("=== Duck ===");
+        duck.Swim();
+        duck.Fly();
+        duck.Walk();
+        
+        Console.WriteLine("\\n=== Fish ===");
+        fish.Swim();
+        
+        Console.WriteLine("\\n=== Eagle ===");
+        eagle.Fly();
+        eagle.Walk();
+        
+        // Using interface type for polymorphism
+        Console.WriteLine("\\n=== All Swimmers ===");
+        ISwimmable[] swimmers = { duck, fish };
+        foreach (var swimmer in swimmers)
+        {
+            swimmer.Swim();
+        }
     }
 }`}
-  title="Multiple Interfaces"
 />
 
 ## Interface Properties
 
 <CodeEditor 
-  language="csharp"
-  code={`using System;
+  initialCode={`using System;
 
 interface IProduct
 {
+    // Read-write property
     string Name { get; set; }
     decimal Price { get; set; }
+    
+    // Read-only property
     string Category { get; }
     
-    void DisplayInfo();
-    decimal CalculateTax();
+    // Calculated property (defined in implementation)
+    decimal PriceWithTax { get; }
 }
 
 class Book : IProduct
@@ -200,27 +208,7 @@ class Book : IProduct
     public string Author { get; set; }
     public int Pages { get; set; }
     
-    public Book(string name, string author, decimal price, int pages)
-    {
-        Name = name;
-        Author = author;
-        Price = price;
-        Pages = pages;
-    }
-    
-    public void DisplayInfo()
-    {
-        Console.WriteLine($"Book: {Name}");
-        Console.WriteLine($"Author: {Author}");
-        Console.WriteLine($"Pages: {Pages}");
-        Console.WriteLine($"Price: \${Price}");
-        Console.WriteLine($"Tax: \${CalculateTax():F2}");
-    }
-    
-    public decimal CalculateTax()
-    {
-        return Price * 0.05m; // 5% tax on books
-    }
+    public decimal PriceWithTax => Price * 1.05m;  // 5% tax
 }
 
 class Electronics : IProduct
@@ -228,42 +216,34 @@ class Electronics : IProduct
     public string Name { get; set; }
     public decimal Price { get; set; }
     public string Category => "Electronics";
+    public string Brand { get; set; }
     public int WarrantyMonths { get; set; }
     
-    public Electronics(string name, decimal price, int warranty)
-    {
-        Name = name;
-        Price = price;
-        WarrantyMonths = warranty;
-    }
-    
-    public void DisplayInfo()
-    {
-        Console.WriteLine($"Electronics: {Name}");
-        Console.WriteLine($"Warranty: {WarrantyMonths} months");
-        Console.WriteLine($"Price: \${Price}");
-        Console.WriteLine($"Tax: \${CalculateTax():F2}");
-    }
-    
-    public decimal CalculateTax()
-    {
-        return Price * 0.15m; // 15% tax on electronics
-    }
+    public decimal PriceWithTax => Price * 1.10m;  // 10% tax
 }
 
 class Program
 {
     static void Main()
     {
-        IProduct product1 = new Book("C# in Depth", "Jon Skeet", 44.99m, 528);
-        IProduct product2 = new Electronics("Laptop", 999.99m, 24);
+        IProduct[] products = {
+            new Book { Name = "C# Programming", Price = 49.99m, Author = "John Doe", Pages = 500 },
+            new Electronics { Name = "Laptop", Price = 999.99m, Brand = "Dell", WarrantyMonths = 24 }
+        };
         
-        product1.DisplayInfo();
-        Console.WriteLine();
-        product2.DisplayInfo();
+        Console.WriteLine("Product Catalog:");
+        Console.WriteLine("-----------------");
+        
+        foreach (var product in products)
+        {
+            Console.WriteLine($"Name: {product.Name}");
+            Console.WriteLine($"Category: {product.Category}");
+            Console.WriteLine($"Price: ${'{'}product.Price{'}'}");
+            Console.WriteLine($"Price with Tax: ${'{'}product.PriceWithTax{'}'}");
+            Console.WriteLine();
+        }
     }
 }`}
-  title="Interface Properties"
 />
 
 ## Interface Inheritance
@@ -271,76 +251,49 @@ class Program
 Interfaces can inherit from other interfaces:
 
 <CodeEditor 
-  language="csharp"
-  code={`using System;
+  initialCode={`using System;
 
+// Base interface
 interface IEntity
 {
-    int Id { get; }
+    int Id { get; set; }
     DateTime CreatedAt { get; }
 }
 
+// Derived interface
 interface IAuditable : IEntity
 {
-    string CreatedBy { get; set; }
     DateTime? ModifiedAt { get; set; }
     string ModifiedBy { get; set; }
 }
 
+// Further derived
 interface ISoftDeletable : IAuditable
 {
     bool IsDeleted { get; set; }
     DateTime? DeletedAt { get; set; }
-    string DeletedBy { get; set; }
 }
 
-class User : ISoftDeletable
+// Class implementing the most derived interface
+class Document : ISoftDeletable
 {
-    public int Id { get; }
-    public DateTime CreatedAt { get; }
-    public string CreatedBy { get; set; }
+    public int Id { get; set; }
+    public DateTime CreatedAt { get; } = DateTime.Now;
     public DateTime? ModifiedAt { get; set; }
     public string ModifiedBy { get; set; }
     public bool IsDeleted { get; set; }
     public DateTime? DeletedAt { get; set; }
-    public string DeletedBy { get; set; }
     
-    public string Username { get; set; }
-    public string Email { get; set; }
+    // Additional members
+    public string Title { get; set; }
+    public string Content { get; set; }
     
-    public User(int id, string username, string createdBy)
-    {
-        Id = id;
-        Username = username;
-        CreatedAt = DateTime.Now;
-        CreatedBy = createdBy;
-        IsDeleted = false;
-    }
-    
-    public void Update(string modifiedBy)
-    {
-        ModifiedAt = DateTime.Now;
-        ModifiedBy = modifiedBy;
-        Console.WriteLine($"User {Username} updated by {modifiedBy}");
-    }
-    
-    public void Delete(string deletedBy)
+    public void SoftDelete(string username)
     {
         IsDeleted = true;
         DeletedAt = DateTime.Now;
-        DeletedBy = deletedBy;
-        Console.WriteLine($"User {Username} deleted by {deletedBy}");
-    }
-    
-    public void Display()
-    {
-        Console.WriteLine($"ID: {Id}");
-        Console.WriteLine($"Username: {Username}");
-        Console.WriteLine($"Created: {CreatedAt:yyyy-MM-dd} by {CreatedBy}");
-        if (ModifiedAt.HasValue)
-            Console.WriteLine($"Modified: {ModifiedAt:yyyy-MM-dd} by {ModifiedBy}");
-        if (IsDeleted)
-            Console.WriteLine($"Deleted: {DeletedAt:yyyy-MM-dd} by {DeletedBy}");
+        ModifiedAt = DateTime.Now;
+        ModifiedBy = username;
     }
 }
 
@@ -348,242 +301,243 @@ class Program
 {
     static void Main()
     {
-        User user = new User(1, "john_doe", "admin");
-        user.Display();
+        var doc = new Document
+        {
+            Id = 1,
+            Title = "My Document",
+            Content = "Hello World"
+        };
         
-        Console.WriteLine();
-        user.Update("john_doe");
-        user.Display();
+        Console.WriteLine($"Document: {doc.Title}");
+        Console.WriteLine($"Created: {doc.CreatedAt}");
+        Console.WriteLine($"Is Deleted: {doc.IsDeleted}");
         
-        Console.WriteLine();
-        user.Delete("admin");
-        user.Display();
+        // Modify
+        doc.ModifiedAt = DateTime.Now;
+        doc.ModifiedBy = "admin";
+        Console.WriteLine($"\\nModified by: {doc.ModifiedBy}");
+        
+        // Soft delete
+        doc.SoftDelete("admin");
+        Console.WriteLine($"\\nAfter soft delete:");
+        Console.WriteLine($"Is Deleted: {doc.IsDeleted}");
+        Console.WriteLine($"Deleted At: {doc.DeletedAt}");
     }
 }`}
-  title="Interface Inheritance"
-/>
-
-## Explicit Interface Implementation
-
-<CodeEditor 
-  language="csharp"
-  code={`using System;
-
-interface ILogger
-{
-    void Log(string message);
-}
-
-interface IErrorHandler
-{
-    void Log(string message);  // Same method name!
-}
-
-class FileManager : ILogger, IErrorHandler
-{
-    // Explicit implementation for ILogger
-    void ILogger.Log(string message)
-    {
-        Console.WriteLine($"[LOG] {message}");
-    }
-    
-    // Explicit implementation for IErrorHandler
-    void IErrorHandler.Log(string message)
-    {
-        Console.WriteLine($"[ERROR] {message}");
-    }
-    
-    // Public method
-    public void ProcessFile(string filename)
-    {
-        Console.WriteLine($"Processing {filename}...");
-    }
-}
-
-class Program
-{
-    static void Main()
-    {
-        FileManager manager = new FileManager();
-        
-        // Cannot call Log directly on manager
-        // manager.Log("test");  // ERROR!
-        
-        // Must cast to specific interface
-        ILogger logger = manager;
-        logger.Log("File operation started");
-        
-        IErrorHandler errorHandler = manager;
-        errorHandler.Log("File not found");
-        
-        manager.ProcessFile("data.txt");
-    }
-}`}
-  title="Explicit Interface Implementation"
 />
 
 ## Default Interface Methods (C# 8+)
 
-<CodeEditor 
-  language="csharp"
-  code={`using System;
+Interfaces can have default implementations:
 
-interface INotification
+<CodeEditor 
+  initialCode={`using System;
+
+interface ILogger
 {
-    string GetMessage();
+    void Log(string message);
     
     // Default implementation
-    void Send()
+    void LogInfo(string message)
     {
-        Console.WriteLine($"Sending: {GetMessage()}");
+        Log($"[INFO] {message}");
     }
     
-    void Display()
+    void LogWarning(string message)
     {
-        Console.WriteLine($"Notification: {GetMessage()}");
+        Log($"[WARNING] {message}");
+    }
+    
+    void LogError(string message)
+    {
+        Log($"[ERROR] {message}");
     }
 }
 
-class EmailNotification : INotification
+class ConsoleLogger : ILogger
 {
-    public string To { get; set; }
-    public string Subject { get; set; }
-    
-    public EmailNotification(string to, string subject)
+    public void Log(string message)
     {
-        To = to;
-        Subject = subject;
-    }
-    
-    public string GetMessage()
-    {
-        return $"Email to {To}: {Subject}";
+        Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] {message}");
     }
     
     // Can override default implementation
-    public void Send()
+    public void LogError(string message)
     {
-        Console.WriteLine($"Sending email to {To}");
-        Console.WriteLine($"Subject: {Subject}");
+        Console.ForegroundColor = ConsoleColor.Red;
+        Log($"[ERROR] {message}");
+        Console.ResetColor();
     }
-    
-    // Uses default Display() from interface
 }
 
-class SMSNotification : INotification
+class FileLogger : ILogger
 {
-    public string PhoneNumber { get; set; }
-    public string Text { get; set; }
-    
-    public SMSNotification(string phone, string text)
+    public void Log(string message)
     {
-        PhoneNumber = phone;
-        Text = text;
+        Console.WriteLine($"Writing to file: {message}");
     }
-    
-    public string GetMessage()
-    {
-        return $"SMS to {PhoneNumber}: {Text}";
-    }
-    
-    // Uses default Send() and Display() from interface
+    // Uses default implementations for LogInfo, LogWarning, LogError
 }
 
 class Program
 {
     static void Main()
     {
-        INotification email = new EmailNotification("user@example.com", "Hello!");
-        INotification sms = new SMSNotification("+1234567890", "Hi there");
+        ILogger consoleLogger = new ConsoleLogger();
+        ILogger fileLogger = new FileLogger();
         
-        email.Send();
-        email.Display();
+        Console.WriteLine("=== Console Logger ===");
+        consoleLogger.Log("Basic log");
+        consoleLogger.LogInfo("Information message");
+        consoleLogger.LogWarning("Warning message");
+        consoleLogger.LogError("Error message");
         
-        Console.WriteLine();
-        
-        sms.Send();
-        sms.Display();
+        Console.WriteLine("\\n=== File Logger ===");
+        fileLogger.Log("Basic log");
+        fileLogger.LogInfo("Information message");
     }
 }`}
-  title="Default Interface Methods"
 />
 
-## Real-World Example: Repository Pattern
+## Explicit Interface Implementation
+
+Handle conflicting interface members:
 
 <CodeEditor 
-  language="csharp"
-  code={`using System;
-using System.Collections.Generic;
-using System.Linq;
+  initialCode={`using System;
 
-interface IRepository<T> where T : class
+interface IPrinter
 {
-    void Add(T entity);
-    void Update(T entity);
-    void Delete(int id);
+    void Print();
+}
+
+interface IScanner
+{
+    void Scan();
+    void Print();  // Same name as IPrinter.Print!
+}
+
+class MultiFunctionDevice : IPrinter, IScanner
+{
+    // Explicit implementation for IPrinter
+    void IPrinter.Print()
+    {
+        Console.WriteLine("Printing document...");
+    }
+    
+    // Explicit implementation for IScanner
+    void IScanner.Print()
+    {
+        Console.WriteLine("Printing scan preview...");
+    }
+    
+    public void Scan()
+    {
+        Console.WriteLine("Scanning...");
+    }
+    
+    // Regular method accessible directly
+    public void PrintAll()
+    {
+        Console.WriteLine("Printing all documents...");
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        MultiFunctionDevice device = new MultiFunctionDevice();
+        
+        // Regular members accessible directly
+        device.Scan();
+        device.PrintAll();
+        
+        // Explicit implementations require casting
+        Console.WriteLine("\\nUsing as IPrinter:");
+        IPrinter printer = device;
+        printer.Print();
+        
+        Console.WriteLine("\\nUsing as IScanner:");
+        IScanner scanner = device;
+        scanner.Print();
+        
+        // device.Print(); // Would not compile - must cast first
+    }
+}`}
+/>
+
+## Dependency Injection Pattern
+
+Using interfaces for loose coupling:
+
+<CodeEditor 
+  initialCode={`using System;
+using System.Collections.Generic;
+
+// Interface for data access
+interface IRepository<T>
+{
+    void Add(T item);
     T GetById(int id);
     IEnumerable<T> GetAll();
-    int Count();
 }
 
 class User
 {
     public int Id { get; set; }
-    public string Username { get; set; }
+    public string Name { get; set; }
     public string Email { get; set; }
-    
-    public override string ToString()
-    {
-        return $"[{Id}] {Username} ({Email})";
-    }
 }
 
-class UserRepository : IRepository<User>
+// In-memory implementation
+class InMemoryUserRepository : IRepository<User>
 {
     private List<User> users = new List<User>();
     private int nextId = 1;
     
-    public void Add(User entity)
+    public void Add(User item)
     {
-        entity.Id = nextId++;
-        users.Add(entity);
-        Console.WriteLine($"Added user: {entity}");
-    }
-    
-    public void Update(User entity)
-    {
-        var existing = users.FirstOrDefault(u => u.Id == entity.Id);
-        if (existing != null)
-        {
-            existing.Username = entity.Username;
-            existing.Email = entity.Email;
-            Console.WriteLine($"Updated user: {entity}");
-        }
-    }
-    
-    public void Delete(int id)
-    {
-        var user = users.FirstOrDefault(u => u.Id == id);
-        if (user != null)
-        {
-            users.Remove(user);
-            Console.WriteLine($"Deleted user: {user}");
-        }
+        item.Id = nextId++;
+        users.Add(item);
+        Console.WriteLine($"[Memory] Added user: {item.Name}");
     }
     
     public User GetById(int id)
     {
-        return users.FirstOrDefault(u => u.Id == id);
+        return users.Find(u => u.Id == id);
     }
     
     public IEnumerable<User> GetAll()
     {
         return users;
     }
+}
+
+// Service depends on interface, not concrete class
+class UserService
+{
+    private readonly IRepository<User> repository;
     
-    public int Count()
+    // Dependency injected via constructor
+    public UserService(IRepository<User> repository)
     {
-        return users.Count;
+        this.repository = repository;
+    }
+    
+    public void RegisterUser(string name, string email)
+    {
+        var user = new User { Name = name, Email = email };
+        repository.Add(user);
+    }
+    
+    public void ListUsers()
+    {
+        Console.WriteLine("\\nAll Users:");
+        foreach (var user in repository.GetAll())
+        {
+            Console.WriteLine($"  [{user.Id}] {user.Name} - {user.Email}");
+        }
     }
 }
 
@@ -591,66 +545,145 @@ class Program
 {
     static void Main()
     {
-        IRepository<User> repo = new UserRepository();
+        // Create repository implementation
+        IRepository<User> repo = new InMemoryUserRepository();
         
-        repo.Add(new User { Username = "alice", Email = "alice@example.com" });
-        repo.Add(new User { Username = "bob", Email = "bob@example.com" });
-        repo.Add(new User { Username = "charlie", Email = "charlie@example.com" });
+        // Inject dependency into service
+        UserService service = new UserService(repo);
         
-        Console.WriteLine($"\\nTotal users: {repo.Count()}");
+        // Use the service
+        service.RegisterUser("Alice", "alice@example.com");
+        service.RegisterUser("Bob", "bob@example.com");
+        service.RegisterUser("Charlie", "charlie@example.com");
         
-        Console.WriteLine("\\nAll users:");
-        foreach (var user in repo.GetAll())
-        {
-            Console.WriteLine(user);
-        }
-        
-        Console.WriteLine("\\nUpdating user...");
-        var userToUpdate = repo.GetById(2);
-        if (userToUpdate != null)
-        {
-            userToUpdate.Email = "bob.smith@example.com";
-            repo.Update(userToUpdate);
-        }
-        
-        Console.WriteLine("\\nDeleting user...");
-        repo.Delete(1);
-        
-        Console.WriteLine($"\\nFinal count: {repo.Count()}");
+        service.ListUsers();
     }
 }`}
-  title="Repository Pattern"
 />
 
-## Interface vs Abstract Class
+## Complete Example: Plugin System
 
-| Interface | Abstract Class |
-|-----------|----------------|
-| No implementation (mostly) | Can have implementation |
-| Multiple inheritance | Single inheritance |
-| Cannot have fields | Can have fields |
-| Cannot have constructors | Can have constructors |
-| All members public by default | Can have any access modifier |
-| Define "can-do" relationship | Define "is-a" relationship |
+<CodeEditor 
+  initialCode={`using System;
+using System.Collections.Generic;
 
-## Best Practices
+// Plugin interface
+interface IPlugin
+{
+    string Name { get; }
+    string Version { get; }
+    void Execute();
+}
 
-1. **Use 'I' prefix** - `IDrawable`, `IComparable`, `IRepository`
-2. **Keep interfaces small** - Single Responsibility Principle
-3. **Define contracts, not implementation** - Focus on *what*, not *how*
-4. **Use interfaces for flexibility** - Easy to mock for testing
-5. **Prefer interfaces over abstract classes** - When possible
-6. **Document expected behavior** - Especially for complex contracts
+// Different plugin implementations
+class LoggingPlugin : IPlugin
+{
+    public string Name => "Logging Plugin";
+    public string Version => "1.0.0";
+    
+    public void Execute()
+    {
+        Console.WriteLine("  [Log] Recording activity...");
+    }
+}
+
+class SecurityPlugin : IPlugin
+{
+    public string Name => "Security Plugin";
+    public string Version => "2.1.0";
+    
+    public void Execute()
+    {
+        Console.WriteLine("  [Security] Checking permissions...");
+    }
+}
+
+class AnalyticsPlugin : IPlugin
+{
+    public string Name => "Analytics Plugin";
+    public string Version => "1.5.0";
+    
+    public void Execute()
+    {
+        Console.WriteLine("  [Analytics] Collecting metrics...");
+    }
+}
+
+// Plugin manager
+class PluginManager
+{
+    private List<IPlugin> plugins = new List<IPlugin>();
+    
+    public void Register(IPlugin plugin)
+    {
+        plugins.Add(plugin);
+        Console.WriteLine($"Registered: {plugin.Name} v{plugin.Version}");
+    }
+    
+    public void ListPlugins()
+    {
+        Console.WriteLine("\\nInstalled Plugins:");
+        foreach (var plugin in plugins)
+        {
+            Console.WriteLine($"  - {plugin.Name} (v{plugin.Version})");
+        }
+    }
+    
+    public void ExecuteAll()
+    {
+        Console.WriteLine("\\nExecuting all plugins:");
+        foreach (var plugin in plugins)
+        {
+            Console.WriteLine($"{plugin.Name}:");
+            plugin.Execute();
+        }
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        PluginManager manager = new PluginManager();
+        
+        // Register plugins
+        manager.Register(new LoggingPlugin());
+        manager.Register(new SecurityPlugin());
+        manager.Register(new AnalyticsPlugin());
+        
+        manager.ListPlugins();
+        manager.ExecuteAll();
+    }
+}`}
+/>
 
 ## Key Takeaways
 
-- **Interfaces define contracts** that classes must implement
-- Enable **multiple inheritance** in C#
-- Contain method signatures, properties, events, indexers
-- Use **explicit implementation** for name conflicts
-- **Default methods** (C# 8+) allow some implementation
-- Essential for **dependency injection** and **testable code**
+- **Interfaces** define contracts without implementation
+- Classes can implement **multiple interfaces**
+- Interfaces enable **polymorphism** and **loose coupling**
+- Use **explicit implementation** to resolve naming conflicts
+- **Default methods** (C# 8+) allow backward-compatible interface evolution
+- Interfaces are key to **dependency injection**
+
+## Interface vs Abstract Class
+
+| Feature | Interface | Abstract Class |
+|---------|-----------|----------------|
+| Multiple inheritance | Yes | No |
+| Fields | No | Yes |
+| Constructors | No | Yes |
+| Default implementation | C# 8+ only | Yes |
+| Access modifiers | Public by default | Any |
+
+## Best Practices
+
+1. **Keep interfaces focused** - Single Responsibility Principle
+2. **Use I prefix** for interface names (IAnimal, ILogger)
+3. **Program to interfaces**, not implementations
+4. **Prefer composition** over inheritance
+5. **Use interfaces for dependencies** to enable testing
 
 ## Next Steps
 
-Next lesson: **Abstract Classes** - combining interfaces with partial implementation!
+Next lesson: **Abstract Classes** - Learn when to use abstract classes instead of interfaces!

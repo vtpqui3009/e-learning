@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronDown, ChevronRight, Menu, X } from "lucide-react";
@@ -12,20 +12,53 @@ export function Sidebar() {
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const scrollPositionRef = useRef<number>(0);
 
+  // Fetch lesson tree only once on mount
   useEffect(() => {
-    // Fetch lesson tree
     fetch("/api/lessons/tree")
       .then((res) => res.json())
       .then((data) => {
         setTree(data);
-        // Auto-expand current category
-        const currentCategory = pathname.split("/")[2];
-        if (currentCategory) {
-          setExpandedCategories(new Set([currentCategory]));
-        }
       });
+  }, []);
+
+  // Auto-expand current category when pathname changes
+  useEffect(() => {
+    const currentCategory = pathname.split("/")[2];
+    if (currentCategory) {
+      setExpandedCategories((prev) => {
+        const newSet = new Set(prev);
+        newSet.add(currentCategory);
+        return newSet;
+      });
+    }
   }, [pathname]);
+
+  // Save scroll position on scroll
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const handleScroll = () => {
+      scrollPositionRef.current = container.scrollTop;
+    };
+
+    container.addEventListener('scroll', handleScroll, { passive: true });
+    return () => container.removeEventListener('scroll', handleScroll);
+  }, [tree]); // Re-attach when tree loads
+
+  // Restore scroll position ONLY when categories expand/collapse
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (container && scrollPositionRef.current > 0) {
+      // Use requestAnimationFrame to ensure DOM is ready
+      requestAnimationFrame(() => {
+        container.scrollTop = scrollPositionRef.current;
+      });
+    }
+  }, [expandedCategories]); // Only on category expand/collapse, NOT on pathname changes
 
   const toggleCategory = (categoryId: string) => {
     const newExpanded = new Set(expandedCategories);
@@ -42,7 +75,10 @@ export function Sidebar() {
   };
 
   const SidebarContent = () => (
-    <nav className="h-full overflow-y-auto p-6 space-y-1 bg-neutral-900">
+    <nav
+      ref={scrollContainerRef}
+      className="h-full overflow-y-auto p-6 space-y-1 bg-neutral-900 custom-scrollbar"
+    >
       {/* Logo/Title Area */}
       <div className="mb-8 pb-6 border-b border-neutral-700">
         <Link href="/lessons" className="block group">
@@ -67,10 +103,6 @@ export function Sidebar() {
             <div
               key={item.category.category}
               className="space-y-2"
-              style={{
-                animationDelay: `${index * 50}ms`,
-                animation: "slideIn 0.3s ease-out forwards",
-              }}
             >
               {/* Category Header */}
               <button
@@ -123,12 +155,10 @@ export function Sidebar() {
                           "block px-3 py-2 rounded-md text-sm transition-all duration-150",
                           "hover:bg-neutral-800 hover:translate-x-0.5",
                           isActive
-                            ? "bg-neutral-800 text-white font-medium shadow-sm"
+                            ? "text-white font-medium shadow-sm"
                             : "text-gray-400 hover:text-gray-200"
                         )}
                         style={{
-                          animationDelay: `${lessonIndex * 30}ms`,
-                          animation: "fadeIn 0.2s ease-out forwards",
                           backgroundColor: isActive ? item.category.color : undefined,
                         }}
                       >
@@ -193,25 +223,35 @@ export function Sidebar() {
         </>
       )}
 
+      {/* Custom Scrollbar Styles */}
       <style jsx global>{`
-        @keyframes slideIn {
-          from {
-            opacity: 0;
-            transform: translateX(-10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateX(0);
-          }
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 8px;
         }
 
-        @keyframes fadeIn {
-          from {
-            opacity: 0;
-          }
-          to {
-            opacity: 1;
-          }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: rgba(23, 23, 23, 0.4);
+          border-radius: 4px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: rgba(115, 115, 115, 0.3);
+          border-radius: 4px;
+          transition: background 0.2s ease;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: rgba(115, 115, 115, 0.5);
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:active {
+          background: rgba(115, 115, 115, 0.7);
+        }
+
+        /* Firefox scrollbar */
+        .custom-scrollbar {
+          scrollbar-width: thin;
+          scrollbar-color: rgba(115, 115, 115, 0.3) rgba(23, 23, 23, 0.4);
         }
       `}</style>
     </>

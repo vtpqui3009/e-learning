@@ -1,0 +1,9 @@
+{
+  "category": "09-generics",
+  "title": "Generics",
+  "description": "Write flexible, reusable code with generics",
+  "order": 9,
+  "icon": "🧬",
+  "color": "#a855f7",
+  "lessonCount": 2
+}

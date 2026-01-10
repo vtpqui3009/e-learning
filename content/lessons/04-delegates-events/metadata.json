@@ -4,5 +4,6 @@
   "description": "Master delegates, events, and lambda expressions",
   "order": 4,
   "icon": "🎯",
-  "color": "#10b981"
+  "color": "#10b981",
+  "lessonCount": 3
 }

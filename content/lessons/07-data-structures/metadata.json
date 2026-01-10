@@ -1,0 +1,9 @@
+{
+  "category": "07-data-structures",
+  "title": "Data Structures",
+  "description": "Master arrays, collections, and dictionaries in C#",
+  "order": 7,
+  "icon": "📦",
+  "color": "#f97316",
+  "lessonCount": 3
+}

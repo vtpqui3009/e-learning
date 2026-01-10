@@ -1,0 +1,667 @@
+---
+title: "Generics Basics"
+description: "Write flexible, reusable, and type-safe code with generics"
+order: 1
+difficulty: "intermediate"
+estimatedTime: "30 minutes"
+keywords: ["generics", "type parameter", "generic class", "generic method", "type-safe"]
+prerequisites: ["02-oop-basics/01-classes-objects"]
+---
+
+# Generics in C#
+
+Generics allow you to write code that works with any data type while maintaining type safety. Instead of writing separate classes for `int`, `string`, and `double`, you write one generic class that works with all of them.
+
+## Why Use Generics?
+
+Without generics, you'd have to:
+- Write duplicate code for each type, OR
+- Use `object` and lose type safety
+
+Generics provide:
+- **Code reusability** - Write once, use with any type
+- **Type safety** - Catch errors at compile time, not runtime
+- **Performance** - No boxing/unboxing for value types
+- **IntelliSense support** - Full IDE support for types
+
+## The Problem Without Generics
+
+<CodeEditor 
+  initialCode={`using System;
+
+// Without generics: Must create separate classes for each type
+class IntList
+{
+    private int[] items = new int[10];
+    private int count = 0;
+    
+    public void Add(int item)
+    {
+        items[count++] = item;
+    }
+    
+    public int Get(int index) => items[index];
+}
+
+class StringList
+{
+    private string[] items = new string[10];
+    private int count = 0;
+    
+    public void Add(string item)
+    {
+        items[count++] = item;
+    }
+    
+    public string Get(int index) => items[index];
+}
+
+// Or use object (loses type safety)
+class ObjectList
+{
+    private object[] items = new object[10];
+    private int count = 0;
+    
+    public void Add(object item)
+    {
+        items[count++] = item;
+    }
+    
+    public object Get(int index) => items[index];
+}
+
+class Program
+{
+    static void Main()
+    {
+        // Type-specific lists work but require duplicate code
+        IntList intList = new IntList();
+        intList.Add(42);
+        int num = intList.Get(0);  // Strongly typed
+        Console.WriteLine($"Int: {num}");
+        
+        // Object list loses type safety
+        ObjectList objList = new ObjectList();
+        objList.Add(42);
+        objList.Add("hello");  // Can add any type - dangerous!
+        
+        int value = (int)objList.Get(0);  // Must cast - can fail at runtime
+        Console.WriteLine($"Object cast: {value}");
+        
+        // This would crash at runtime, not compile time:
+        // int wrong = (int)objList.Get(1);  // "hello" is not an int!
+        
+        Console.WriteLine("\\nGeneric solution is much better!");
+    }
+}`}
+/>
+
+## Creating a Generic Class
+
+<CodeEditor 
+  initialCode={`using System;
+
+// Generic class with type parameter T
+class MyList<T>
+{
+    private T[] items = new T[10];
+    private int count = 0;
+    
+    public void Add(T item)
+    {
+        if (count < items.Length)
+        {
+            items[count++] = item;
+        }
+    }
+    
+    public T Get(int index)
+    {
+        if (index < 0 || index >= count)
+        {
+            throw new IndexOutOfRangeException();
+        }
+        return items[index];
+    }
+    
+    public int Count => count;
+}
+
+class Program
+{
+    static void Main()
+    {
+        // Use with int
+        MyList<int> numbers = new MyList<int>();
+        numbers.Add(10);
+        numbers.Add(20);
+        numbers.Add(30);
+        
+        Console.WriteLine("Integer list:");
+        for (int i = 0; i < numbers.Count; i++)
+        {
+            int num = numbers.Get(i);  // Strongly typed!
+            Console.WriteLine($"  {num}");
+        }
+        
+        // Use with string
+        MyList<string> names = new MyList<string>();
+        names.Add("Alice");
+        names.Add("Bob");
+        names.Add("Charlie");
+        
+        Console.WriteLine("\\nString list:");
+        for (int i = 0; i < names.Count; i++)
+        {
+            string name = names.Get(i);  // Strongly typed!
+            Console.WriteLine($"  {name}");
+        }
+        
+        // Use with custom class
+        MyList<DateTime> dates = new MyList<DateTime>();
+        dates.Add(DateTime.Now);
+        dates.Add(DateTime.Now.AddDays(1));
+        
+        Console.WriteLine("\\nDateTime list:");
+        Console.WriteLine($"  {dates.Get(0):d}");
+        Console.WriteLine($"  {dates.Get(1):d}");
+        
+        // Compile error - type safety!
+        // numbers.Add("hello");  // Error: cannot convert string to int
+    }
+}`}
+/>
+
+## Generic Methods
+
+You can create generic methods without making the entire class generic:
+
+<CodeEditor 
+  initialCode={`using System;
+
+class Utilities
+{
+    // Generic method
+    public static void Swap<T>(ref T a, ref T b)
+    {
+        T temp = a;
+        a = b;
+        b = temp;
+    }
+    
+    // Generic method with return type
+    public static T[] CreateArray<T>(T item, int count)
+    {
+        T[] array = new T[count];
+        for (int i = 0; i < count; i++)
+        {
+            array[i] = item;
+        }
+        return array;
+    }
+    
+    // Generic method to find maximum
+    public static T Max<T>(T a, T b) where T : IComparable<T>
+    {
+        return a.CompareTo(b) > 0 ? a : b;
+    }
+    
+    // Print any array
+    public static void PrintArray<T>(T[] array)
+    {
+        Console.WriteLine($"[{string.Join(", ", array)}]");
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        // Swap integers
+        int x = 10, y = 20;
+        Console.WriteLine($"Before swap: x={x}, y={y}");
+        Utilities.Swap(ref x, ref y);
+        Console.WriteLine($"After swap: x={x}, y={y}");
+        
+        // Swap strings
+        string a = "Hello", b = "World";
+        Console.WriteLine($"\\nBefore swap: a={a}, b={b}");
+        Utilities.Swap(ref a, ref b);
+        Console.WriteLine($"After swap: a={a}, b={b}");
+        
+        // Create arrays of different types
+        Console.WriteLine("\\nCreated arrays:");
+        int[] zeros = Utilities.CreateArray(0, 5);
+        Utilities.PrintArray(zeros);
+        
+        string[] hellos = Utilities.CreateArray("Hi", 3);
+        Utilities.PrintArray(hellos);
+        
+        // Find maximum
+        Console.WriteLine($"\\nMax(10, 20) = {Utilities.Max(10, 20)}");
+        Console.WriteLine($"Max(\\"apple\\", \\"banana\\") = {Utilities.Max("apple", "banana")}");
+    }
+}`}
+/>
+
+## Multiple Type Parameters
+
+<CodeEditor 
+  initialCode={`using System;
+
+// Generic class with two type parameters
+class Pair<TFirst, TSecond>
+{
+    public TFirst First { get; set; }
+    public TSecond Second { get; set; }
+    
+    public Pair(TFirst first, TSecond second)
+    {
+        First = first;
+        Second = second;
+    }
+    
+    public override string ToString()
+    {
+        return $"({First}, {Second})";
+    }
+}
+
+// Key-value pair
+class KeyValue<TKey, TValue>
+{
+    public TKey Key { get; }
+    public TValue Value { get; set; }
+    
+    public KeyValue(TKey key, TValue value)
+    {
+        Key = key;
+        Value = value;
+    }
+}
+
+// Result type for operations that might fail
+class Result<TSuccess, TError>
+{
+    public bool IsSuccess { get; }
+    public TSuccess Value { get; }
+    public TError Error { get; }
+    
+    private Result(bool success, TSuccess value, TError error)
+    {
+        IsSuccess = success;
+        Value = value;
+        Error = error;
+    }
+    
+    public static Result<TSuccess, TError> Success(TSuccess value)
+    {
+        return new Result<TSuccess, TError>(true, value, default);
+    }
+    
+    public static Result<TSuccess, TError> Failure(TError error)
+    {
+        return new Result<TSuccess, TError>(false, default, error);
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        // Pair examples
+        var point = new Pair<int, int>(10, 20);
+        Console.WriteLine($"Point: {point}");
+        
+        var person = new Pair<string, int>("Alice", 25);
+        Console.WriteLine($"Person: {person}");
+        
+        var mixed = new Pair<string, DateTime>("Event", DateTime.Now);
+        Console.WriteLine($"Mixed: {mixed}");
+        
+        // KeyValue examples
+        Console.WriteLine("\\nKey-Value pairs:");
+        var kv1 = new KeyValue<int, string>(1, "One");
+        var kv2 = new KeyValue<string, double>("price", 19.99);
+        Console.WriteLine($"  {kv1.Key}: {kv1.Value}");
+        Console.WriteLine($"  {kv2.Key}: {kv2.Value}");
+        
+        // Result type
+        Console.WriteLine("\\nResult type:");
+        var success = Divide(10, 2);
+        var failure = Divide(10, 0);
+        
+        PrintResult(success);
+        PrintResult(failure);
+    }
+    
+    static Result<int, string> Divide(int a, int b)
+    {
+        if (b == 0)
+            return Result<int, string>.Failure("Division by zero");
+        return Result<int, string>.Success(a / b);
+    }
+    
+    static void PrintResult(Result<int, string> result)
+    {
+        if (result.IsSuccess)
+            Console.WriteLine($"  Success: {result.Value}");
+        else
+            Console.WriteLine($"  Error: {result.Error}");
+    }
+}`}
+/>
+
+## Generic Interfaces
+
+<CodeEditor 
+  initialCode={`using System;
+using System.Collections.Generic;
+
+// Generic interface
+interface IRepository<T>
+{
+    void Add(T item);
+    T GetById(int id);
+    List<T> GetAll();
+    void Delete(int id);
+}
+
+// Entity base class
+class Entity
+{
+    public int Id { get; set; }
+}
+
+class User : Entity
+{
+    public string Name { get; set; }
+    public string Email { get; set; }
+    
+    public override string ToString() => $"User({Id}, {Name}, {Email})";
+}
+
+class Product : Entity
+{
+    public string Title { get; set; }
+    public decimal Price { get; set; }
+    
+    public override string ToString() => $"Product({'{'}Id{'}'}, {'{'}Title{'}'}, ${'{'}Price{'}'})";
+}
+
+// Generic repository implementation
+class InMemoryRepository<T> : IRepository<T> where T : Entity
+{
+    private List<T> items = new List<T>();
+    private int nextId = 1;
+    
+    public void Add(T item)
+    {
+        item.Id = nextId++;
+        items.Add(item);
+        Console.WriteLine($"Added: {item}");
+    }
+    
+    public T GetById(int id)
+    {
+        return items.Find(x => x.Id == id);
+    }
+    
+    public List<T> GetAll()
+    {
+        return new List<T>(items);
+    }
+    
+    public void Delete(int id)
+    {
+        items.RemoveAll(x => x.Id == id);
+        Console.WriteLine($"Deleted item with Id {id}");
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        // User repository
+        IRepository<User> userRepo = new InMemoryRepository<User>();
+        
+        Console.WriteLine("=== User Repository ===");
+        userRepo.Add(new User { Name = "Alice", Email = "alice@mail.com" });
+        userRepo.Add(new User { Name = "Bob", Email = "bob@mail.com" });
+        
+        var user = userRepo.GetById(1);
+        Console.WriteLine($"Found: {user}");
+        
+        // Product repository - same code, different type!
+        IRepository<Product> productRepo = new InMemoryRepository<Product>();
+        
+        Console.WriteLine("\\n=== Product Repository ===");
+        productRepo.Add(new Product { Title = "Laptop", Price = 999.99m });
+        productRepo.Add(new Product { Title = "Mouse", Price = 29.99m });
+        
+        Console.WriteLine("\\nAll products:");
+        foreach (var product in productRepo.GetAll())
+        {
+            Console.WriteLine($"  {product}");
+        }
+    }
+}`}
+/>
+
+## Built-in Generic Collections
+
+C# provides many generic collections in `System.Collections.Generic`:
+
+<CodeEditor 
+  initialCode={`using System;
+using System.Collections.Generic;
+
+class Program
+{
+    static void Main()
+    {
+        // List<T> - Dynamic array
+        List<int> numbers = new List<int> { 1, 2, 3, 4, 5 };
+        numbers.Add(6);
+        Console.WriteLine($"List: {string.Join(", ", numbers)}");
+        
+        // Dictionary<TKey, TValue> - Key-value pairs
+        Dictionary<string, int> ages = new Dictionary<string, int>
+        {
+            { "Alice", 25 },
+            { "Bob", 30 }
+        };
+        Console.WriteLine($"\\nAlice's age: {ages["Alice"]}");
+        
+        // Queue<T> - FIFO
+        Queue<string> queue = new Queue<string>();
+        queue.Enqueue("First");
+        queue.Enqueue("Second");
+        Console.WriteLine($"\\nDequeue: {queue.Dequeue()}");
+        
+        // Stack<T> - LIFO
+        Stack<string> stack = new Stack<string>();
+        stack.Push("Bottom");
+        stack.Push("Top");
+        Console.WriteLine($"Pop: {stack.Pop()}");
+        
+        // HashSet<T> - Unique elements
+        HashSet<int> set = new HashSet<int> { 1, 2, 2, 3, 3, 3 };
+        Console.WriteLine($"\\nSet (unique): {string.Join(", ", set)}");
+        
+        // LinkedList<T> - Doubly linked list
+        LinkedList<string> linkedList = new LinkedList<string>();
+        linkedList.AddFirst("First");
+        linkedList.AddLast("Last");
+        Console.WriteLine($"\\nLinkedList: {string.Join(" -> ", linkedList)}");
+        
+        // SortedList<TKey, TValue> - Sorted by key
+        SortedList<int, string> sortedList = new SortedList<int, string>
+        {
+            { 3, "Three" },
+            { 1, "One" },
+            { 2, "Two" }
+        };
+        Console.WriteLine("\\nSortedList:");
+        foreach (var kvp in sortedList)
+        {
+            Console.WriteLine($"  {kvp.Key}: {kvp.Value}");
+        }
+    }
+}`}
+/>
+
+## Practical Example: Generic Cache
+
+<CodeEditor 
+  initialCode={`using System;
+using System.Collections.Generic;
+
+class Cache<TKey, TValue>
+{
+    private Dictionary<TKey, CacheItem> cache = new Dictionary<TKey, CacheItem>();
+    private TimeSpan defaultExpiration;
+    
+    private class CacheItem
+    {
+        public TValue Value { get; set; }
+        public DateTime ExpiresAt { get; set; }
+    }
+    
+    public Cache(TimeSpan defaultExpiration)
+    {
+        this.defaultExpiration = defaultExpiration;
+    }
+    
+    public void Set(TKey key, TValue value)
+    {
+        Set(key, value, defaultExpiration);
+    }
+    
+    public void Set(TKey key, TValue value, TimeSpan expiration)
+    {
+        cache[key] = new CacheItem
+        {
+            Value = value,
+            ExpiresAt = DateTime.UtcNow.Add(expiration)
+        };
+    }
+    
+    public bool TryGet(TKey key, out TValue value)
+    {
+        if (cache.TryGetValue(key, out CacheItem item))
+        {
+            if (item.ExpiresAt > DateTime.UtcNow)
+            {
+                value = item.Value;
+                return true;
+            }
+            // Expired - remove it
+            cache.Remove(key);
+        }
+        
+        value = default;
+        return false;
+    }
+    
+    public TValue GetOrCreate(TKey key, Func<TValue> factory)
+    {
+        if (TryGet(key, out TValue value))
+        {
+            return value;
+        }
+        
+        value = factory();
+        Set(key, value);
+        return value;
+    }
+    
+    public void Remove(TKey key)
+    {
+        cache.Remove(key);
+    }
+    
+    public void Clear()
+    {
+        cache.Clear();
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        // Cache with 1-hour default expiration
+        var userCache = new Cache<int, string>(TimeSpan.FromHours(1));
+        
+        // Set values
+        userCache.Set(1, "Alice");
+        userCache.Set(2, "Bob");
+        userCache.Set(3, "Charlie", TimeSpan.FromMinutes(30)); // Custom expiration
+        
+        // Get values
+        if (userCache.TryGet(1, out string user1))
+        {
+            Console.WriteLine($"User 1: {user1}");
+        }
+        
+        // GetOrCreate - fetch from "database" if not cached
+        string user4 = userCache.GetOrCreate(4, () =>
+        {
+            Console.WriteLine("Fetching user 4 from database...");
+            return "Diana";
+        });
+        Console.WriteLine($"User 4: {user4}");
+        
+        // Second call returns cached value
+        string user4Again = userCache.GetOrCreate(4, () =>
+        {
+            Console.WriteLine("This won't be called");
+            return "Not Diana";
+        });
+        Console.WriteLine($"User 4 (cached): {user4Again}");
+        
+        // Different value types
+        var priceCache = new Cache<string, decimal>(TimeSpan.FromMinutes(5));
+        priceCache.Set("AAPL", 150.50m);
+        priceCache.Set("GOOGL", 2800.00m);
+        
+        Console.WriteLine("\\nStock prices:");
+        if (priceCache.TryGet("AAPL", out decimal applePrice))
+        {
+            Console.WriteLine($"  AAPL: ${'{'}applePrice{'}'}");
+        }
+    }
+}`}
+/>
+
+## Key Takeaways
+
+- Generics use **type parameters** (like `T`) as placeholders for actual types
+- Generic classes and methods work with **any type** while remaining type-safe
+- Use **multiple type parameters** when needed (`<TKey, TValue>`)
+- Generic interfaces define **contracts** that work with any type
+- C# provides many **built-in generic collections** (`List<T>`, `Dictionary<K,V>`, etc.)
+- Generics provide **better performance** than using `object` (no boxing/unboxing)
+
+## Common Type Parameter Naming Conventions
+
+| Parameter | Meaning | Example |
+|-----------|---------|---------|
+| `T` | Type (general) | `List<T>` |
+| `TKey` | Key type | `Dictionary<TKey, TValue>` |
+| `TValue` | Value type | `Dictionary<TKey, TValue>` |
+| `TResult` | Return type | `Func<T, TResult>` |
+| `TSource` | Source type | LINQ methods |
+| `TElement` | Element type | Collections |
+
+## Best Practices
+
+1. **Use meaningful type parameter names** for clarity (`TEntity` vs just `T`)
+2. **Prefer generic collections** over non-generic (`List<int>` not `ArrayList`)
+3. **Add constraints** when you need specific capabilities (next lesson)
+4. **Consider covariance/contravariance** for interfaces
+5. **Keep generic classes focused** on a single responsibility
+
+In the next lesson, we'll explore generic constraints for more control over type parameters!

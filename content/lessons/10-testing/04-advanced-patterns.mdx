@@ -1,0 +1,567 @@
+---
+title: "Advanced Testing Patterns"
+description: "Learn Theory tests, data-driven testing, and advanced scenarios"
+order: 4
+difficulty: "intermediate"
+tags: ["testing", "theory", "data-driven", "parameterized"]
+duration: "35 minutes"
+---
+
+# Advanced Testing Patterns
+
+Take your testing skills to the next level with advanced patterns and techniques!
+
+## Theory Tests: Testing Multiple Scenarios
+
+Instead of writing many similar tests, use `[Theory]` with `[InlineData]`:
+
+<CodeEditor
+  initialCode={`using System;
+using Xunit;
+
+public class Calculator
+{
+    public int Add(int a, int b)
+    {
+        return a + b;
+    }
+
+    public int Multiply(int a, int b)
+    {
+        return a * b;
+    }
+}
+
+public class CalculatorTests
+{
+    // Without Theory - repetitive!
+    [Fact]
+    public void Add_2And3_Returns5()
+    {
+        var calc = new Calculator();
+        Assert.Equal(5, calc.Add(2, 3));
+    }
+
+    [Fact]
+    public void Add_0And0_Returns0()
+    {
+        var calc = new Calculator();
+        Assert.Equal(0, calc.Add(0, 0));
+    }
+
+    [Fact]
+    public void Add_Negative1AndNegative1_ReturnsNegative2()
+    {
+        var calc = new Calculator();
+        Assert.Equal(-2, calc.Add(-1, -1));
+    }
+
+    // With Theory - much cleaner!
+    [Theory]
+    [InlineData(2, 3, 5)]
+    [InlineData(0, 0, 0)]
+    [InlineData(-1, -1, -2)]
+    [InlineData(100, 200, 300)]
+    [InlineData(-5, 5, 0)]
+    public void Add_VariousInputs_ReturnsCorrectSum(int a, int b, int expected)
+    {
+        // Arrange
+        var calc = new Calculator();
+
+        // Act
+        int result = calc.Add(a, b);
+
+        // Assert
+        Assert.Equal(expected, result);
+    }
+
+    // Multiple scenarios for multiplication
+    [Theory]
+    [InlineData(2, 3, 6)]
+    [InlineData(0, 100, 0)]
+    [InlineData(-2, 3, -6)]
+    [InlineData(-2, -3, 6)]
+    public void Multiply_VariousInputs_ReturnsProduct(int a, int b, int expected)
+    {
+        var calc = new Calculator();
+        int result = calc.Multiply(a, b);
+        Assert.Equal(expected, result);
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        Console.WriteLine("Theory tests run multiple test cases efficiently!");
+    }
+}`}
+/>
+
+## Testing Edge Cases
+
+Always test the boundaries and unusual inputs:
+
+<CodeEditor
+  initialCode={`using System;
+using Xunit;
+
+public class StringHelper
+{
+    public string GetFirstCharacter(string text)
+    {
+        if (string.IsNullOrEmpty(text))
+            return string.Empty;
+
+        return text[0].ToString();
+    }
+
+    public int CountWords(string text)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+            return 0;
+
+        return text.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries).Length;
+    }
+}
+
+public class EdgeCaseTests
+{
+    [Theory]
+    [InlineData("Hello", "H")]           // Normal case
+    [InlineData("A", "A")]               // Single character
+    [InlineData("", "")]                 // Empty string
+    [InlineData(null, "")]               // Null
+    [InlineData("   ", "")]              // Whitespace only
+    public void GetFirstCharacter_VariousCases_ReturnsExpected(string input, string expected)
+    {
+        var helper = new StringHelper();
+        string result = helper.GetFirstCharacter(input);
+        Assert.Equal(expected, result);
+    }
+
+    [Theory]
+    [InlineData("Hello World", 2)]       // Normal case
+    [InlineData("Single", 1)]            // One word
+    [InlineData("", 0)]                  // Empty
+    [InlineData(null, 0)]                // Null
+    [InlineData("   ", 0)]               // Whitespace
+    [InlineData("One Two Three", 3)]     // Multiple words
+    [InlineData("  Extra   Spaces  ", 2)] // Extra spaces
+    public void CountWords_VariousCases_ReturnsCount(string input, int expected)
+    {
+        var helper = new StringHelper();
+        int result = helper.CountWords(input);
+        Assert.Equal(expected, result);
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        Console.WriteLine("Edge case testing ensures robustness!");
+    }
+}`}
+/>
+
+## Testing Complex Objects
+
+<CodeEditor
+  initialCode={`using System;
+using Xunit;
+
+public class User
+{
+    public string Name { get; set; }
+    public string Email { get; set; }
+    public int Age { get; set; }
+    public bool IsActive { get; set; }
+}
+
+public class UserService
+{
+    public User CreateUser(string name, string email, int age)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            throw new ArgumentException("Name is required");
+
+        if (string.IsNullOrWhiteSpace(email))
+            throw new ArgumentException("Email is required");
+
+        if (age < 0 || age > 150)
+            throw new ArgumentException("Age must be between 0 and 150");
+
+        return new User
+        {
+            Name = name,
+            Email = email,
+            Age = age,
+            IsActive = true
+        };
+    }
+}
+
+public class UserServiceTests
+{
+    [Fact]
+    public void CreateUser_ValidData_ReturnsUserWithCorrectProperties()
+    {
+        // Arrange
+        var service = new UserService();
+
+        // Act
+        User result = service.CreateUser("Alice", "alice@example.com", 25);
+
+        // Assert - check all properties
+        Assert.NotNull(result);
+        Assert.Equal("Alice", result.Name);
+        Assert.Equal("alice@example.com", result.Email);
+        Assert.Equal(25, result.Age);
+        Assert.True(result.IsActive);
+    }
+
+    [Theory]
+    [InlineData("", "email@test.com", 25)]    // Empty name
+    [InlineData(null, "email@test.com", 25)]  // Null name
+    [InlineData("Alice", "", 25)]             // Empty email
+    [InlineData("Alice", null, 25)]           // Null email
+    public void CreateUser_InvalidData_ThrowsException(string name, string email, int age)
+    {
+        var service = new UserService();
+        Assert.Throws<ArgumentException>(() => service.CreateUser(name, email, age));
+    }
+
+    [Theory]
+    [InlineData(-1)]    // Negative age
+    [InlineData(151)]   // Too old
+    [InlineData(200)]   // Way too old
+    public void CreateUser_InvalidAge_ThrowsException(int age)
+    {
+        var service = new UserService();
+        Assert.Throws<ArgumentException>(() =>
+            service.CreateUser("Alice", "alice@example.com", age)
+        );
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        Console.WriteLine("Testing complex objects ensures data integrity!");
+    }
+}`}
+/>
+
+## Testing Collections and LINQ
+
+<CodeEditor
+  initialCode={`using System;
+using System.Collections.Generic;
+using System.Linq;
+using Xunit;
+
+public class ProductService
+{
+    private List<Product> products = new List<Product>
+    {
+        new Product { Id = 1, Name = "Laptop", Price = 999.99m, InStock = true },
+        new Product { Id = 2, Name = "Mouse", Price = 29.99m, InStock = true },
+        new Product { Id = 3, Name = "Keyboard", Price = 79.99m, InStock = false },
+        new Product { Id = 4, Name = "Monitor", Price = 299.99m, InStock = true }
+    };
+
+    public List<Product> GetInStockProducts()
+    {
+        return products.Where(p => p.InStock).ToList();
+    }
+
+    public List<Product> GetProductsOverPrice(decimal minPrice)
+    {
+        return products.Where(p => p.Price > minPrice).ToList();
+    }
+
+    public decimal GetAveragePrice()
+    {
+        return products.Average(p => p.Price);
+    }
+}
+
+public class Product
+{
+    public int Id { get; set; }
+    public string Name { get; set; }
+    public decimal Price { get; set; }
+    public bool InStock { get; set; }
+}
+
+public class ProductServiceTests
+{
+    [Fact]
+    public void GetInStockProducts_ReturnsOnlyInStock()
+    {
+        // Arrange
+        var service = new ProductService();
+
+        // Act
+        List<Product> result = service.GetInStockProducts();
+
+        // Assert
+        Assert.NotEmpty(result);
+        Assert.Equal(3, result.Count);
+        Assert.All(result, p => Assert.True(p.InStock));
+        Assert.DoesNotContain(result, p => p.Name == "Keyboard");
+    }
+
+    [Theory]
+    [InlineData(50, 3)]    // 3 products over $50
+    [InlineData(100, 2)]   // 2 products over $100
+    [InlineData(500, 1)]   // 1 product over $500
+    [InlineData(1000, 0)]  // 0 products over $1000
+    public void GetProductsOverPrice_ReturnsCorrectCount(decimal minPrice, int expectedCount)
+    {
+        // Arrange
+        var service = new ProductService();
+
+        // Act
+        List<Product> result = service.GetProductsOverPrice(minPrice);
+
+        // Assert
+        Assert.Equal(expectedCount, result.Count);
+        Assert.All(result, p => Assert.True(p.Price > minPrice));
+    }
+
+    [Fact]
+    public void GetAveragePrice_ReturnsCorrectAverage()
+    {
+        // Arrange
+        var service = new ProductService();
+        decimal expected = (999.99m + 29.99m + 79.99m + 299.99m) / 4;
+
+        // Act
+        decimal result = service.GetAveragePrice();
+
+        // Assert
+        Assert.Equal(expected, result, 2); // 2 decimal places precision
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        Console.WriteLine("Collection testing validates data filtering!");
+    }
+}`}
+/>
+
+## Testing with Setup and Cleanup
+
+<CodeEditor
+  initialCode={`using System;
+using System.Collections.Generic;
+using Xunit;
+
+public class ShoppingCart
+{
+    private List<decimal> items = new List<decimal>();
+
+    public void AddItem(decimal price)
+    {
+        if (price <= 0)
+            throw new ArgumentException("Price must be positive");
+        items.Add(price);
+    }
+
+    public decimal GetTotal()
+    {
+        return items.Sum(x => x);
+    }
+
+    public int GetItemCount()
+    {
+        return items.Count;
+    }
+
+    public void Clear()
+    {
+        items.Clear();
+    }
+}
+
+public class ShoppingCartTests : IDisposable
+{
+    private ShoppingCart cart;
+
+    // Constructor runs before each test
+    public ShoppingCartTests()
+    {
+        Console.WriteLine("Setting up test...");
+        cart = new ShoppingCart();
+    }
+
+    // Dispose runs after each test
+    public void Dispose()
+    {
+        Console.WriteLine("Cleaning up test...");
+        cart = null;
+    }
+
+    [Fact]
+    public void AddItem_SingleItem_IncreasesCount()
+    {
+        cart.AddItem(10.99m);
+        Assert.Equal(1, cart.GetItemCount());
+    }
+
+    [Fact]
+    public void AddItem_MultipleItems_CalculatesTotal()
+    {
+        cart.AddItem(10.99m);
+        cart.AddItem(5.50m);
+        cart.AddItem(3.25m);
+
+        Assert.Equal(19.74m, cart.GetTotal());
+        Assert.Equal(3, cart.GetItemCount());
+    }
+
+    [Fact]
+    public void AddItem_NegativePrice_ThrowsException()
+    {
+        Assert.Throws<ArgumentException>(() => cart.AddItem(-5.00m));
+    }
+
+    [Fact]
+    public void Clear_RemovesAllItems()
+    {
+        cart.AddItem(10.00m);
+        cart.AddItem(20.00m);
+        cart.Clear();
+
+        Assert.Equal(0, cart.GetItemCount());
+        Assert.Equal(0m, cart.GetTotal());
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        Console.WriteLine("Setup/cleanup ensures test isolation!");
+    }
+}`}
+/>
+
+## Testing with Member Data
+
+For more complex test data:
+
+<CodeEditor
+  initialCode={`using System;
+using System.Collections.Generic;
+using Xunit;
+
+public class MathHelper
+{
+    public bool IsPrime(int number)
+    {
+        if (number <= 1) return false;
+        if (number == 2) return true;
+        if (number % 2 == 0) return false;
+
+        for (int i = 3; i * i <= number; i += 2)
+        {
+            if (number % i == 0) return false;
+        }
+        return true;
+    }
+}
+
+public class MathHelperTests
+{
+    // Define test data as a property
+    public static IEnumerable<object[]> PrimeNumbers =>
+        new List<object[]>
+        {
+            new object[] { 2, true },
+            new object[] { 3, true },
+            new object[] { 5, true },
+            new object[] { 7, true },
+            new object[] { 11, true },
+            new object[] { 13, true }
+        };
+
+    public static IEnumerable<object[]> NonPrimeNumbers =>
+        new List<object[]>
+        {
+            new object[] { 0, false },
+            new object[] { 1, false },
+            new object[] { 4, false },
+            new object[] { 6, false },
+            new object[] { 8, false },
+            new object[] { 9, false },
+            new object[] { 10, false }
+        };
+
+    [Theory]
+    [MemberData(nameof(PrimeNumbers))]
+    public void IsPrime_PrimeNumber_ReturnsTrue(int number, bool expected)
+    {
+        var helper = new MathHelper();
+        bool result = helper.IsPrime(number);
+        Assert.Equal(expected, result);
+    }
+
+    [Theory]
+    [MemberData(nameof(NonPrimeNumbers))]
+    public void IsPrime_NonPrimeNumber_ReturnsFalse(int number, bool expected)
+    {
+        var helper = new MathHelper();
+        bool result = helper.IsPrime(number);
+        Assert.Equal(expected, result);
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        Console.WriteLine("MemberData allows complex test data sets!");
+    }
+}`}
+/>
+
+## Key Takeaways
+
+- ✅ Use `[Theory]` for testing multiple similar scenarios
+- ✅ `[InlineData]` for simple data, `[MemberData]` for complex data
+- ✅ Always test edge cases (null, empty, zero, negative, boundaries)
+- ✅ Test collections with `Assert.All`, `Assert.Contains`, etc.
+- ✅ Use constructor/Dispose for test setup/cleanup
+- ✅ Test one scenario per test method
+
+## Practice Exercise
+
+Create a `DiscountCalculator` class with:
+```csharp
+public decimal ApplyDiscount(decimal price, decimal discountPercent)
+```
+
+Write `[Theory]` tests for:
+- Normal discounts (10%, 20%, 50%)
+- Edge cases (0%, 100%, negative prices)
+- Invalid discounts (negative %, over 100%)
+
+Aim for at least 10 test cases!
+
+## Next Steps
+
+In the final lesson, you'll learn:
+- Integration testing
+- Testing complete workflows
+- Best practices
+- Common pitfalls
+- Real-world testing scenarios
+
+Continue to **Integration Testing & Best Practices** →

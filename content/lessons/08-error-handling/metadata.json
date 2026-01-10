@@ -1,0 +1,9 @@
+{
+  "category": "08-error-handling",
+  "title": "Error Handling",
+  "description": "Handle errors gracefully with exceptions",
+  "order": 8,
+  "icon": "🛡️",
+  "color": "#ef4444",
+  "lessonCount": 2
+}

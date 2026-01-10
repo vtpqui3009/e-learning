@@ -18,6 +18,40 @@ Inheritance enables a class (**derived class** or **child class**) to inherit me
 
 Think of it like this: A `Dog` inherits characteristics from `Animal` - all dogs are animals, but not all animals are dogs.
 
+<InheritanceTree
+  classes={[
+    {
+      name: "Animal",
+      properties: ["Name: string", "Age: int"],
+      methods: ["Eat()", "Sleep()", "MakeSound()"],
+      isAbstract: false
+    },
+    {
+      name: "Dog",
+      properties: ["Breed: string"],
+      methods: ["Bark()", "MakeSound()"],
+      isAbstract: false
+    },
+    {
+      name: "Cat",
+      properties: ["IndoorOnly: bool"],
+      methods: ["Meow()", "MakeSound()"],
+      isAbstract: false
+    },
+    {
+      name: "Bird",
+      properties: ["CanFly: bool"],
+      methods: ["Chirp()", "MakeSound()"],
+      isAbstract: false
+    }
+  ]}
+  relationships={[
+    { from: "Dog", to: "Animal", type: "inherits" },
+    { from: "Cat", to: "Animal", type: "inherits" },
+    { from: "Bird", to: "Animal", type: "inherits" }
+  ]}
+/>
+
 ## Basic Syntax
 
 ```csharp

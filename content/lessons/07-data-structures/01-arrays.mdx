@@ -1,0 +1,438 @@
+---
+title: "Arrays in C#"
+description: "Learn how to store and manipulate collections of data using arrays"
+order: 1
+difficulty: "beginner"
+estimatedTime: "25 minutes"
+keywords: ["arrays", "indexing", "multidimensional", "jagged arrays", "iteration"]
+prerequisites: ["01-fundamentals/05-loops"]
+---
+
+# Arrays in C#
+
+Arrays are fundamental data structures that store multiple values of the same type in a contiguous block of memory. They provide fast access to elements using an index.
+
+## What is an Array?
+
+An **array** is a fixed-size collection of elements of the same type. Think of it like a row of mailboxes - each has a number (index) and can hold one item.
+
+Key characteristics:
+- **Fixed size** - Size is set when created and cannot change
+- **Zero-indexed** - First element is at index 0
+- **Type-safe** - All elements must be the same type
+- **Fast access** - Direct access to any element by index
+
+## Declaring and Initializing Arrays
+
+<CodeEditor 
+  initialCode={`using System;
+
+class Program
+{
+    static void Main()
+    {
+        // Method 1: Declare then initialize
+        int[] numbers = new int[5];
+        numbers[0] = 10;
+        numbers[1] = 20;
+        numbers[2] = 30;
+        numbers[3] = 40;
+        numbers[4] = 50;
+        
+        Console.WriteLine("Method 1:");
+        Console.WriteLine($"First element: {numbers[0]}");
+        Console.WriteLine($"Last element: {numbers[4]}");
+        
+        // Method 2: Initialize with values
+        string[] fruits = new string[] { "Apple", "Banana", "Cherry" };
+        
+        Console.WriteLine("\\nMethod 2:");
+        foreach (string fruit in fruits)
+        {
+            Console.WriteLine(fruit);
+        }
+        
+        // Method 3: Shorthand syntax
+        double[] prices = { 19.99, 29.99, 39.99, 49.99 };
+        
+        Console.WriteLine("\\nMethod 3:");
+        Console.WriteLine($"Prices count: {prices.Length}");
+    }
+}`}
+/>
+
+## Accessing Array Elements
+
+<CodeEditor 
+  initialCode={`using System;
+
+class Program
+{
+    static void Main()
+    {
+        string[] days = { "Monday", "Tuesday", "Wednesday", 
+                          "Thursday", "Friday", "Saturday", "Sunday" };
+        
+        // Access by index (0-based)
+        Console.WriteLine($"First day: {days[0]}");
+        Console.WriteLine($"Third day: {days[2]}");
+        
+        // Access last element using Length
+        Console.WriteLine($"Last day: {days[days.Length - 1]}");
+        
+        // C# 8+ Index from end operator
+        Console.WriteLine($"Last day (^1): {days[^1]}");
+        Console.WriteLine($"Second to last: {days[^2]}");
+        
+        // Modify an element
+        days[5] = "SATURDAY";
+        Console.WriteLine($"\\nModified: {days[5]}");
+        
+        // Get array length
+        Console.WriteLine($"\\nTotal days: {days.Length}");
+    }
+}`}
+/>
+
+## Iterating Over Arrays
+
+<CodeEditor 
+  initialCode={`using System;
+
+class Program
+{
+    static void Main()
+    {
+        int[] scores = { 85, 92, 78, 95, 88 };
+        
+        // Method 1: for loop (when you need the index)
+        Console.WriteLine("Using for loop:");
+        for (int i = 0; i < scores.Length; i++)
+        {
+            Console.WriteLine($"Score {i + 1}: {scores[i]}");
+        }
+        
+        // Method 2: foreach loop (cleaner, read-only)
+        Console.WriteLine("\\nUsing foreach:");
+        foreach (int score in scores)
+        {
+            Console.WriteLine($"Score: {score}");
+        }
+        
+        // Method 3: while loop
+        Console.WriteLine("\\nUsing while loop:");
+        int index = 0;
+        while (index < scores.Length)
+        {
+            Console.WriteLine($"Index {index}: {scores[index]}");
+            index++;
+        }
+    }
+}`}
+/>
+
+## Common Array Operations
+
+<CodeEditor 
+  initialCode={`using System;
+
+class Program
+{
+    static void Main()
+    {
+        int[] numbers = { 5, 2, 8, 1, 9, 3, 7, 4, 6 };
+        
+        Console.WriteLine("Original: " + string.Join(", ", numbers));
+        
+        // Find min and max
+        int min = numbers[0], max = numbers[0];
+        foreach (int n in numbers)
+        {
+            if (n < min) min = n;
+            if (n > max) max = n;
+        }
+        Console.WriteLine($"Min: {min}, Max: {max}");
+        
+        // Calculate sum and average
+        int sum = 0;
+        foreach (int n in numbers)
+        {
+            sum += n;
+        }
+        double average = (double)sum / numbers.Length;
+        Console.WriteLine($"Sum: {sum}, Average: {average:F2}");
+        
+        // Sort the array (modifies original)
+        Array.Sort(numbers);
+        Console.WriteLine("Sorted: " + string.Join(", ", numbers));
+        
+        // Reverse the array
+        Array.Reverse(numbers);
+        Console.WriteLine("Reversed: " + string.Join(", ", numbers));
+        
+        // Search for an element
+        int[] sorted = { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+        int idx = Array.BinarySearch(sorted, 5);
+        Console.WriteLine($"\\nIndex of 5: {idx}");
+        
+        // Check if element exists
+        bool exists = Array.Exists(sorted, x => x == 7);
+        Console.WriteLine($"Does 7 exist? {exists}");
+    }
+}`}
+/>
+
+## Multidimensional Arrays
+
+C# supports rectangular multidimensional arrays:
+
+<CodeEditor 
+  initialCode={`using System;
+
+class Program
+{
+    static void Main()
+    {
+        // 2D array (matrix) - 3 rows, 4 columns
+        int[,] matrix = new int[3, 4];
+        
+        // Fill with values
+        for (int row = 0; row < 3; row++)
+        {
+            for (int col = 0; col < 4; col++)
+            {
+                matrix[row, col] = row * 4 + col + 1;
+            }
+        }
+        
+        // Print the matrix
+        Console.WriteLine("Matrix:");
+        for (int row = 0; row < 3; row++)
+        {
+            for (int col = 0; col < 4; col++)
+            {
+                Console.Write($"{matrix[row, col],4}");
+            }
+            Console.WriteLine();
+        }
+        
+        // Initialize with values
+        int[,] grid = {
+            { 1, 2, 3 },
+            { 4, 5, 6 },
+            { 7, 8, 9 }
+        };
+        
+        Console.WriteLine($"\\nGrid dimensions: {grid.GetLength(0)} x {grid.GetLength(1)}");
+        Console.WriteLine($"Element at [1,2]: {grid[1, 2]}");
+    }
+}`}
+/>
+
+## Jagged Arrays
+
+Jagged arrays are "arrays of arrays" where each inner array can have a different size:
+
+<CodeEditor 
+  initialCode={`using System;
+
+class Program
+{
+    static void Main()
+    {
+        // Jagged array - each row can have different length
+        int[][] jagged = new int[3][];
+        
+        jagged[0] = new int[] { 1, 2, 3 };
+        jagged[1] = new int[] { 4, 5 };
+        jagged[2] = new int[] { 6, 7, 8, 9 };
+        
+        Console.WriteLine("Jagged array:");
+        for (int i = 0; i < jagged.Length; i++)
+        {
+            Console.Write($"Row {i}: ");
+            for (int j = 0; j < jagged[i].Length; j++)
+            {
+                Console.Write($"{jagged[i][j]} ");
+            }
+            Console.WriteLine();
+        }
+        
+        // Initialize inline
+        string[][] names = {
+            new string[] { "Alice", "Bob" },
+            new string[] { "Charlie", "David", "Eve" },
+            new string[] { "Frank" }
+        };
+        
+        Console.WriteLine("\\nNames:");
+        foreach (string[] row in names)
+        {
+            Console.WriteLine(string.Join(", ", row));
+        }
+    }
+}`}
+/>
+
+## Array Slicing with Ranges (C# 8+)
+
+<CodeEditor 
+  initialCode={`using System;
+
+class Program
+{
+    static void Main()
+    {
+        int[] numbers = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+        
+        Console.WriteLine("Original: " + string.Join(", ", numbers));
+        
+        // Range operator (..)
+        int[] firstThree = numbers[0..3];
+        Console.WriteLine("First 3 [0..3]: " + string.Join(", ", firstThree));
+        
+        int[] lastThree = numbers[^3..];
+        Console.WriteLine("Last 3 [^3..]: " + string.Join(", ", lastThree));
+        
+        int[] middle = numbers[3..7];
+        Console.WriteLine("Middle [3..7]: " + string.Join(", ", middle));
+        
+        // Omit start or end
+        int[] fromStart = numbers[..5];
+        Console.WriteLine("From start [..5]: " + string.Join(", ", fromStart));
+        
+        int[] toEnd = numbers[5..];
+        Console.WriteLine("To end [5..]: " + string.Join(", ", toEnd));
+    }
+}`}
+/>
+
+## Passing Arrays to Methods
+
+<CodeEditor 
+  initialCode={`using System;
+
+class Program
+{
+    static void Main()
+    {
+        int[] numbers = { 5, 3, 8, 1, 9, 2 };
+        
+        Console.WriteLine("Original: " + string.Join(", ", numbers));
+        
+        // Arrays are passed by reference
+        DoubleValues(numbers);
+        Console.WriteLine("After doubling: " + string.Join(", ", numbers));
+        
+        // Return an array from a method
+        int[] squares = GetSquares(5);
+        Console.WriteLine("Squares: " + string.Join(", ", squares));
+        
+        // params keyword for variable arguments
+        int sum = Sum(1, 2, 3, 4, 5);
+        Console.WriteLine($"Sum of 1-5: {sum}");
+    }
+    
+    static void DoubleValues(int[] arr)
+    {
+        for (int i = 0; i < arr.Length; i++)
+        {
+            arr[i] *= 2;
+        }
+    }
+    
+    static int[] GetSquares(int count)
+    {
+        int[] result = new int[count];
+        for (int i = 0; i < count; i++)
+        {
+            result[i] = (i + 1) * (i + 1);
+        }
+        return result;
+    }
+    
+    // params allows variable number of arguments
+    static int Sum(params int[] values)
+    {
+        int total = 0;
+        foreach (int v in values)
+        {
+            total += v;
+        }
+        return total;
+    }
+}`}
+/>
+
+## Practical Example: Student Grades
+
+<CodeEditor 
+  initialCode={`using System;
+
+class Program
+{
+    static void Main()
+    {
+        string[] students = { "Alice", "Bob", "Charlie", "Diana", "Eve" };
+        int[] grades = { 85, 92, 78, 95, 88 };
+        
+        Console.WriteLine("=== Student Grade Report ===\\n");
+        
+        // Display all grades
+        for (int i = 0; i < students.Length; i++)
+        {
+            string letterGrade = GetLetterGrade(grades[i]);
+            Console.WriteLine($"{students[i]}: {grades[i]} ({letterGrade})");
+        }
+        
+        // Calculate statistics
+        int sum = 0, min = grades[0], max = grades[0];
+        int minIdx = 0, maxIdx = 0;
+        
+        for (int i = 0; i < grades.Length; i++)
+        {
+            sum += grades[i];
+            if (grades[i] < min) { min = grades[i]; minIdx = i; }
+            if (grades[i] > max) { max = grades[i]; maxIdx = i; }
+        }
+        
+        double average = (double)sum / grades.Length;
+        
+        Console.WriteLine("\\n=== Statistics ===");
+        Console.WriteLine($"Average: {average:F2}");
+        Console.WriteLine($"Highest: {students[maxIdx]} with {max}");
+        Console.WriteLine($"Lowest: {students[minIdx]} with {min}");
+    }
+    
+    static string GetLetterGrade(int score)
+    {
+        if (score >= 90) return "A";
+        if (score >= 80) return "B";
+        if (score >= 70) return "C";
+        if (score >= 60) return "D";
+        return "F";
+    }
+}`}
+/>
+
+## Key Takeaways
+
+- Arrays store multiple values of the same type with fixed size
+- Array indices are **zero-based** (first element is at index 0)
+- Use `Length` property to get the number of elements
+- Use `for` loop when you need the index, `foreach` for cleaner iteration
+- Arrays are **reference types** - passed by reference to methods
+- Use multidimensional arrays for grids/matrices
+- Use jagged arrays when rows need different lengths
+- C# 8+ supports range operators for slicing (`[1..5]`, `[^3..]`)
+- Use `params` keyword for methods accepting variable arguments
+
+## Best Practices
+
+1. **Check bounds** - Always ensure index is within valid range
+2. **Use foreach** when you don't need to modify elements
+3. **Consider List&lt;T&gt;** when you need dynamic resizing
+4. **Initialize with values** when possible for cleaner code
+5. **Use Array methods** like `Sort`, `Reverse`, `Find` for common operations
+
+In the next lesson, we'll explore collections like `List<T>` that provide dynamic sizing!

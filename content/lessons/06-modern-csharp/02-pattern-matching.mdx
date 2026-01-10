@@ -1,38 +1,37 @@
 ---
 title: "Pattern Matching"
-description: "Master pattern matching with switch expressions and modern C# patterns"
+description: "Use powerful pattern matching for cleaner conditional logic"
 order: 2
 difficulty: "advanced"
-tags: ["pattern-matching", "switch-expressions", "modern-csharp"]
+tags: ["pattern matching", "switch expression", "is", "when"]
 duration: "30 minutes"
 ---
 
 # Pattern Matching
 
-Pattern matching enables powerful, concise code for testing and deconstructing data. It's one of the most significant modern C# features.
+Pattern matching is a powerful feature that enables concise, expressive code for conditional logic. It extends traditional switch statements with type patterns, property patterns, and more.
 
-## Type Patterns
+## Type Patterns with 'is'
 
 <CodeEditor 
-  language="csharp"
-  code={`using System;
+  initialCode={`using System;
 
 class Program
 {
     static void Main()
     {
-        object[] items = { 42, "Hello", 3.14, true, null };
+        object[] items = { 42, "Hello", 3.14, true, null, new int[] {1, 2, 3} };
         
         foreach (var item in items)
         {
-            // Type pattern with is
+            // Type pattern with 'is'
             if (item is int number)
             {
-                Console.WriteLine($"Integer: {number}, doubled: {number * 2}");
+                Console.WriteLine($"Integer: {number * 2}");
             }
             else if (item is string text)
             {
-                Console.WriteLine($"String: {text}, length: {text.Length}");
+                Console.WriteLine($"String: {text.ToUpper()}");
             }
             else if (item is double d)
             {
@@ -42,443 +41,522 @@ class Program
             {
                 Console.WriteLine($"Boolean: {flag}");
             }
-            else
+            else if (item is int[] arr)
             {
-                Console.WriteLine("Null or unknown type");
+                Console.WriteLine($"Array: [{string.Join(", ", arr)}]");
+            }
+            else if (item is null)
+            {
+                Console.WriteLine("Null value");
             }
         }
     }
 }`}
-  title="Type Patterns"
 />
 
 ## Switch Expressions (C# 8+)
 
+A more concise alternative to switch statements:
+
 <CodeEditor 
-  language="csharp"
-  code={`using System;
+  initialCode={`using System;
 
 class Program
 {
     static void Main()
     {
-        // Traditional switch statement
-        string day1 = GetDayType("Monday");
-        Console.WriteLine($"Monday is a {day1}");
+        // Traditional switch statement vs switch expression
         
-        // Modern switch expression
-        string day2 = GetDayTypeModern("Saturday");
-        Console.WriteLine($"Saturday is a {day2}");
-        
-        // With numbers
-        for (int i = 1; i <= 5; i++)
+        // Example 1: Day of week
+        int day = 3;
+        string dayName = day switch
         {
-            string description = i switch
-            {
-                1 => "one",
-                2 => "two",
-                3 => "three",
-                4 => "four",
-                5 => "five",
-                _ => "unknown"  // _ is discard pattern
-            };
-            Console.WriteLine($"{i} -> {description}");
+            1 => "Monday",
+            2 => "Tuesday",
+            3 => "Wednesday",
+            4 => "Thursday",
+            5 => "Friday",
+            6 => "Saturday",
+            7 => "Sunday",
+            _ => "Invalid day"  // Default case
+        };
+        Console.WriteLine($"Day {day} is {dayName}");
+        
+        // Example 2: Grade letter
+        int score = 85;
+        string grade = score switch
+        {
+            >= 90 => "A",
+            >= 80 => "B",
+            >= 70 => "C",
+            >= 60 => "D",
+            _ => "F"
+        };
+        Console.WriteLine($"Score {score} = Grade {grade}");
+        
+        // Example 3: Traffic light
+        string light = "yellow";
+        string action = light switch
+        {
+            "green" => "Go",
+            "yellow" => "Slow down",
+            "red" => "Stop",
+            _ => "Unknown signal"
+        };
+        Console.WriteLine($"Light: {light} => {action}");
+    }
+}`}
+/>
+
+## Pattern Matching with Types
+
+<CodeEditor 
+  initialCode={`using System;
+using System.Collections.Generic;
+
+abstract class Shape { }
+class Circle : Shape { public double Radius { get; set; } }
+class Rectangle : Shape { public double Width { get; set; } public double Height { get; set; } }
+class Triangle : Shape { public double Base { get; set; } public double Height { get; set; } }
+
+class Program
+{
+    static void Main()
+    {
+        List<Shape> shapes = new List<Shape>
+        {
+            new Circle { Radius = 5 },
+            new Rectangle { Width = 10, Height = 5 },
+            new Triangle { Base = 8, Height = 6 },
+            new Circle { Radius = 3 }
+        };
+        
+        Console.WriteLine("Shape Areas:");
+        foreach (var shape in shapes)
+        {
+            double area = CalculateArea(shape);
+            Console.WriteLine($"  {shape.GetType().Name}: {area:F2}");
         }
     }
     
-    // Old way
-    static string GetDayType(string day)
+    static double CalculateArea(Shape shape) => shape switch
     {
-        switch (day)
-        {
-            case "Monday":
-            case "Tuesday":
-            case "Wednesday":
-            case "Thursday":
-            case "Friday":
-                return "weekday";
-            case "Saturday":
-            case "Sunday":
-                return "weekend";
-            default:
-                return "unknown";
-        }
-    }
-    
-    // New way
-    static string GetDayTypeModern(string day) => day switch
-    {
-        "Monday" or "Tuesday" or "Wednesday" or "Thursday" or "Friday" => "weekday",
-        "Saturday" or "Sunday" => "weekend",
-        _ => "unknown"
+        Circle c => Math.PI * c.Radius * c.Radius,
+        Rectangle r => r.Width * r.Height,
+        Triangle t => 0.5 * t.Base * t.Height,
+        null => throw new ArgumentNullException(nameof(shape)),
+        _ => throw new ArgumentException("Unknown shape")
     };
 }`}
-  title="Switch Expressions"
 />
 
 ## Property Patterns
 
+Match based on object properties:
+
 <CodeEditor 
-  language="csharp"
-  code={`using System;
+  initialCode={`using System;
 
 class Person
 {
     public string Name { get; set; }
     public int Age { get; set; }
-    public string City { get; set; }
+    public string Country { get; set; }
 }
 
 class Program
 {
     static void Main()
     {
-        Person[] people = 
+        var people = new[]
         {
-            new Person { Name = "Alice", Age = 25, City = "New York" },
-            new Person { Name = "Bob", Age = 17, City = "Boston" },
-            new Person { Name = "Charlie", Age = 30, City = "Chicago" },
-            new Person { Name = "David", Age = 16, City = "New York" }
+            new Person { Name = "Alice", Age = 25, Country = "USA" },
+            new Person { Name = "Bob", Age = 17, Country = "UK" },
+            new Person { Name = "Charlie", Age = 30, Country = "USA" },
+            new Person { Name = "Diana", Age = 15, Country = "Canada" }
         };
         
+        Console.WriteLine("Eligibility Check:");
         foreach (var person in people)
         {
-            // Property pattern
-            string category = person switch
-            {
-                { Age: < 18 } => "Minor",
-                { Age: >= 18 and < 65 } => "Adult",
-                { Age: >= 65 } => "Senior",
-                _ => "Unknown"
-            };
-            
-            Console.WriteLine($"{person.Name} ({person.Age}): {category}");
-        }
-        
-        Console.WriteLine("\\nNew York adults:");
-        foreach (var person in people)
-        {
-            // Multiple property pattern
-            if (person is { City: "New York", Age: >= 18 })
-            {
-                Console.WriteLine($"  {person.Name}");
-            }
+            string status = GetStatus(person);
+            Console.WriteLine($"  {person.Name}: {status}");
         }
     }
-}`}
-  title="Property Patterns"
-/>
-
-## Relational and Logical Patterns
-
-<CodeEditor 
-  language="csharp"
-  code={`using System;
-
-class Program
-{
-    static void Main()
+    
+    static string GetStatus(Person person) => person switch
     {
-        int[] numbers = { -5, 0, 15, 42, 99, 150 };
-        
-        foreach (var num in numbers)
-        {
-            // Relational patterns: <, <=, >, >=
-            string range = num switch
-            {
-                < 0 => "negative",
-                0 => "zero",
-                > 0 and < 50 => "small positive",
-                >= 50 and < 100 => "medium positive",
-                >= 100 => "large positive"
-            };
-            
-            Console.WriteLine($"{num,4} -> {range}");
-        }
-        
-        Console.WriteLine("\\nGrade categories:");
-        int[] scores = { 95, 85, 75, 65, 55 };
-        
-        foreach (var score in scores)
-        {
-            // Logical patterns: and, or, not
-            string grade = score switch
-            {
-                >= 90 and <= 100 => "A",
-                >= 80 and < 90 => "B",
-                >= 70 and < 80 => "C",
-                >= 60 and < 70 => "D",
-                < 60 and >= 0 => "F",
-                _ => "Invalid"
-            };
-            
-            Console.WriteLine($"Score {score}: Grade {grade}");
-        }
-    }
+        // Property patterns
+        { Age: < 18 } => "Minor - Not eligible",
+        { Country: "USA", Age: >= 21 } => "US Adult - Full access",
+        { Country: "USA", Age: >= 18 } => "US Young Adult - Limited access",
+        { Country: "UK" or "Canada", Age: >= 18 } => "International Adult - Full access",
+        _ => "Other - Standard access"
+    };
 }`}
-  title="Relational Patterns"
 />
 
 ## Tuple Patterns
 
+Match multiple values at once:
+
 <CodeEditor 
-  language="csharp"
-  code={`using System;
+  initialCode={`using System;
 
 class Program
 {
     static void Main()
     {
-        // Rock, Paper, Scissors game
-        Console.WriteLine("Rock, Paper, Scissors:");
-        Console.WriteLine(PlayGame("rock", "paper"));
-        Console.WriteLine(PlayGame("paper", "scissors"));
-        Console.WriteLine(PlayGame("rock", "rock"));
+        // Rock-Paper-Scissors game
+        Console.WriteLine("Rock-Paper-Scissors Results:");
         
-        // Traffic light logic
-        Console.WriteLine("\\nTraffic light transitions:");
-        Console.WriteLine(GetNextLight("red", true));
-        Console.WriteLine(GetNextLight("green", false));
-        Console.WriteLine(GetNextLight("yellow", false));
+        var games = new[]
+        {
+            ("rock", "scissors"),
+            ("paper", "rock"),
+            ("scissors", "paper"),
+            ("rock", "rock"),
+            ("paper", "scissors")
+        };
+        
+        foreach (var (player1, player2) in games)
+        {
+            string result = DetermineWinner(player1, player2);
+            Console.WriteLine($"  {player1} vs {player2}: {result}");
+        }
+        
+        // State machine example
+        Console.WriteLine("\\nVending Machine:");
+        string state = "idle";
+        string[] actions = { "insert_coin", "select_item", "dispense", "reset" };
+        
+        foreach (var action in actions)
+        {
+            state = ProcessVendingMachine(state, action);
+            Console.WriteLine($"  After '{action}': {state}");
+        }
     }
     
-    static string PlayGame(string player1, string player2) => (player1, player2) switch
+    static string DetermineWinner(string p1, string p2) => (p1, p2) switch
     {
-        ("rock", "paper") => "Player 2 wins!",
-        ("rock", "scissors") => "Player 1 wins!",
-        ("paper", "rock") => "Player 1 wins!",
-        ("paper", "scissors") => "Player 2 wins!",
-        ("scissors", "rock") => "Player 2 wins!",
-        ("scissors", "paper") => "Player 1 wins!",
-        (var p1, var p2) when p1 == p2 => "Tie!",
+        ("rock", "scissors") => "Player 1 wins",
+        ("paper", "rock") => "Player 1 wins",
+        ("scissors", "paper") => "Player 1 wins",
+        ("scissors", "rock") => "Player 2 wins",
+        ("rock", "paper") => "Player 2 wins",
+        ("paper", "scissors") => "Player 2 wins",
+        var (a, b) when a == b => "Tie",
         _ => "Invalid move"
     };
     
-    static string GetNextLight(string current, bool pedestrianWaiting) => 
-        (current, pedestrianWaiting) switch
+    static string ProcessVendingMachine(string currentState, string action) => (currentState, action) switch
     {
-        ("red", _) => "green",
-        ("green", true) => "yellow",
-        ("green", false) => "green",
-        ("yellow", _) => "red",
-        _ => "error"
+        ("idle", "insert_coin") => "has_money",
+        ("has_money", "select_item") => "item_selected",
+        ("item_selected", "dispense") => "dispensing",
+        ("dispensing", "reset") => "idle",
+        (_, "reset") => "idle",  // Can always reset
+        _ => currentState  // No change
     };
 }`}
-  title="Tuple Patterns"
+/>
+
+## Relational Patterns
+
+Use comparison operators in patterns:
+
+<CodeEditor 
+  initialCode={`using System;
+
+class Program
+{
+    static void Main()
+    {
+        // Temperature classification
+        int[] temperatures = { -10, 0, 15, 25, 35, 42 };
+        
+        Console.WriteLine("Temperature Classifications:");
+        foreach (int temp in temperatures)
+        {
+            string classification = ClassifyTemperature(temp);
+            Console.WriteLine($"  {temp}°C: {classification}");
+        }
+        
+        // Age groups
+        int[] ages = { 5, 12, 17, 25, 50, 70, 85 };
+        
+        Console.WriteLine("\\nAge Groups:");
+        foreach (int age in ages)
+        {
+            string group = GetAgeGroup(age);
+            Console.WriteLine($"  Age {age}: {group}");
+        }
+        
+        // Price tiers
+        decimal[] prices = { 5.99m, 15.00m, 49.99m, 99.99m, 250.00m };
+        
+        Console.WriteLine("\\nPrice Tiers:");
+        foreach (decimal price in prices)
+        {
+            string tier = GetPriceTier(price);
+            Console.WriteLine($"  ${'{'}price{'}'}: {tier}");
+        }
+    }
+    
+    static string ClassifyTemperature(int temp) => temp switch
+    {
+        < 0 => "Freezing",
+        >= 0 and < 10 => "Cold",
+        >= 10 and < 20 => "Cool",
+        >= 20 and < 30 => "Warm",
+        >= 30 and < 40 => "Hot",
+        >= 40 => "Extreme heat"
+    };
+    
+    static string GetAgeGroup(int age) => age switch
+    {
+        < 0 => "Invalid",
+        < 13 => "Child",
+        < 20 => "Teenager",
+        < 30 => "Young Adult",
+        < 60 => "Adult",
+        < 80 => "Senior",
+        _ => "Elderly"
+    };
+    
+    static string GetPriceTier(decimal price) => price switch
+    {
+        <= 10m => "Budget",
+        > 10m and <= 50m => "Standard",
+        > 50m and <= 100m => "Premium",
+        > 100m => "Luxury"
+    };
+}`}
+/>
+
+## Logical Patterns (and, or, not)
+
+Combine patterns with logical operators:
+
+<CodeEditor 
+  initialCode={`using System;
+
+class Program
+{
+    static void Main()
+    {
+        // Character classification
+        char[] chars = { 'A', 'z', '5', ' ', '@', '\\n' };
+        
+        Console.WriteLine("Character Types:");
+        foreach (char c in chars)
+        {
+            string type = ClassifyChar(c);
+            string display = c == '\\n' ? "\\\\n" : c.ToString();
+            Console.WriteLine($"  '{display}': {type}");
+        }
+        
+        // Access control
+        var requests = new[]
+        {
+            (role: "admin", action: "delete"),
+            (role: "editor", action: "edit"),
+            (role: "viewer", action: "view"),
+            (role: "viewer", action: "delete"),
+            (role: "guest", action: "view")
+        };
+        
+        Console.WriteLine("\\nAccess Control:");
+        foreach (var (role, action) in requests)
+        {
+            bool allowed = IsAllowed(role, action);
+            Console.WriteLine($"  {role} -> {action}: {(allowed ? "Allowed" : "Denied")}");
+        }
+    }
+    
+    static string ClassifyChar(char c) => c switch
+    {
+        >= 'A' and <= 'Z' => "Uppercase letter",
+        >= 'a' and <= 'z' => "Lowercase letter",
+        >= '0' and <= '9' => "Digit",
+        ' ' or '\\t' or '\\n' => "Whitespace",
+        not (' ' or '\\t' or '\\n') and (>= ' ' and <= '~') => "Special character",
+        _ => "Control character"
+    };
+    
+    static bool IsAllowed(string role, string action) => (role, action) switch
+    {
+        ("admin", _) => true,  // Admin can do anything
+        ("editor", "edit" or "view") => true,
+        ("viewer", "view") => true,
+        (not "guest", not "delete") => true,  // Non-guests can do non-destructive actions
+        _ => false
+    };
+}`}
 />
 
 ## List Patterns (C# 11+)
 
+Match against list contents:
+
 <CodeEditor 
-  language="csharp"
-  code={`using System;
+  initialCode={`using System;
 
 class Program
 {
     static void Main()
     {
-        int[] empty = { };
-        int[] single = { 1 };
-        int[] pair = { 1, 2 };
-        int[] many = { 1, 2, 3, 4, 5 };
-        
-        Console.WriteLine(Describe(empty));
-        Console.WriteLine(Describe(single));
-        Console.WriteLine(Describe(pair));
-        Console.WriteLine(Describe(many));
-        
-        Console.WriteLine("\\nPattern matching on list content:");
-        int[][] lists = 
-        {
-            new int[] { 1, 2, 3 },
+        // Array patterns
+        int[][] arrays = {
+            new int[] { },
+            new int[] { 1 },
             new int[] { 1, 2 },
-            new int[] { 5, 10, 15 },
-            new int[] { 1 }
+            new int[] { 1, 2, 3 },
+            new int[] { 1, 2, 3, 4, 5 }
         };
         
-        foreach (var list in lists)
+        Console.WriteLine("Array Patterns:");
+        foreach (var arr in arrays)
         {
-            string result = list switch
-            {
-                [] => "empty",
-                [var single] => $"single element: {single}",
-                [var first, var second] => $"pair: {first}, {second}",
-                [var first, .., var last] => $"many: first={first}, last={last}",
-            };
-            Console.WriteLine(result);
+            string description = DescribeArray(arr);
+            Console.WriteLine($"  [{string.Join(", ", arr)}]: {description}");
+        }
+        
+        // Command parsing
+        string[] commands = {
+            "help",
+            "list all",
+            "add item1 item2 item3",
+            "remove firstItem"
+        };
+        
+        Console.WriteLine("\\nCommand Parsing:");
+        foreach (var cmd in commands)
+        {
+            string result = ParseCommand(cmd.Split(' '));
+            Console.WriteLine($"  '{cmd}' => {result}");
         }
     }
     
-    static string Describe(int[] array) => array switch
+    static string DescribeArray(int[] arr) => arr switch
     {
         [] => "Empty array",
-        [var x] => $"Single element: {x}",
-        [var x, var y] => $"Two elements: {x}, {y}",
-        [var first, .., var last] => $"Multiple elements: first={first}, last={last}",
+        [var single] => $"Single element: {single}",
+        [var first, var second] => $"Pair: {first} and {second}",
+        [var first, .., var last] => $"Many elements, first={first}, last={last}",
+    };
+    
+    static string ParseCommand(string[] parts) => parts switch
+    {
+        ["help"] => "Showing help...",
+        ["list", var what] => $"Listing {what}",
+        ["add", .. var items] => $"Adding {items.Length} items",
+        ["remove", var item] => $"Removing '{item}'",
+        [var cmd, ..] => $"Unknown command: {cmd}",
+        [] => "No command provided"
     };
 }`}
-  title="List Patterns"
 />
 
-## when Guard Clauses
+## Real-World Example: Order Processing
 
 <CodeEditor 
-  language="csharp"
-  code={`using System;
+  initialCode={`using System;
+using System.Collections.Generic;
 
-class Person
+enum OrderStatus { New, Processing, Shipped, Delivered, Cancelled }
+
+class Order
 {
-    public string Name { get; set; }
-    public int Age { get; set; }
-    public bool IsEmployee { get; set; }
-    public decimal Salary { get; set; }
+    public int Id { get; set; }
+    public OrderStatus Status { get; set; }
+    public decimal Total { get; set; }
+    public bool IsPriority { get; set; }
+    public string CustomerType { get; set; }
 }
 
 class Program
 {
     static void Main()
     {
-        Person[] people = 
+        var orders = new List<Order>
         {
-            new Person { Name = "Alice", Age = 25, IsEmployee = true, Salary = 75000 },
-            new Person { Name = "Bob", Age = 17, IsEmployee = false, Salary = 0 },
-            new Person { Name = "Charlie", Age = 30, IsEmployee = true, Salary = 120000 },
-            new Person { Name = "David", Age = 22, IsEmployee = true, Salary = 50000 }
+            new Order { Id = 1, Status = OrderStatus.New, Total = 50, IsPriority = false, CustomerType = "regular" },
+            new Order { Id = 2, Status = OrderStatus.New, Total = 150, IsPriority = true, CustomerType = "vip" },
+            new Order { Id = 3, Status = OrderStatus.Processing, Total = 75, IsPriority = false, CustomerType = "regular" },
+            new Order { Id = 4, Status = OrderStatus.Shipped, Total = 200, IsPriority = true, CustomerType = "vip" },
+            new Order { Id = 5, Status = OrderStatus.Cancelled, Total = 30, IsPriority = false, CustomerType = "regular" }
         };
         
-        foreach (var person in people)
+        Console.WriteLine("Order Processing:");
+        foreach (var order in orders)
         {
-            string status = person switch
-            {
-                { Age: < 18 } => "Minor",
-                { IsEmployee: false } => "Not employed",
-                { IsEmployee: true, Salary: > 100000 } => "High earner",
-                { IsEmployee: true, Salary: >= 50000 } when person.Age < 25 
-                    => "Young professional",
-                { IsEmployee: true } => "Employee",
-                _ => "Unknown"
-            };
+            string action = ProcessOrder(order);
+            decimal discount = CalculateDiscount(order);
             
-            Console.WriteLine($"{person.Name}: {status}");
-        }
-        
-        Console.WriteLine("\\nDivision examples:");
-        int[] numbers = { 10, 0, -5, 15 };
-        
-        foreach (var num in numbers)
-        {
-            string result = num switch
-            {
-                0 => "Cannot divide by zero",
-                < 0 => "Negative number",
-                var n when n > 0 && n < 10 => $"Small result: {100 / n}",
-                var n => $"Result: {100 / n}"
-            };
-            Console.WriteLine($"100 / {num}: {result}");
-        }
-    }
-}`}
-  title="Guard Clauses"
-/>
-
-## Real-World Example: HTTP Response Handler
-
-<CodeEditor 
-  language="csharp"
-  code={`using System;
-
-class HttpResponse
-{
-    public int StatusCode { get; set; }
-    public string Body { get; set; }
-    public bool IsSuccess { get; set; }
-    public string ErrorMessage { get; set; }
-}
-
-class Program
-{
-    static void Main()
-    {
-        HttpResponse[] responses = 
-        {
-            new HttpResponse { StatusCode = 200, IsSuccess = true, Body = "Success data" },
-            new HttpResponse { StatusCode = 404, IsSuccess = false, ErrorMessage = "Not found" },
-            new HttpResponse { StatusCode = 500, IsSuccess = false, ErrorMessage = "Server error" },
-            new HttpResponse { StatusCode = 401, IsSuccess = false, ErrorMessage = "Unauthorized" }
-        };
-        
-        foreach (var response in responses)
-        {
-            HandleResponse(response);
+            Console.WriteLine($"  Order #{order.Id}:");
+            Console.WriteLine($"    Status: {order.Status}");
+            Console.WriteLine($"    Action: {action}");
+            Console.WriteLine($"    Discount: {discount:P0}");
             Console.WriteLine();
         }
     }
     
-    static void HandleResponse(HttpResponse response)
+    static string ProcessOrder(Order order) => order switch
     {
-        var message = response switch
-        {
-            { IsSuccess: true, StatusCode: 200 } => 
-                $"✓ Success: {response.Body}",
-            
-            { StatusCode: 404 } => 
-                "⚠ Not Found: Resource doesn't exist",
-            
-            { StatusCode: >= 400 and < 500 } => 
-                $"⚠ Client Error ({response.StatusCode}): {response.ErrorMessage}",
-            
-            { StatusCode: >= 500 } => 
-                $"❌ Server Error ({response.StatusCode}): {response.ErrorMessage}",
-            
-            { StatusCode: >= 200 and < 300, IsSuccess: true } => 
-                $"✓ Success ({response.StatusCode})",
-            
-            _ => 
-                $"Unknown response: {response.StatusCode}"
-        };
+        // Priority VIP orders get immediate attention
+        { IsPriority: true, CustomerType: "vip", Status: OrderStatus.New } 
+            => "Rush to fulfillment center",
         
-        Console.WriteLine(message);
+        // Large orders get special handling
+        { Total: > 100, Status: OrderStatus.New } 
+            => "Flag for quality check before processing",
         
-        // Handle retry logic
-        bool shouldRetry = response switch
-        {
-            { StatusCode: >= 500 } => true,
-            { StatusCode: 429 } => true,  // Too many requests
-            { StatusCode: 408 } => true,  // Request timeout
-            _ => false
-        };
+        // Normal new orders
+        { Status: OrderStatus.New } 
+            => "Add to standard processing queue",
         
-        if (shouldRetry)
-        {
-            Console.WriteLine("  → Will retry this request");
-        }
-    }
+        // Cancelled orders
+        { Status: OrderStatus.Cancelled } 
+            => "Process refund",
+        
+        // Shipped priority orders
+        { IsPriority: true, Status: OrderStatus.Shipped } 
+            => "Send tracking notification",
+        
+        // Default
+        _ => "Continue standard workflow"
+    };
+    
+    static decimal CalculateDiscount(Order order) => order switch
+    {
+        { CustomerType: "vip", Total: > 100 } => 0.20m,
+        { CustomerType: "vip" } => 0.10m,
+        { Total: > 200 } => 0.15m,
+        { Total: > 100 } => 0.05m,
+        _ => 0m
+    };
 }`}
-  title="HTTP Response Handler"
 />
-
-## Best Practices
-
-1. **Prefer switch expressions** - More concise than statements
-2. **Use _ for default** - Explicit discard pattern
-3. **Combine with when** - For complex conditions
-4. **Property patterns** - Check object properties
-5. **Tuple patterns** - Match multiple values
-6. **Keep patterns simple** - Break complex logic into methods
-7. **Order matters** - More specific patterns first
 
 ## Key Takeaways
 
-- **Pattern matching** enables expressive, type-safe code
-- **Switch expressions** are more concise than switch statements
-- **Property patterns** test object properties
-- **Relational patterns**: `<`, `>`, `>=`, `<=`
-- **Logical patterns**: `and`, `or`, `not`
+- **Switch expressions** provide concise, expression-based pattern matching
+- **Type patterns** allow safe casting with `is` keyword
+- **Property patterns** match based on object properties
 - **Tuple patterns** match multiple values simultaneously
-- **List patterns** (C# 11+) match collection shapes
-- **when clauses** add additional conditions
-- Makes code **more readable** and **less error-prone**
+- **Relational patterns** use `<`, `>`, `<=`, `>=` for comparisons
+- **Logical patterns** combine with `and`, `or`, `not`
+- **List patterns** (C# 11+) match array/list contents
+
+## Best Practices
+
+1. **Use switch expressions** for cleaner code
+2. **Prefer patterns** over complex if-else chains
+3. **Use discard (_)** for default cases
+4. **Combine patterns** for complex conditions
+5. **Keep patterns readable** - don't over-complicate
 
 ## Next Steps
 
-Final lesson: **Records** - immutable data types with value semantics!
+Next: **Records** - immutable data types with built-in functionality!

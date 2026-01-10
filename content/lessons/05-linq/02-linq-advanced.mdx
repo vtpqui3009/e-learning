@@ -1,414 +1,156 @@
 ---
 title: "Advanced LINQ"
-description: "Master GroupBy, Join, Aggregate, and complex LINQ queries"
+description: "Master advanced LINQ operations including GroupBy, Join, and complex queries"
 order: 2
 difficulty: "advanced"
-tags: ["linq", "groupby", "join", "aggregate", "advanced"]
-duration: "40 minutes"
+tags: ["linq", "groupby", "join", "aggregation", "advanced"]
+duration: "35 minutes"
 ---
 
 # Advanced LINQ
 
-Master complex LINQ operations including grouping, joining, and custom aggregations for powerful data manipulation.
+Now that you understand LINQ basics, let's explore advanced operations that enable complex data transformations and queries.
 
-## GroupBy - Grouping Data
+## GroupBy
 
-<CodeEditor 
-  language="csharp"
-  code={`using System;
-using System.Linq;
-using System.Collections.Generic;
-
-class Person
-{
-    public string Name { get; set; }
-    public int Age { get; set; }
-    public string City { get; set; }
-}
-
-class Program
-{
-    static void Main()
-    {
-        List<Person> people = new List<Person>
-        {
-            new Person { Name = "Alice", Age = 25, City = "New York" },
-            new Person { Name = "Bob", Age = 30, City = "Boston" },
-            new Person { Name = "Charlie", Age = 25, City = "New York" },
-            new Person { Name = "David", Age = 35, City = "Boston" },
-            new Person { Name = "Eve", Age = 30, City = "Chicago" }
-        };
-        
-        // Group by city
-        var byCity = people.GroupBy(p => p.City);
-        
-        Console.WriteLine("People by city:");
-        foreach (var group in byCity)
-        {
-            Console.WriteLine($"\\n{group.Key}:");
-            foreach (var person in group)
-            {
-                Console.WriteLine($"  - {person.Name}, {person.Age}");
-            }
-        }
-        
-        // Group by age
-        var byAge = people.GroupBy(p => p.Age);
-        
-        Console.WriteLine("\\nPeople by age:");
-        foreach (var group in byAge)
-        {
-            var names = string.Join(", ", group.Select(p => p.Name));
-            Console.WriteLine($"Age {group.Key}: {names} (Count: {group.Count()})");
-        }
-        
-        // Group and aggregate
-        var cityCounts = people
-            .GroupBy(p => p.City)
-            .Select(g => new
-            {
-                City = g.Key,
-                Count = g.Count(),
-                AvgAge = g.Average(p => p.Age)
-            });
-        
-        Console.WriteLine("\\nCity statistics:");
-        foreach (var stat in cityCounts)
-        {
-            Console.WriteLine($"{stat.City}: {stat.Count} people, avg age \${stat.AvgAge:F1}");
-        }
-    }
-}`}
-  title="GroupBy Example"
-/>
-
-## Join - Combining Collections
+GroupBy organizes elements into groups based on a key selector.
 
 <CodeEditor 
-  language="csharp"
-  code={`using System;
+  initialCode={`using System;
 using System.Linq;
 using System.Collections.Generic;
 
 class Student
 {
-    public int Id { get; set; }
     public string Name { get; set; }
-}
-
-class Course
-{
-    public int StudentId { get; set; }
-    public string CourseName { get; set; }
-    public string Grade { get; set; }
+    public string Department { get; set; }
+    public int Grade { get; set; }
 }
 
 class Program
 {
     static void Main()
     {
-        List<Student> students = new List<Student>
+        var students = new List<Student>
         {
-            new Student { Id = 1, Name = "Alice" },
-            new Student { Id = 2, Name = "Bob" },
-            new Student { Id = 3, Name = "Charlie" }
+            new Student { Name = "Alice", Department = "CS", Grade = 90 },
+            new Student { Name = "Bob", Department = "Math", Grade = 85 },
+            new Student { Name = "Charlie", Department = "CS", Grade = 88 },
+            new Student { Name = "Diana", Department = "Physics", Grade = 92 },
+            new Student { Name = "Eve", Department = "CS", Grade = 95 },
+            new Student { Name = "Frank", Department = "Math", Grade = 78 }
         };
         
-        List<Course> courses = new List<Course>
-        {
-            new Course { StudentId = 1, CourseName = "Math", Grade = "A" },
-            new Course { StudentId = 1, CourseName = "Physics", Grade = "B" },
-            new Course { StudentId = 2, CourseName = "Math", Grade = "B" },
-            new Course { StudentId = 3, CourseName = "Chemistry", Grade = "A" }
-        };
+        // Basic GroupBy
+        var byDepartment = students.GroupBy(s => s.Department);
         
-        // Inner join
-        var joined = students.Join(
-            courses,
-            student => student.Id,
-            course => course.StudentId,
-            (student, course) => new
+        Console.WriteLine("Students by Department:");
+        foreach (var group in byDepartment)
+        {
+            Console.WriteLine($"\\n{group.Key}:");
+            foreach (var student in group)
             {
-                StudentName = student.Name,
-                Course = course.CourseName,
-                Grade = course.Grade
+                Console.WriteLine($"  {student.Name}: {student.Grade}");
             }
-        );
-        
-        Console.WriteLine("Student courses:");
-        foreach (var item in joined)
-        {
-            Console.WriteLine($"{item.StudentName}: {item.Course} - {item.Grade}");
         }
         
-        // Group join (each student with their courses)
-        var groupJoin = students.GroupJoin(
-            courses,
-            student => student.Id,
-            course => course.StudentId,
-            (student, studentCourses) => new
+        // GroupBy with aggregation
+        Console.WriteLine("\\nDepartment Statistics:");
+        var stats = students
+            .GroupBy(s => s.Department)
+            .Select(g => new
             {
-                Student = student.Name,
-                Courses = studentCourses
-            }
-        );
+                Department = g.Key,
+                Count = g.Count(),
+                Average = g.Average(s => s.Grade),
+                Top = g.OrderByDescending(s => s.Grade).First().Name
+            });
         
-        Console.WriteLine("\\nStudents with their courses:");
-        foreach (var item in groupJoin)
+        foreach (var stat in stats)
         {
-            Console.WriteLine($"\\n{item.Student}:");
-            foreach (var course in item.Courses)
-            {
-                Console.WriteLine($"  - {course.CourseName}: {course.Grade}");
-            }
+            Console.WriteLine($"{stat.Department}: {stat.Count} students, Avg: {stat.Average:F1}, Top: {stat.Top}");
         }
     }
 }`}
-  title="Join Operations"
 />
 
-## Aggregate - Custom Aggregations
+### Grouping by Multiple Keys
 
 <CodeEditor 
-  language="csharp"
-  code={`using System;
-using System.Linq;
-using System.Collections.Generic;
-
-class Program
-{
-    static void Main()
-    {
-        List<int> numbers = new List<int> { 1, 2, 3, 4, 5 };
-        
-        // Sum using Aggregate
-        int sum = numbers.Aggregate((total, n) => total + n);
-        Console.WriteLine($"Sum: {sum}");
-        
-        // Product
-        int product = numbers.Aggregate((result, n) => result * n);
-        Console.WriteLine($"Product: {product}");
-        
-        // With seed value
-        int sumPlus100 = numbers.Aggregate(100, (total, n) => total + n);
-        Console.WriteLine($"Sum + 100: {sumPlus100}");
-        
-        // Build string
-        List<string> words = new List<string> { "Hello", "World", "from", "LINQ" };
-        string sentence = words.Aggregate((result, word) => result + " " + word);
-        Console.WriteLine($"\\nSentence: {sentence}");
-        
-        // Complex aggregation
-        var stats = numbers.Aggregate(
-            new { Count = 0, Sum = 0, Min = int.MaxValue, Max = int.MinValue },
-            (acc, n) => new
-            {
-                Count = acc.Count + 1,
-                Sum = acc.Sum + n,
-                Min = Math.Min(acc.Min, n),
-                Max = Math.Max(acc.Max, n)
-            },
-            acc => new
-            {
-                acc.Count,
-                acc.Sum,
-                Average = (double)acc.Sum / acc.Count,
-                acc.Min,
-                acc.Max
-            }
-        );
-        
-        Console.WriteLine($"\\nStatistics:");
-        Console.WriteLine($"Count: {stats.Count}");
-        Console.WriteLine($"Sum: {stats.Sum}");
-        Console.WriteLine($"Average: {stats.Average}");
-        Console.WriteLine($"Min: {stats.Min}");
-        Console.WriteLine($"Max: {stats.Max}");
-    }
-}`}
-  title="Aggregate Function"
-/>
-
-## SelectMany - Flattening Collections
-
-<CodeEditor 
-  language="csharp"
-  code={`using System;
-using System.Linq;
-using System.Collections.Generic;
-
-class Department
-{
-    public string Name { get; set; }
-    public List<string> Employees { get; set; }
-}
-
-class Program
-{
-    static void Main()
-    {
-        List<Department> departments = new List<Department>
-        {
-            new Department 
-            { 
-                Name = "Engineering",
-                Employees = new List<string> { "Alice", "Bob", "Charlie" }
-            },
-            new Department 
-            { 
-                Name = "Marketing",
-                Employees = new List<string> { "David", "Eve" }
-            },
-            new Department 
-            { 
-                Name = "Sales",
-                Employees = new List<string> { "Frank" }
-            }
-        };
-        
-        // SelectMany flattens nested collections
-        var allEmployees = departments.SelectMany(d => d.Employees);
-        Console.WriteLine("All employees:");
-        Console.WriteLine(string.Join(", ", allEmployees));
-        
-        // With transformation
-        var employeeInfo = departments.SelectMany(
-            d => d.Employees,
-            (dept, emp) => $"{emp} ({dept.Name})"
-        );
-        
-        Console.WriteLine("\\nEmployee departments:");
-        foreach (var info in employeeInfo)
-        {
-            Console.WriteLine($"  - {info}");
-        }
-        
-        // Multiple levels
-        List<List<int>> nestedNumbers = new List<List<int>>
-        {
-            new List<int> { 1, 2, 3 },
-            new List<int> { 4, 5 },
-            new List<int> { 6, 7, 8, 9 }
-        };
-        
-        var flatNumbers = nestedNumbers.SelectMany(list => list);
-        Console.WriteLine($"\\nFlattened: {string.Join(", ", flatNumbers)}");
-    }
-}`}
-  title="SelectMany - Flattening"
-/>
-
-## Distinct, Union, Intersect, Except
-
-<CodeEditor 
-  language="csharp"
-  code={`using System;
-using System.Linq;
-using System.Collections.Generic;
-
-class Program
-{
-    static void Main()
-    {
-        List<int> list1 = new List<int> { 1, 2, 3, 4, 5 };
-        List<int> list2 = new List<int> { 4, 5, 6, 7, 8 };
-        List<int> duplicates = new List<int> { 1, 2, 2, 3, 3, 3, 4 };
-        
-        // Distinct - remove duplicates
-        var unique = duplicates.Distinct();
-        Console.WriteLine("Distinct: " + string.Join(", ", unique));
-        
-        // Union - combine and remove duplicates
-        var union = list1.Union(list2);
-        Console.WriteLine($"\\nUnion of [{string.Join(", ", list1)}]");
-        Console.WriteLine($"   and [{string.Join(", ", list2)}]:");
-        Console.WriteLine("   = " + string.Join(", ", union));
-        
-        // Intersect - common elements
-        var intersect = list1.Intersect(list2);
-        Console.WriteLine($"\\nIntersect: {string.Join(", ", intersect)}");
-        
-        // Except - elements in first but not second
-        var except1 = list1.Except(list2);
-        var except2 = list2.Except(list1);
-        Console.WriteLine($"\\nList1 Except List2: {string.Join(", ", except1)}");
-        Console.WriteLine($"List2 Except List1: {string.Join(", ", except2)}");
-        
-        // With strings
-        List<string> tech1 = new List<string> { "C#", "Java", "Python" };
-        List<string> tech2 = new List<string> { "Python", "JavaScript", "C#" };
-        
-        var commonTech = tech1.Intersect(tech2);
-        Console.WriteLine($"\\nCommon technologies: {string.Join(", ", commonTech)}");
-    }
-}`}
-  title="Set Operations"
-/>
-
-## Skip, Take, Pagination
-
-<CodeEditor 
-  language="csharp"
-  code={`using System;
-using System.Linq;
-using System.Collections.Generic;
-
-class Program
-{
-    static void Main()
-    {
-        List<int> numbers = Enumerable.Range(1, 100).ToList();
-        
-        // Take first 5
-        var firstFive = numbers.Take(5);
-        Console.WriteLine("First 5: " + string.Join(", ", firstFive));
-        
-        // Skip first 5
-        var skipFive = numbers.Skip(5).Take(5);
-        Console.WriteLine("Skip 5, take 5: " + string.Join(", ", skipFive));
-        
-        // TakeWhile - take until condition fails
-        var takeWhile = numbers.TakeWhile(n => n < 10);
-        Console.WriteLine($"\\nTake while < 10: {string.Join(", ", takeWhile)}");
-        
-        // SkipWhile - skip until condition fails
-        var skipWhile = numbers.SkipWhile(n => n < 95).Take(10);
-        Console.WriteLine($"Skip while < 95, take 10: {string.Join(", ", skipWhile)}");
-        
-        // Pagination example
-        int pageSize = 10;
-        int pageNumber = 3;
-        
-        var page = numbers
-            .Skip((pageNumber - 1) * pageSize)
-            .Take(pageSize);
-        
-        Console.WriteLine($"\\nPage {pageNumber} (size {pageSize}):");
-        Console.WriteLine(string.Join(", ", page));
-        
-        // Get page count
-        int totalPages = (int)Math.Ceiling((double)numbers.Count / pageSize);
-        Console.WriteLine($"Total pages: {totalPages}");
-    }
-}`}
-  title="Skip and Take"
-/>
-
-## Complex Real-World Example
-
-<CodeEditor 
-  language="csharp"
-  code={`using System;
+  initialCode={`using System;
 using System.Linq;
 using System.Collections.Generic;
 
 class Order
 {
-    public int OrderId { get; set; }
-    public int CustomerId { get; set; }
-    public DateTime Date { get; set; }
-    public decimal Total { get; set; }
+    public string Customer { get; set; }
+    public string Product { get; set; }
+    public int Year { get; set; }
+    public int Month { get; set; }
+    public decimal Amount { get; set; }
 }
+
+class Program
+{
+    static void Main()
+    {
+        var orders = new List<Order>
+        {
+            new Order { Customer = "Alice", Product = "Laptop", Year = 2024, Month = 1, Amount = 999 },
+            new Order { Customer = "Bob", Product = "Mouse", Year = 2024, Month = 1, Amount = 29 },
+            new Order { Customer = "Alice", Product = "Mouse", Year = 2024, Month = 1, Amount = 29 },
+            new Order { Customer = "Alice", Product = "Keyboard", Year = 2024, Month = 2, Amount = 79 },
+            new Order { Customer = "Charlie", Product = "Monitor", Year = 2024, Month = 2, Amount = 299 },
+            new Order { Customer = "Bob", Product = "Laptop", Year = 2024, Month = 2, Amount = 999 }
+        };
+        
+        // Group by multiple keys using anonymous type
+        var byYearMonth = orders
+            .GroupBy(o => new { o.Year, o.Month })
+            .Select(g => new
+            {
+                Period = $"{g.Key.Year}-{g.Key.Month:D2}",
+                OrderCount = g.Count(),
+                TotalSales = g.Sum(o => o.Amount)
+            });
+        
+        Console.WriteLine("Sales by Period:");
+        foreach (var period in byYearMonth)
+        {
+            Console.WriteLine($"{period.Period}: {period.OrderCount} orders, \\${'{'}period.TotalSales{'}'}");
+        }
+        
+        // Group by customer, then by product
+        var customerProducts = orders
+            .GroupBy(o => o.Customer)
+            .Select(g => new
+            {
+                Customer = g.Key,
+                Products = g.GroupBy(o => o.Product)
+                           .Select(pg => new { Product = pg.Key, Total = pg.Sum(o => o.Amount) })
+            });
+        
+        Console.WriteLine("\\nCustomer Purchases:");
+        foreach (var customer in customerProducts)
+        {
+            Console.WriteLine($"\\n{customer.Customer}:");
+            foreach (var product in customer.Products)
+            {
+                Console.WriteLine($"  {product.Product}: \\${'{'}product.Total{'}'}");
+            }
+        }
+    }
+}`}
+/>
+
+## Join Operations
+
+### Inner Join
+
+<CodeEditor 
+  initialCode={`using System;
+using System.Linq;
+using System.Collections.Generic;
 
 class Customer
 {
@@ -417,104 +159,565 @@ class Customer
     public string City { get; set; }
 }
 
+class Order
+{
+    public int Id { get; set; }
+    public int CustomerId { get; set; }
+    public decimal Amount { get; set; }
+    public DateTime Date { get; set; }
+}
+
 class Program
 {
     static void Main()
     {
-        List<Customer> customers = new List<Customer>
+        var customers = new List<Customer>
         {
-            new Customer { Id = 1, Name = "Alice", City = "New York" },
-            new Customer { Id = 2, Name = "Bob", City = "Boston" },
-            new Customer { Id = 3, Name = "Charlie", City = "New York" }
+            new Customer { Id = 1, Name = "Alice", City = "NYC" },
+            new Customer { Id = 2, Name = "Bob", City = "LA" },
+            new Customer { Id = 3, Name = "Charlie", City = "Chicago" }
         };
         
-        List<Order> orders = new List<Order>
+        var orders = new List<Order>
         {
-            new Order { OrderId = 1, CustomerId = 1, Total = 150, Date = DateTime.Now.AddDays(-10) },
-            new Order { OrderId = 2, CustomerId = 1, Total = 200, Date = DateTime.Now.AddDays(-5) },
-            new Order { OrderId = 3, CustomerId = 2, Total = 300, Date = DateTime.Now.AddDays(-8) },
-            new Order { OrderId = 4, CustomerId = 3, Total = 100, Date = DateTime.Now.AddDays(-2) },
-            new Order { OrderId = 5, CustomerId = 1, Total = 250, Date = DateTime.Now.AddDays(-1) }
+            new Order { Id = 1, CustomerId = 1, Amount = 100, Date = DateTime.Now },
+            new Order { Id = 2, CustomerId = 2, Amount = 200, Date = DateTime.Now },
+            new Order { Id = 3, CustomerId = 1, Amount = 150, Date = DateTime.Now },
+            new Order { Id = 4, CustomerId = 1, Amount = 75, Date = DateTime.Now }
         };
         
-        // Complex query: Customer order summary
-        var customerSummary = customers
+        // Method syntax join
+        var customerOrders = customers.Join(
+            orders,                     // Inner collection
+            c => c.Id,                  // Outer key selector
+            o => o.CustomerId,          // Inner key selector
+            (c, o) => new               // Result selector
+            {
+                CustomerName = c.Name,
+                City = c.City,
+                OrderId = o.Id,
+                Amount = o.Amount
+            });
+        
+        Console.WriteLine("Customer Orders (Inner Join):");
+        foreach (var item in customerOrders)
+        {
+            Console.WriteLine($"  {item.CustomerName} ({item.City}): Order #{item.OrderId} - \\${'{'}item.Amount{'}'}");
+        }
+        
+        // Query syntax (more readable for joins)
+        var queryJoin = from c in customers
+                        join o in orders on c.Id equals o.CustomerId
+                        select new { c.Name, o.Amount };
+        
+        Console.WriteLine("\\nQuery syntax join:");
+        foreach (var item in queryJoin)
+        {
+            Console.WriteLine($"  {item.Name}: \\${'{'}item.Amount{'}'}");
+        }
+        
+        // Note: Charlie has no orders, so he doesn't appear (inner join)
+    }
+}`}
+/>
+
+### Left Outer Join with GroupJoin
+
+<CodeEditor 
+  initialCode={`using System;
+using System.Linq;
+using System.Collections.Generic;
+
+class Customer
+{
+    public int Id { get; set; }
+    public string Name { get; set; }
+}
+
+class Order
+{
+    public int CustomerId { get; set; }
+    public decimal Amount { get; set; }
+}
+
+class Program
+{
+    static void Main()
+    {
+        var customers = new List<Customer>
+        {
+            new Customer { Id = 1, Name = "Alice" },
+            new Customer { Id = 2, Name = "Bob" },
+            new Customer { Id = 3, Name = "Charlie" }  // No orders
+        };
+        
+        var orders = new List<Order>
+        {
+            new Order { CustomerId = 1, Amount = 100 },
+            new Order { CustomerId = 1, Amount = 150 },
+            new Order { CustomerId = 2, Amount = 200 }
+        };
+        
+        // GroupJoin - each customer with their orders
+        var grouped = customers.GroupJoin(
+            orders,
+            c => c.Id,
+            o => o.CustomerId,
+            (c, orderGroup) => new
+            {
+                Customer = c.Name,
+                OrderCount = orderGroup.Count(),
+                TotalSpent = orderGroup.Sum(o => o.Amount),
+                Orders = orderGroup.ToList()
+            });
+        
+        Console.WriteLine("Customer Order Summary (includes customers with no orders):");
+        foreach (var item in grouped)
+        {
+            Console.WriteLine($"  {item.Customer}: {item.OrderCount} orders, Total: \\${'{'}item.TotalSpent{'}'}");
+        }
+        
+        // Left outer join using SelectMany
+        var leftJoin = customers
             .GroupJoin(
                 orders,
                 c => c.Id,
                 o => o.CustomerId,
-                (customer, customerOrders) => new
+                (c, orderGroup) => new { Customer = c, Orders = orderGroup })
+            .SelectMany(
+                x => x.Orders.DefaultIfEmpty(),
+                (x, order) => new
                 {
-                    Customer = customer.Name,
-                    City = customer.City,
-                    Orders = customerOrders,
-                    TotalSpent = customerOrders.Sum(o => o.Total),
-                    OrderCount = customerOrders.Count(),
-                    LastOrderDate = customerOrders.Any() ? 
-                        customerOrders.Max(o => o.Date) : (DateTime?)null
-                }
-            )
-            .OrderByDescending(cs => cs.TotalSpent);
+                    CustomerName = x.Customer.Name,
+                    Amount = order?.Amount ?? 0
+                });
         
-        Console.WriteLine("Customer Summary:");
-        foreach (var cs in customerSummary)
+        Console.WriteLine("\\nLeft Outer Join Result:");
+        foreach (var item in leftJoin)
         {
-            Console.WriteLine($"\\n{cs.Customer} ({cs.City}):");
-            Console.WriteLine($"  Orders: {cs.OrderCount}");
-            Console.WriteLine($"  Total Spent: \${cs.TotalSpent}");
-            if (cs.LastOrderDate.HasValue)
-                Console.WriteLine($"  Last Order: {cs.LastOrderDate.Value:yyyy-MM-dd}");
-        }
-        
-        // City statistics
-        var cityStats = customers
-            .Join(
-                orders,
-                c => c.Id,
-                o => o.CustomerId,
-                (c, o) => new { c.City, o.Total }
-            )
-            .GroupBy(x => x.City)
-            .Select(g => new
-            {
-                City = g.Key,
-                TotalRevenue = g.Sum(x => x.Total),
-                OrderCount = g.Count(),
-                AvgOrderValue = g.Average(x => x.Total)
-            });
-        
-        Console.WriteLine("\\n\\nCity Statistics:");
-        foreach (var stat in cityStats)
-        {
-            Console.WriteLine($"{stat.City}:");
-            Console.WriteLine($"  Total Revenue: \${stat.TotalRevenue}");
-            Console.WriteLine($"  Orders: {stat.OrderCount}");
-            Console.WriteLine($"  Avg Order: \${stat.AvgOrderValue:F2}");
+            Console.WriteLine($"  {item.CustomerName}: \\${'{'}item.Amount{'}'}");
         }
     }
 }`}
-  title="Complex Real-World Query"
 />
 
-## Best Practices
+## SelectMany - Flattening Nested Collections
 
-1. **Use method syntax** - More composable than query syntax
-2. **Materialize with ToList()** - When you need results multiple times
-3. **Avoid multiple enumerations** - Cache results if needed
-4. **Use AsEnumerable()** - Switch from IQueryable to LINQ to Objects
-5. **Consider performance** - Some operations are expensive
-6. **Break complex queries** - Into intermediate variables for readability
+<CodeEditor 
+  initialCode={`using System;
+using System.Linq;
+using System.Collections.Generic;
+
+class Team
+{
+    public string Name { get; set; }
+    public List<string> Members { get; set; }
+}
+
+class Program
+{
+    static void Main()
+    {
+        var teams = new List<Team>
+        {
+            new Team { Name = "Alpha", Members = new List<string> { "Alice", "Bob" } },
+            new Team { Name = "Beta", Members = new List<string> { "Charlie", "Diana", "Eve" } },
+            new Team { Name = "Gamma", Members = new List<string> { "Frank" } }
+        };
+        
+        // Without SelectMany - get nested lists
+        var memberLists = teams.Select(t => t.Members);
+        Console.WriteLine("Without SelectMany (nested):");
+        foreach (var list in memberLists)
+        {
+            Console.WriteLine($"  [{string.Join(", ", list)}]");
+        }
+        
+        // With SelectMany - flatten to single list
+        var allMembers = teams.SelectMany(t => t.Members);
+        Console.WriteLine($"\\nWith SelectMany (flat): {string.Join(", ", allMembers)}");
+        
+        // SelectMany with result selector
+        var membersWithTeam = teams.SelectMany(
+            t => t.Members,
+            (team, member) => new { Team = team.Name, Member = member }
+        );
+        
+        Console.WriteLine("\\nMembers with their teams:");
+        foreach (var item in membersWithTeam)
+        {
+            Console.WriteLine($"  {item.Member} -> {item.Team}");
+        }
+        
+        // Practical: Flatten nested arrays
+        var matrix = new List<int[]>
+        {
+            new[] { 1, 2, 3 },
+            new[] { 4, 5 },
+            new[] { 6, 7, 8, 9 }
+        };
+        
+        var flattened = matrix.SelectMany(row => row);
+        Console.WriteLine($"\\nFlattened matrix: {string.Join(", ", flattened)}");
+    }
+}`}
+/>
+
+## Set Operations
+
+<CodeEditor 
+  initialCode={`using System;
+using System.Linq;
+using System.Collections.Generic;
+
+class Program
+{
+    static void Main()
+    {
+        var set1 = new List<int> { 1, 2, 3, 4, 5 };
+        var set2 = new List<int> { 4, 5, 6, 7, 8 };
+        
+        Console.WriteLine($"Set 1: {string.Join(", ", set1)}");
+        Console.WriteLine($"Set 2: {string.Join(", ", set2)}");
+        
+        // Union - all elements from both sets (no duplicates)
+        var union = set1.Union(set2);
+        Console.WriteLine($"\\nUnion: {string.Join(", ", union)}");
+        
+        // Intersect - elements in both sets
+        var intersect = set1.Intersect(set2);
+        Console.WriteLine($"Intersect: {string.Join(", ", intersect)}");
+        
+        // Except - elements in first but not in second
+        var except = set1.Except(set2);
+        Console.WriteLine($"Except (1-2): {string.Join(", ", except)}");
+        
+        var exceptReverse = set2.Except(set1);
+        Console.WriteLine($"Except (2-1): {string.Join(", ", exceptReverse)}");
+        
+        // Concat - combine all (allows duplicates)
+        var concat = set1.Concat(set2);
+        Console.WriteLine($"\\nConcat: {string.Join(", ", concat)}");
+        
+        // Distinct after concat
+        var concatDistinct = set1.Concat(set2).Distinct();
+        Console.WriteLine($"Concat Distinct: {string.Join(", ", concatDistinct)}");
+        
+        // SequenceEqual - check if sequences are identical
+        var list1 = new List<int> { 1, 2, 3 };
+        var list2 = new List<int> { 1, 2, 3 };
+        var list3 = new List<int> { 3, 2, 1 };
+        
+        Console.WriteLine($"\\n1,2,3 == 1,2,3? {list1.SequenceEqual(list2)}");
+        Console.WriteLine($"1,2,3 == 3,2,1? {list1.SequenceEqual(list3)}");
+    }
+}`}
+/>
+
+## Aggregate - Custom Aggregation
+
+<CodeEditor 
+  initialCode={`using System;
+using System.Linq;
+using System.Collections.Generic;
+
+class Program
+{
+    static void Main()
+    {
+        var numbers = new List<int> { 1, 2, 3, 4, 5 };
+        
+        // Aggregate with accumulator
+        // Sum: ((((1+2)+3)+4)+5) = 15
+        var sum = numbers.Aggregate((acc, n) => acc + n);
+        Console.WriteLine($"Sum using Aggregate: {sum}");
+        
+        // Product: 1*2*3*4*5 = 120
+        var product = numbers.Aggregate((acc, n) => acc * n);
+        Console.WriteLine($"Product: {product}");
+        
+        // With seed value
+        // 10 + 1 + 2 + 3 + 4 + 5 = 25
+        var sumWithSeed = numbers.Aggregate(10, (acc, n) => acc + n);
+        Console.WriteLine($"Sum with seed 10: {sumWithSeed}");
+        
+        // String concatenation
+        var words = new List<string> { "Hello", "World", "from", "LINQ" };
+        var sentence = words.Aggregate((current, next) => current + " " + next);
+        Console.WriteLine($"Sentence: {sentence}");
+        
+        // With result selector
+        var average = numbers.Aggregate(
+            new { Sum = 0, Count = 0 },                      // Seed
+            (acc, n) => new { Sum = acc.Sum + n, Count = acc.Count + 1 },  // Accumulator
+            acc => (double)acc.Sum / acc.Count               // Result selector
+        );
+        Console.WriteLine($"Average using Aggregate: {average}");
+        
+        // Find longest string
+        var items = new List<string> { "cat", "elephant", "dog", "hippopotamus", "ant" };
+        var longest = items.Aggregate((current, next) => 
+            next.Length > current.Length ? next : current);
+        Console.WriteLine($"Longest word: {longest}");
+    }
+}`}
+/>
+
+## Let and Into (Query Syntax)
+
+<CodeEditor 
+  initialCode={`using System;
+using System.Linq;
+using System.Collections.Generic;
+
+class Student
+{
+    public string Name { get; set; }
+    public List<int> Scores { get; set; }
+}
+
+class Program
+{
+    static void Main()
+    {
+        var students = new List<Student>
+        {
+            new Student { Name = "Alice", Scores = new List<int> { 90, 85, 92 } },
+            new Student { Name = "Bob", Scores = new List<int> { 70, 75, 68 } },
+            new Student { Name = "Charlie", Scores = new List<int> { 95, 98, 100 } }
+        };
+        
+        // Using 'let' to store intermediate calculation
+        var results = from s in students
+                      let average = s.Scores.Average()
+                      let highest = s.Scores.Max()
+                      where average >= 80
+                      orderby average descending
+                      select new
+                      {
+                          Name = s.Name,
+                          Average = average,
+                          Highest = highest,
+                          Grade = average >= 90 ? "A" : "B"
+                      };
+        
+        Console.WriteLine("Students with average >= 80:");
+        foreach (var r in results)
+        {
+            Console.WriteLine($"  {r.Name}: Avg={r.Average:F1}, High={r.Highest}, Grade={r.Grade}");
+        }
+        
+        // Using 'into' for query continuation
+        var grouped = from s in students
+                      group s by s.Scores.Average() >= 80 into g
+                      select new
+                      {
+                          IsPassing = g.Key,
+                          Students = g.Select(s => s.Name).ToList()
+                      };
+        
+        Console.WriteLine("\\nGrouped by passing status:");
+        foreach (var g in grouped)
+        {
+            var status = g.IsPassing ? "Passing" : "Not Passing";
+            Console.WriteLine($"  {status}: {string.Join(", ", g.Students)}");
+        }
+    }
+}`}
+/>
+
+## Zip - Combining Sequences
+
+<CodeEditor 
+  initialCode={`using System;
+using System.Linq;
+using System.Collections.Generic;
+
+class Program
+{
+    static void Main()
+    {
+        var names = new List<string> { "Alice", "Bob", "Charlie" };
+        var scores = new List<int> { 95, 82, 88 };
+        
+        // Zip combines two sequences element by element
+        var combined = names.Zip(scores, (name, score) => $"{name}: {score}");
+        
+        Console.WriteLine("Zipped result:");
+        foreach (var item in combined)
+        {
+            Console.WriteLine($"  {item}");
+        }
+        
+        // Zip to tuple (C# 7+)
+        var tuples = names.Zip(scores);
+        
+        Console.WriteLine("\\nAs tuples:");
+        foreach (var (name, score) in tuples)
+        {
+            Console.WriteLine($"  {name} scored {score}");
+        }
+        
+        // Zip multiple sequences
+        var grades = new List<string> { "A", "B", "B+" };
+        
+        var fullRecords = names
+            .Zip(scores, (name, score) => new { Name = name, Score = score })
+            .Zip(grades, (ns, grade) => new { ns.Name, ns.Score, Grade = grade });
+        
+        Console.WriteLine("\\nFull records:");
+        foreach (var record in fullRecords)
+        {
+            Console.WriteLine($"  {record.Name}: {record.Score} ({record.Grade})");
+        }
+        
+        // Zip stops at shortest sequence
+        var short1 = new[] { 1, 2 };
+        var long2 = new[] { 10, 20, 30, 40 };
+        var zipped = short1.Zip(long2, (a, b) => a + b);
+        Console.WriteLine($"\\nShort + Long: {string.Join(", ", zipped)}");  // Only 2 elements
+    }
+}`}
+/>
+
+## Deferred vs Immediate Execution
+
+<CodeEditor 
+  initialCode={`using System;
+using System.Linq;
+using System.Collections.Generic;
+
+class Program
+{
+    static void Main()
+    {
+        var numbers = new List<int> { 1, 2, 3, 4, 5 };
+        
+        // Deferred execution - query not executed yet
+        var query = numbers.Where(n => 
+        {
+            Console.WriteLine($"  Checking {n}");
+            return n > 2;
+        });
+        
+        Console.WriteLine("Query created (nothing printed yet)");
+        
+        // Query executes when enumerated
+        Console.WriteLine("\\nFirst enumeration:");
+        foreach (var n in query)
+        {
+            Console.WriteLine($"Got: {n}");
+        }
+        
+        // Modify source after query creation
+        numbers.Add(6);
+        
+        Console.WriteLine("\\nSecond enumeration (after adding 6):");
+        var result = query.ToList();  // Executes again!
+        Console.WriteLine($"Result: {string.Join(", ", result)}");
+        
+        // Immediate execution operators:
+        Console.WriteLine("\\n=== Immediate Execution ===");
+        
+        // These execute immediately and cache results
+        var list = numbers.Where(n => n > 2).ToList();      // Immediate
+        var array = numbers.Where(n => n > 2).ToArray();    // Immediate
+        var count = numbers.Count(n => n > 2);               // Immediate
+        var first = numbers.First(n => n > 2);               // Immediate
+        var any = numbers.Any(n => n > 10);                  // Immediate
+        
+        Console.WriteLine($"Count: {count}");
+        Console.WriteLine($"First: {first}");
+        Console.WriteLine($"Any > 10: {any}");
+    }
+}`}
+/>
+
+## Performance Considerations
+
+<CodeEditor 
+  initialCode={`using System;
+using System.Linq;
+using System.Collections.Generic;
+using System.Diagnostics;
+
+class Program
+{
+    static void Main()
+    {
+        var numbers = Enumerable.Range(1, 100000).ToList();
+        
+        // Tip 1: Avoid multiple enumerations
+        Console.WriteLine("=== Avoid Multiple Enumerations ===");
+        
+        // BAD: Enumerates twice
+        var query = numbers.Where(n => n % 2 == 0);
+        // Console.WriteLine($"Count: {query.Count()}");    // First enumeration
+        // Console.WriteLine($"Sum: {query.Sum()}");        // Second enumeration
+        
+        // GOOD: Materialize once
+        var list = numbers.Where(n => n % 2 == 0).ToList();
+        Console.WriteLine($"Count: {list.Count}");
+        Console.WriteLine($"Sum: {list.Sum()}");
+        
+        // Tip 2: Filter early
+        Console.WriteLine("\\n=== Filter Early ===");
+        
+        // Less efficient: Select then Where
+        var slow = numbers
+            .Select(n => new { Value = n, Square = n * n })
+            .Where(x => x.Value > 99990);
+        
+        // More efficient: Where then Select
+        var fast = numbers
+            .Where(n => n > 99990)
+            .Select(n => new { Value = n, Square = n * n });
+        
+        Console.WriteLine($"Fast filtered count: {fast.Count()}");
+        
+        // Tip 3: Use Any() instead of Count() for existence check
+        Console.WriteLine("\\n=== Any vs Count ===");
+        
+        // Slower: counts all matching elements
+        bool hasLargeCount = numbers.Count(n => n > 50000) > 0;
+        
+        // Faster: stops at first match
+        bool hasLargeAny = numbers.Any(n => n > 50000);
+        
+        Console.WriteLine($"Has large numbers: {hasLargeAny}");
+        
+        // Tip 4: FirstOrDefault vs SingleOrDefault
+        Console.WriteLine("\\n=== First vs Single ===");
+        
+        // First: returns first match (faster)
+        var first = numbers.FirstOrDefault(n => n > 1000);
+        
+        // Single: verifies only one match exists (slower, throws if multiple)
+        // var single = numbers.SingleOrDefault(n => n == 5000);
+        
+        Console.WriteLine($"First > 1000: {first}");
+    }
+}`}
+/>
 
 ## Key Takeaways
 
-- **GroupBy** organizes data into groups by key
-- **Join** combines collections based on matching keys
-- **Aggregate** enables custom accumulation logic
+- **GroupBy** organizes data into groups for aggregation
+- **Join** combines related data from different sources
 - **SelectMany** flattens nested collections
-- **Set operations**: Distinct, Union, Intersect, Except
-- **Pagination**: Skip and Take for efficient data retrieval
-- LINQ enables **declarative, composable** data queries
+- **Set operations** (Union, Intersect, Except) work with unique elements
+- **Aggregate** enables custom accumulation logic
+- **Deferred execution** delays query processing until enumeration
+- **Performance**: Filter early, avoid multiple enumerations, use Any() over Count()
 
-## Next Steps
+## Best Practices
 
-Next section: **Modern C# Features** including Async/Await, Pattern Matching, and Records!
+1. **Use query syntax for complex joins** - more readable
+2. **Use method syntax for simple chains** - more fluent
+3. **Materialize with ToList()** when you'll enumerate multiple times
+4. **Filter before projection** - reduce data early
+5. **Profile complex queries** - LINQ can hide performance issues
+
+## Summary
+
+You've now mastered advanced LINQ including grouping, joining, and optimization techniques. These skills enable you to write powerful, expressive data queries in C#!

@@ -1,0 +1,738 @@
+---
+title: "Generic Constraints"
+description: "Control type parameters with constraints for safer, more powerful generics"
+order: 2
+difficulty: "advanced"
+estimatedTime: "25 minutes"
+keywords: ["generic constraints", "where", "type constraints", "interface constraint", "class constraint"]
+prerequisites: ["09-generics/01-generic-classes"]
+---
+
+# Generic Constraints in C#
+
+Generic constraints restrict which types can be used as type arguments. They allow you to access specific members of the type parameter and write more powerful generic code.
+
+## Why Use Constraints?
+
+Without constraints, you can only use members available on `object`:
+
+<CodeEditor 
+  initialCode={`using System;
+
+class Program
+{
+    // Without constraints - limited functionality
+    static void PrintInfo<T>(T item)
+    {
+        // Can only use object methods: ToString(), GetType(), Equals()
+        Console.WriteLine(item.ToString());
+        
+        // This would NOT compile without constraints:
+        // Console.WriteLine(item.Name);  // Error: T doesn't have Name
+        // item.CompareTo(other);         // Error: T doesn't have CompareTo
+    }
+    
+    static void Main()
+    {
+        PrintInfo(42);
+        PrintInfo("Hello");
+        PrintInfo(DateTime.Now);
+    }
+}`}
+/>
+
+## Basic Constraint Syntax
+
+Use the `where` keyword to specify constraints:
+
+```csharp
+class MyClass<T> where T : constraint
+{
+    // T must satisfy the constraint
+}
+
+// Multiple constraints
+class MyClass<T> where T : constraint1, constraint2
+{
+}
+
+// Multiple type parameters
+class MyClass<T, U> 
+    where T : constraint1
+    where U : constraint2
+{
+}
+```
+
+## Interface Constraints
+
+Require type to implement an interface:
+
+<CodeEditor 
+  initialCode={`using System;
+using System.Collections.Generic;
+
+class Sorter
+{
+    // T must implement IComparable<T>
+    public static T FindMax<T>(T[] items) where T : IComparable<T>
+    {
+        if (items == null || items.Length == 0)
+            throw new ArgumentException("Array cannot be empty");
+        
+        T max = items[0];
+        for (int i = 1; i < items.Length; i++)
+        {
+            // Now we can use CompareTo() because of the constraint!
+            if (items[i].CompareTo(max) > 0)
+            {
+                max = items[i];
+            }
+        }
+        return max;
+    }
+    
+    public static void Sort<T>(T[] items) where T : IComparable<T>
+    {
+        // Simple bubble sort
+        for (int i = 0; i < items.Length - 1; i++)
+        {
+            for (int j = 0; j < items.Length - 1 - i; j++)
+            {
+                if (items[j].CompareTo(items[j + 1]) > 0)
+                {
+                    // Swap
+                    T temp = items[j];
+                    items[j] = items[j + 1];
+                    items[j + 1] = temp;
+                }
+            }
+        }
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        // Works with int (implements IComparable<int>)
+        int[] numbers = { 5, 2, 8, 1, 9, 3 };
+        Console.WriteLine($"Max number: {Sorter.FindMax(numbers)}");
+        
+        Sorter.Sort(numbers);
+        Console.WriteLine($"Sorted: {string.Join(", ", numbers)}");
+        
+        // Works with string (implements IComparable<string>)
+        string[] names = { "Charlie", "Alice", "Bob" };
+        Console.WriteLine($"\\nMax name: {Sorter.FindMax(names)}");
+        
+        Sorter.Sort(names);
+        Console.WriteLine($"Sorted: {string.Join(", ", names)}");
+        
+        // Works with DateTime
+        DateTime[] dates = { DateTime.Now, DateTime.Now.AddDays(-1), DateTime.Now.AddDays(1) };
+        Console.WriteLine($"\\nLatest date: {Sorter.FindMax(dates):d}");
+    }
+}`}
+/>
+
+## Class and Struct Constraints
+
+<CodeEditor 
+  initialCode={`using System;
+
+// Constraint: T must be a reference type (class)
+class ReferenceContainer<T> where T : class
+{
+    private T item;
+    
+    public T Item
+    {
+        get => item;
+        set => item = value;  // Can be null for reference types
+    }
+    
+    public bool HasValue => item != null;
+}
+
+// Constraint: T must be a value type (struct)
+class ValueContainer<T> where T : struct
+{
+    private T? item;  // Nullable value type
+    
+    public T? Item
+    {
+        get => item;
+        set => item = value;
+    }
+    
+    public bool HasValue => item.HasValue;
+    
+    public T GetValueOrDefault(T defaultValue)
+    {
+        return item ?? defaultValue;
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        // Reference type container
+        var stringContainer = new ReferenceContainer<string>();
+        stringContainer.Item = "Hello";
+        Console.WriteLine($"String container: {stringContainer.Item}");
+        Console.WriteLine($"Has value: {stringContainer.HasValue}");
+        
+        stringContainer.Item = null;
+        Console.WriteLine($"After null - Has value: {stringContainer.HasValue}");
+        
+        // Value type container
+        var intContainer = new ValueContainer<int>();
+        intContainer.Item = 42;
+        Console.WriteLine($"\\nInt container: {intContainer.Item}");
+        
+        intContainer.Item = null;
+        Console.WriteLine($"After null - Value or default: {intContainer.GetValueOrDefault(0)}");
+        
+        // This would NOT compile:
+        // var invalid1 = new ReferenceContainer<int>();     // int is not a class
+        // var invalid2 = new ValueContainer<string>();      // string is not a struct
+    }
+}`}
+/>
+
+## The new() Constraint
+
+Require a parameterless constructor:
+
+<CodeEditor 
+  initialCode={`using System;
+using System.Collections.Generic;
+
+// T must have a parameterless constructor
+class Factory<T> where T : new()
+{
+    public T Create()
+    {
+        return new T();  // Can instantiate T because of new() constraint
+    }
+    
+    public List<T> CreateMultiple(int count)
+    {
+        List<T> items = new List<T>();
+        for (int i = 0; i < count; i++)
+        {
+            items.Add(new T());
+        }
+        return items;
+    }
+}
+
+class Person
+{
+    public string Name { get; set; }
+    public int Age { get; set; }
+    
+    // Parameterless constructor (required for new() constraint)
+    public Person()
+    {
+        Name = "Unknown";
+        Age = 0;
+    }
+    
+    public override string ToString() => $"Person({Name}, {Age})";
+}
+
+class Product
+{
+    public string Title { get; set; }
+    public decimal Price { get; set; }
+    
+    // Parameterless constructor (required for new() constraint)
+    public Product()
+    {
+        Title = "New Product";
+        Price = 0;
+    }
+    
+    public override string ToString() => $"Product({'{'}Title{'}'}, ${'{'}Price{'}'})";
+}
+
+class Program
+{
+    static void Main()
+    {
+        // Factory for Person
+        var personFactory = new Factory<Person>();
+        Person p = personFactory.Create();
+        Console.WriteLine($"Created: {p}");
+        
+        // Factory for Product
+        var productFactory = new Factory<Product>();
+        List<Product> products = productFactory.CreateMultiple(3);
+        
+        Console.WriteLine("\\nCreated products:");
+        foreach (var product in products)
+        {
+            Console.WriteLine($"  {product}");
+        }
+        
+        // Works with built-in types that have parameterless constructors
+        var intFactory = new Factory<int>();
+        Console.WriteLine($"\\nDefault int: {intFactory.Create()}");
+        
+        var dateFactory = new Factory<DateTime>();
+        Console.WriteLine($"Default DateTime: {dateFactory.Create()}");
+    }
+}`}
+/>
+
+## Base Class Constraints
+
+<CodeEditor 
+  initialCode={`using System;
+using System.Collections.Generic;
+
+// Base class
+abstract class Entity
+{
+    public int Id { get; set; }
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime? UpdatedAt { get; set; }
+    
+    public void MarkUpdated()
+    {
+        UpdatedAt = DateTime.UtcNow;
+    }
+}
+
+class User : Entity
+{
+    public string Username { get; set; }
+    public string Email { get; set; }
+    
+    public override string ToString() => $"User({Id}, {Username})";
+}
+
+class Order : Entity
+{
+    public decimal Total { get; set; }
+    public string Status { get; set; }
+    
+    public override string ToString() => $"Order({'{'}Id{'}'}, ${'{'}Total{'}'}, {'{'}Status{'}'})";
+}
+
+// Generic repository - T must inherit from Entity
+class Repository<T> where T : Entity
+{
+    private List<T> items = new List<T>();
+    private int nextId = 1;
+    
+    public void Add(T entity)
+    {
+        entity.Id = nextId++;
+        // Can access Entity members because of constraint
+        entity.CreatedAt = DateTime.UtcNow;
+        items.Add(entity);
+    }
+    
+    public T GetById(int id)
+    {
+        return items.Find(e => e.Id == id);
+    }
+    
+    public void Update(T entity)
+    {
+        entity.MarkUpdated();  // Can call Entity methods
+    }
+    
+    public List<T> GetAll()
+    {
+        return new List<T>(items);
+    }
+    
+    public List<T> GetRecent(TimeSpan within)
+    {
+        DateTime threshold = DateTime.UtcNow.Subtract(within);
+        return items.FindAll(e => e.CreatedAt >= threshold);
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        var userRepo = new Repository<User>();
+        userRepo.Add(new User { Username = "alice", Email = "alice@test.com" });
+        userRepo.Add(new User { Username = "bob", Email = "bob@test.com" });
+        
+        Console.WriteLine("Users:");
+        foreach (var user in userRepo.GetAll())
+        {
+            Console.WriteLine($"  {user} - Created: {user.CreatedAt:T}");
+        }
+        
+        var orderRepo = new Repository<Order>();
+        orderRepo.Add(new Order { Total = 99.99m, Status = "Pending" });
+        orderRepo.Add(new Order { Total = 149.99m, Status = "Shipped" });
+        
+        Console.WriteLine("\\nOrders:");
+        foreach (var order in orderRepo.GetAll())
+        {
+            Console.WriteLine($"  {order}");
+        }
+        
+        // Update an order
+        var order1 = orderRepo.GetById(1);
+        order1.Status = "Completed";
+        orderRepo.Update(order1);
+        Console.WriteLine($"\\nUpdated: {order1}, UpdatedAt: {order1.UpdatedAt:T}");
+    }
+}`}
+/>
+
+## Combining Multiple Constraints
+
+<CodeEditor 
+  initialCode={`using System;
+
+// Interface definitions
+interface IIdentifiable
+{
+    int Id { get; set; }
+}
+
+interface ITimestamped
+{
+    DateTime CreatedAt { get; set; }
+    DateTime? ModifiedAt { get; set; }
+}
+
+interface IValidatable
+{
+    bool IsValid();
+    string[] GetErrors();
+}
+
+// Entity with multiple interfaces
+class Customer : IIdentifiable, ITimestamped, IValidatable
+{
+    public int Id { get; set; }
+    public string Name { get; set; }
+    public string Email { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime? ModifiedAt { get; set; }
+    
+    public bool IsValid()
+    {
+        return !string.IsNullOrEmpty(Name) && 
+               !string.IsNullOrEmpty(Email) && 
+               Email.Contains("@");
+    }
+    
+    public string[] GetErrors()
+    {
+        var errors = new System.Collections.Generic.List<string>();
+        if (string.IsNullOrEmpty(Name)) errors.Add("Name is required");
+        if (string.IsNullOrEmpty(Email)) errors.Add("Email is required");
+        else if (!Email.Contains("@")) errors.Add("Invalid email format");
+        return errors.ToArray();
+    }
+}
+
+// Service with MULTIPLE constraints
+class EntityService<T> 
+    where T : class, IIdentifiable, ITimestamped, IValidatable, new()
+{
+    private System.Collections.Generic.List<T> entities = 
+        new System.Collections.Generic.List<T>();
+    private int nextId = 1;
+    
+    public T Create()
+    {
+        // Can use new() because of constraint
+        T entity = new T();
+        entity.Id = nextId++;
+        entity.CreatedAt = DateTime.UtcNow;
+        return entity;
+    }
+    
+    public bool Save(T entity)
+    {
+        // Can use IValidatable because of constraint
+        if (!entity.IsValid())
+        {
+            Console.WriteLine("Validation errors:");
+            foreach (var error in entity.GetErrors())
+            {
+                Console.WriteLine($"  - {error}");
+            }
+            return false;
+        }
+        
+        if (entity.Id == 0)
+        {
+            entity.Id = nextId++;
+            entity.CreatedAt = DateTime.UtcNow;
+        }
+        else
+        {
+            entity.ModifiedAt = DateTime.UtcNow;
+        }
+        
+        entities.Add(entity);
+        return true;
+    }
+    
+    public T FindById(int id)
+    {
+        // Can use IIdentifiable because of constraint
+        return entities.Find(e => e.Id == id);
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        var service = new EntityService<Customer>();
+        
+        // Create using factory
+        var customer = service.Create();
+        Console.WriteLine($"Created customer with Id: {customer.Id}");
+        
+        // Try to save invalid customer
+        Console.WriteLine("\\nTrying to save invalid customer:");
+        service.Save(customer);
+        
+        // Fix and save
+        customer.Name = "Alice";
+        customer.Email = "alice@example.com";
+        
+        Console.WriteLine("\\nSaving valid customer:");
+        if (service.Save(customer))
+        {
+            Console.WriteLine($"Saved: {customer.Name} (Id: {customer.Id})");
+        }
+    }
+}`}
+/>
+
+## Constraint Reference Table
+
+| Constraint | Meaning |
+|------------|---------|
+| `where T : struct` | T must be a value type |
+| `where T : class` | T must be a reference type |
+| `where T : class?` | T must be a nullable reference type |
+| `where T : notnull` | T must be non-nullable |
+| `where T : new()` | T must have parameterless constructor |
+| `where T : BaseClass` | T must inherit from BaseClass |
+| `where T : IInterface` | T must implement IInterface |
+| `where T : U` | T must be or derive from U |
+| `where T : unmanaged` | T must be unmanaged type |
+| `where T : default` | Override method may specify default |
+
+## Practical Example: Generic Validator
+
+<CodeEditor 
+  initialCode={`using System;
+using System.Collections.Generic;
+
+// Validation rule interface
+interface IValidationRule<T>
+{
+    bool IsValid(T item);
+    string ErrorMessage { get; }
+}
+
+// Concrete validation rules
+class NotNullRule<T> : IValidationRule<T> where T : class
+{
+    public string ErrorMessage => "Value cannot be null";
+    
+    public bool IsValid(T item) => item != null;
+}
+
+class StringLengthRule : IValidationRule<string>
+{
+    private int minLength;
+    private int maxLength;
+    
+    public StringLengthRule(int min, int max)
+    {
+        minLength = min;
+        maxLength = max;
+    }
+    
+    public string ErrorMessage => $"Length must be between {minLength} and {maxLength}";
+    
+    public bool IsValid(string item)
+    {
+        if (item == null) return false;
+        return item.Length >= minLength && item.Length <= maxLength;
+    }
+}
+
+class RangeRule<T> : IValidationRule<T> where T : IComparable<T>
+{
+    private T min;
+    private T max;
+    
+    public RangeRule(T min, T max)
+    {
+        this.min = min;
+        this.max = max;
+    }
+    
+    public string ErrorMessage => $"Value must be between {min} and {max}";
+    
+    public bool IsValid(T item)
+    {
+        return item.CompareTo(min) >= 0 && item.CompareTo(max) <= 0;
+    }
+}
+
+// Generic validator
+class Validator<T>
+{
+    private List<(string property, IValidationRule<object> rule)> rules = 
+        new List<(string, IValidationRule<object>)>();
+    
+    public Validator<T> AddRule<TProp>(string propertyName, 
+                                        Func<T, TProp> selector, 
+                                        IValidationRule<TProp> rule)
+    {
+        // Wrap the rule
+        rules.Add((propertyName, new WrappedRule<TProp>(selector, rule)));
+        return this;
+    }
+    
+    public ValidationResult Validate(T item)
+    {
+        var result = new ValidationResult();
+        
+        foreach (var (property, rule) in rules)
+        {
+            if (!rule.IsValid(item))
+            {
+                result.AddError(property, rule.ErrorMessage);
+            }
+        }
+        
+        return result;
+    }
+    
+    private class WrappedRule<TProp> : IValidationRule<object>
+    {
+        private Func<T, TProp> selector;
+        private IValidationRule<TProp> innerRule;
+        
+        public WrappedRule(Func<T, TProp> selector, IValidationRule<TProp> rule)
+        {
+            this.selector = selector;
+            this.innerRule = rule;
+        }
+        
+        public string ErrorMessage => innerRule.ErrorMessage;
+        
+        public bool IsValid(object item)
+        {
+            TProp value = selector((T)item);
+            return innerRule.IsValid(value);
+        }
+    }
+}
+
+class ValidationResult
+{
+    private Dictionary<string, List<string>> errors = 
+        new Dictionary<string, List<string>>();
+    
+    public bool IsValid => errors.Count == 0;
+    
+    public void AddError(string property, string message)
+    {
+        if (!errors.ContainsKey(property))
+            errors[property] = new List<string>();
+        errors[property].Add(message);
+    }
+    
+    public void PrintErrors()
+    {
+        foreach (var (prop, msgs) in errors)
+        {
+            foreach (var msg in msgs)
+            {
+                Console.WriteLine($"  {prop}: {msg}");
+            }
+        }
+    }
+}
+
+// Usage
+class User
+{
+    public string Name { get; set; }
+    public int Age { get; set; }
+}
+
+class Program
+{
+    static void Main()
+    {
+        var validator = new Validator<User>()
+            .AddRule("Name", u => u.Name, new NotNullRule<string>())
+            .AddRule("Name", u => u.Name, new StringLengthRule(2, 50))
+            .AddRule("Age", u => u.Age, new RangeRule<int>(0, 150));
+        
+        // Invalid user
+        var user1 = new User { Name = "A", Age = 200 };
+        Console.WriteLine("Validating user1:");
+        var result1 = validator.Validate(user1);
+        if (!result1.IsValid)
+        {
+            result1.PrintErrors();
+        }
+        
+        // Valid user
+        var user2 = new User { Name = "Alice", Age = 25 };
+        Console.WriteLine("\\nValidating user2:");
+        var result2 = validator.Validate(user2);
+        Console.WriteLine(result2.IsValid ? "  Valid!" : "  Invalid");
+    }
+}`}
+/>
+
+## Key Takeaways
+
+- Constraints **restrict type parameters** to types with specific capabilities
+- Use `where T : interface` to access interface members on T
+- Use `where T : class` for reference types, `where T : struct` for value types
+- Use `where T : new()` when you need to instantiate T
+- Use `where T : BaseClass` to access base class members
+- **Combine multiple constraints** with commas
+- Constraints enable **more powerful generic code** with compile-time safety
+
+## Best Practices
+
+1. **Use minimal constraints** - only what you need
+2. **Prefer interface constraints** over class constraints for flexibility
+3. **Document constraint requirements** for public APIs
+4. **Consider covariance/contravariance** for generic interfaces
+5. **Use new() constraint** only when truly needed
+
+## When to Use Each Constraint
+
+| Use Case | Constraint |
+|----------|------------|
+| Compare values | `where T : IComparable<T>` |
+| Clone objects | `where T : ICloneable` |
+| Create instances | `where T : new()` |
+| Only reference types | `where T : class` |
+| Only value types | `where T : struct` |
+| Access base members | `where T : BaseClass` |
+| Combine behaviors | Multiple constraints |
+
+Congratulations! You now have a comprehensive understanding of C# generics and constraints!

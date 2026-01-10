@@ -1,41 +1,52 @@
 ---
 title: "Properties"
-description: "Master C# properties for elegant encapsulation"
+description: "Learn how to use C# properties for cleaner encapsulation"
 order: 3
 difficulty: "intermediate"
 tags: ["oop", "properties", "getters", "setters"]
-duration: "30 minutes"
+duration: "25 minutes"
 ---
 
-# Properties
+# Properties in C#
 
-Properties are a powerful C# feature that provides a flexible mechanism to read, write, or compute the values of private fields. They combine the benefits of fields (easy access) with the control of methods (validation, computation).
+Properties provide a flexible mechanism for reading, writing, or computing the values of private fields. They combine the simplicity of fields with the power of methods.
 
 ## What are Properties?
 
-Properties are members that provide a flexible mechanism to access private fields. They use **accessors** (`get` and `set`) to control how values are retrieved and assigned.
+Properties look like fields but work like methods. They provide a way to access private data with automatic encapsulation.
 
-### Basic Property Syntax
+## Basic Property Syntax
 
 <CodeEditor 
-  language="csharp"
-  code={`using System;
+  initialCode={`using System;
 
 class Person
 {
     // Private backing field
     private string name;
     
-    // Property with get and set accessors
+    // Property with getter and setter
     public string Name
     {
-        get 
-        { 
-            return name; 
-        }
+        get { return name; }      // Returns the value
+        set { name = value; }     // Sets the value
+    }
+    
+    // Property with validation
+    private int age;
+    public int Age
+    {
+        get { return age; }
         set 
         { 
-            name = value; 
+            if (value >= 0 && value <= 150)
+            {
+                age = value;
+            }
+            else
+            {
+                Console.WriteLine("Invalid age value");
+            }
         }
     }
 }
@@ -46,185 +57,54 @@ class Program
     {
         Person person = new Person();
         
-        // Using the property (looks like a field!)
-        person.Name = "Alice";      // Calls the set accessor
-        Console.WriteLine(person.Name);  // Calls the get accessor
+        // Set values using properties
+        person.Name = "John";
+        person.Age = 30;
+        
+        // Get values using properties
+        Console.WriteLine($"Name: {person.Name}");
+        Console.WriteLine($"Age: {person.Age}");
+        
+        // Try invalid age
+        person.Age = -5;  // Will print error
+        Console.WriteLine($"Age is still: {person.Age}");
     }
 }`}
-  title="Basic Property Example"
 />
 
 ## Auto-Implemented Properties
 
-For simple properties without validation, C# provides a shorthand syntax:
+For simple properties without validation logic, use auto-implemented properties:
 
 <CodeEditor 
-  language="csharp"
-  code={`using System;
-
-class Book
-{
-    // Auto-implemented properties
-    public string Title { get; set; }
-    public string Author { get; set; }
-    public int Pages { get; set; }
-    public decimal Price { get; set; }
-    
-    // With default value
-    public bool IsAvailable { get; set; } = true;
-    
-    public void Display()
-    {
-        Console.WriteLine($"Title: {Title}");
-        Console.WriteLine($"Author: {Author}");
-        Console.WriteLine($"Pages: {Pages}");
-        Console.WriteLine($"Price: \${Price}");
-        Console.WriteLine($"Available: {IsAvailable}");
-    }
-}
-
-class Program
-{
-    static void Main()
-    {
-        Book book = new Book
-        {
-            Title = "C# in Depth",
-            Author = "Jon Skeet",
-            Pages = 528,
-            Price = 44.99m
-        };
-        
-        book.Display();
-        
-        book.IsAvailable = false;
-        Console.WriteLine($"\\nAvailability changed: {book.IsAvailable}");
-    }
-}`}
-  title="Auto-Implemented Properties"
-/>
-
-## Properties with Validation
-
-Properties can include validation logic in the `set` accessor:
-
-<CodeEditor 
-  language="csharp"
-  code={`using System;
-
-class BankAccount
-{
-    private decimal balance;
-    private string accountHolder;
-    
-    public string AccountHolder
-    {
-        get { return accountHolder; }
-        set
-        {
-            if (string.IsNullOrWhiteSpace(value))
-                throw new ArgumentException("Account holder name cannot be empty");
-            accountHolder = value;
-        }
-    }
-    
-    public decimal Balance
-    {
-        get { return balance; }
-        private set  // Private set - only class can modify
-        {
-            if (value < 0)
-                throw new ArgumentException("Balance cannot be negative");
-            balance = value;
-        }
-    }
-    
-    public BankAccount(string holder, decimal initialBalance)
-    {
-        AccountHolder = holder;
-        Balance = initialBalance;
-    }
-    
-    public void Deposit(decimal amount)
-    {
-        if (amount <= 0)
-            throw new ArgumentException("Deposit amount must be positive");
-        Balance += amount;
-        Console.WriteLine($"Deposited \${amount}. New balance: \${Balance}");
-    }
-    
-    public void Withdraw(decimal amount)
-    {
-        if (amount <= 0)
-            throw new ArgumentException("Withdrawal amount must be positive");
-        if (amount > Balance)
-            throw new InvalidOperationException("Insufficient funds");
-        Balance -= amount;
-        Console.WriteLine($"Withdrew \${amount}. New balance: \${Balance}");
-    }
-}
-
-class Program
-{
-    static void Main()
-    {
-        BankAccount account = new BankAccount("John Doe", 1000);
-        
-        Console.WriteLine($"Account: {account.AccountHolder}");
-        Console.WriteLine($"Balance: \${account.Balance}");
-        
-        account.Deposit(500);
-        account.Withdraw(200);
-        
-        // This would cause compile error - Balance has private setter:
-        // account.Balance = 5000;
-    }
-}`}
-  title="Properties with Validation"
-/>
-
-## Read-Only Properties
-
-Properties can be made read-only in several ways:
-
-<CodeEditor 
-  language="csharp"
-  code={`using System;
+  initialCode={`using System;
 
 class Product
 {
-    // Read-only property - no set accessor
-    private string id;
-    public string Id
+    // Auto-implemented properties
+    public string Name { get; set; }
+    public decimal Price { get; set; }
+    public int Stock { get; set; }
+    
+    // Read-only auto property (set only in constructor)
+    public string Id { get; }
+    
+    // Auto property with private setter
+    public DateTime CreatedAt { get; private set; }
+    
+    public Product(string name, decimal price)
     {
-        get { return id; }
-    }
-    
-    // Read-only with expression body
-    private DateTime createdDate;
-    public DateTime CreatedDate => createdDate;
-    
-    // Auto-implemented with private set
-    public string Name { get; private set; }
-    
-    // Init-only property (C# 9+)
-    public string Category { get; init; }
-    
-    // Computed read-only property
-    public string DisplayName => $"{Name} ({Category})";
-    
-    public Product(string name, string category)
-    {
-        id = Guid.NewGuid().ToString().Substring(0, 8);
-        createdDate = DateTime.Now;
+        Id = Guid.NewGuid().ToString().Substring(0, 8);
         Name = name;
-        Category = category;
+        Price = price;
+        Stock = 0;
+        CreatedAt = DateTime.Now;
     }
     
-    public void UpdateName(string newName)
+    public void AddStock(int quantity)
     {
-        if (!string.IsNullOrWhiteSpace(newName))
-            Name = newName;
+        Stock += quantity;
+        Console.WriteLine($"Added {quantity} units. Total stock: {Stock}");
     }
 }
 
@@ -232,58 +112,65 @@ class Program
 {
     static void Main()
     {
-        // Using init property
-        Product product = new Product("Laptop", "Electronics")
-        {
-            Category = "Computers"  // Can set during initialization
-        };
+        Product product = new Product("Laptop", 999.99m);
         
-        Console.WriteLine($"ID: {product.Id}");
+        Console.WriteLine($"Product ID: {product.Id}");
         Console.WriteLine($"Name: {product.Name}");
-        Console.WriteLine($"Category: {product.Category}");
-        Console.WriteLine($"Display: {product.DisplayName}");
-        Console.WriteLine($"Created: {product.CreatedDate}");
+        Console.WriteLine($"Price: ${'{'}product.Price{'}'}");
+        Console.WriteLine($"Created: {product.CreatedAt}");
         
-        product.UpdateName("Gaming Laptop");
-        Console.WriteLine($"\\nUpdated: {product.DisplayName}");
+        product.AddStock(10);
         
-        // These would cause compile errors:
-        // product.Id = "new-id";           // No setter
-        // product.CreatedDate = DateTime.Now;  // No setter
-        // product.Category = "Gaming";     // init-only, can't set after construction
+        // Can change Name and Price
+        product.Name = "Gaming Laptop";
+        product.Price = 1299.99m;
+        
+        // Cannot change Id - read-only
+        // product.Id = "newid"; // Compile error!
+        
+        // Cannot change CreatedAt from outside - private setter
+        // product.CreatedAt = DateTime.Now; // Compile error!
+        
+        Console.WriteLine($"\nUpdated: {product.Name} - ${'{'}product.Price{'}'}");
     }
 }`}
-  title="Read-Only Properties"
 />
 
-## Computed Properties
+## Expression-Bodied Properties
 
-Properties can compute values instead of storing them:
+Use arrow syntax for concise read-only properties:
 
 <CodeEditor 
-  language="csharp"
-  code={`using System;
+  initialCode={`using System;
 
 class Rectangle
 {
     public double Width { get; set; }
     public double Height { get; set; }
     
-    // Computed properties
+    // Expression-bodied read-only properties
     public double Area => Width * Height;
-    
     public double Perimeter => 2 * (Width + Height);
-    
     public bool IsSquare => Width == Height;
     
-    public string Orientation
+    public Rectangle(double width, double height)
     {
-        get
-        {
-            if (Width > Height) return "Landscape";
-            if (Height > Width) return "Portrait";
-            return "Square";
-        }
+        Width = width;
+        Height = height;
+    }
+}
+
+class Circle
+{
+    public double Radius { get; set; }
+    
+    public double Area => Math.PI * Radius * Radius;
+    public double Circumference => 2 * Math.PI * Radius;
+    public double Diameter => 2 * Radius;
+    
+    public Circle(double radius)
+    {
+        Radius = radius;
     }
 }
 
@@ -291,289 +178,431 @@ class Program
 {
     static void Main()
     {
-        Rectangle rect = new Rectangle 
-        { 
-            Width = 10, 
-            Height = 5 
-        };
+        Rectangle rect = new Rectangle(10, 5);
+        Console.WriteLine($"Rectangle: {rect.Width} x {rect.Height}");
+        Console.WriteLine($"  Area: {rect.Area}");
+        Console.WriteLine($"  Perimeter: {rect.Perimeter}");
+        Console.WriteLine($"  Is Square: {rect.IsSquare}");
         
-        Console.WriteLine($"Width: {rect.Width}");
-        Console.WriteLine($"Height: {rect.Height}");
-        Console.WriteLine($"Area: {rect.Area}");
-        Console.WriteLine($"Perimeter: {rect.Perimeter}");
-        Console.WriteLine($"Is Square: {rect.IsSquare}");
-        Console.WriteLine($"Orientation: {rect.Orientation}");
-        
-        Console.WriteLine("\\nChanging to square...");
-        rect.Height = 10;
-        Console.WriteLine($"Area: {rect.Area}");
-        Console.WriteLine($"Is Square: {rect.IsSquare}");
-        Console.WriteLine($"Orientation: {rect.Orientation}");
+        Circle circle = new Circle(5);
+        Console.WriteLine($"\\nCircle: radius = {circle.Radius}");
+        Console.WriteLine($"  Diameter: {circle.Diameter}");
+        Console.WriteLine($"  Area: {circle.Area:F2}");
+        Console.WriteLine($"  Circumference: {circle.Circumference:F2}");
     }
 }`}
-  title="Computed Properties"
 />
 
-## Property Access Modifiers
-
-Different access modifiers for get and set:
+## Properties with Validation
 
 <CodeEditor 
-  language="csharp"
-  code={`using System;
+  initialCode={`using System;
 
 class Employee
 {
-    // Public get, private set
-    public int Id { get; private set; }
-    
-    // Public get and set
-    public string Name { get; set; }
-    
-    // Public get, protected set (useful for inheritance)
-    public decimal BaseSalary { get; protected set; }
-    
-    // Private field with public property
-    private decimal bonus;
-    public decimal Bonus
-    {
-        get { return bonus; }
-        set
-        {
-            if (value < 0 || value > BaseSalary * 0.5m)
-            {
-                Console.WriteLine("Bonus must be 0-50% of base salary");
-                return;
-            }
-            bonus = value;
-        }
-    }
-    
-    // Computed property
-    public decimal TotalCompensation => BaseSalary + Bonus;
-    
-    public Employee(int id, string name, decimal salary)
-    {
-        Id = id;
-        Name = name;
-        BaseSalary = salary;
-        Bonus = 0;
-    }
-    
-    public void DisplayInfo()
-    {
-        Console.WriteLine($"ID: {Id}");
-        Console.WriteLine($"Name: {Name}");
-        Console.WriteLine($"Base Salary: \${BaseSalary:N2}");
-        Console.WriteLine($"Bonus: \${Bonus:N2}");
-        Console.WriteLine($"Total: \${TotalCompensation:N2}");
-    }
-}
-
-class Program
-{
-    static void Main()
-    {
-        Employee emp = new Employee(101, "Alice Johnson", 75000);
-        
-        emp.DisplayInfo();
-        
-        Console.WriteLine("\\nSetting bonus...");
-        emp.Bonus = 10000;  // Valid
-        emp.Bonus = 50000;  // Invalid - exceeds 50%
-        
-        emp.DisplayInfo();
-        
-        // Cannot modify Id or BaseSalary from here
-        // emp.Id = 102;  // Compile error!
-    }
-}`}
-  title="Property Access Modifiers"
-/>
-
-## Property Initializers
-
-Properties can have default values and object initializers:
-
-<CodeEditor 
-  language="csharp"
-  code={`using System;
-using System.Collections.Generic;
-
-class Configuration
-{
-    // Properties with default values
-    public string AppName { get; set; } = "My Application";
-    public bool IsDebugMode { get; set; } = false;
-    public int MaxRetries { get; set; } = 3;
-    public List<string> AllowedHosts { get; set; } = new List<string>();
-    
-    // Computed property
-    public string Environment => IsDebugMode ? "Development" : "Production";
-    
-    public void Display()
-    {
-        Console.WriteLine($"App: {AppName}");
-        Console.WriteLine($"Environment: {Environment}");
-        Console.WriteLine($"Debug Mode: {IsDebugMode}");
-        Console.WriteLine($"Max Retries: {MaxRetries}");
-        Console.WriteLine($"Allowed Hosts: {string.Join(", ", AllowedHosts)}");
-    }
-}
-
-class Program
-{
-    static void Main()
-    {
-        // Using default values
-        Configuration config1 = new Configuration();
-        Console.WriteLine("Default Configuration:");
-        config1.Display();
-        
-        // Using object initializer
-        Configuration config2 = new Configuration
-        {
-            AppName = "Production App",
-            IsDebugMode = false,
-            MaxRetries = 5,
-            AllowedHosts = new List<string> { "api.example.com", "*.example.com" }
-        };
-        
-        Console.WriteLine("\\nCustom Configuration:");
-        config2.Display();
-    }
-}`}
-  title="Property Initializers"
-/>
-
-## Real-World Example: User Profile
-
-<CodeEditor 
-  language="csharp"
-  code={`using System;
-
-class UserProfile
-{
     private string email;
-    private int age;
+    private decimal salary;
     
-    public string Username { get; init; }  // Can only set during initialization
+    public string Name { get; set; }
     
     public string Email
     {
-        get => email;
+        get { return email; }
         set
         {
-            if (string.IsNullOrWhiteSpace(value) || !value.Contains("@"))
-                throw new ArgumentException("Invalid email address");
-            email = value.ToLower();
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                throw new ArgumentException("Email cannot be empty");
+            }
+            if (!value.Contains("@"))
+            {
+                throw new ArgumentException("Invalid email format");
+            }
+            email = value;
         }
     }
     
-    public int Age
+    public decimal Salary
     {
-        get => age;
+        get { return salary; }
         set
         {
-            if (value < 13 || value > 120)
-                throw new ArgumentException("Age must be between 13 and 120");
-            age = value;
+            if (value < 0)
+            {
+                throw new ArgumentException("Salary cannot be negative");
+            }
+            salary = value;
         }
     }
-    
-    public DateTime CreatedAt { get; }
-    
-    public bool IsActive { get; set; } = true;
     
     // Computed property
-    public bool IsAdult => Age >= 18;
-    
-    public string Category
-    {
-        get
-        {
-            if (Age < 18) return "Teen";
-            if (Age < 30) return "Young Adult";
-            if (Age < 60) return "Adult";
-            return "Senior";
-        }
-    }
-    
-    public UserProfile(string username, string email, int age)
-    {
-        Username = username;
-        Email = email;
-        Age = age;
-        CreatedAt = DateTime.Now;
-    }
-    
-    public void DisplayProfile()
-    {
-        Console.WriteLine($"Username: {Username}");
-        Console.WriteLine($"Email: {Email}");
-        Console.WriteLine($"Age: {Age} ({Category})");
-        Console.WriteLine($"Adult: {IsAdult}");
-        Console.WriteLine($"Active: {IsActive}");
-        Console.WriteLine($"Member Since: {CreatedAt:yyyy-MM-dd}");
-    }
+    public decimal MonthlySalary => Salary / 12;
 }
 
 class Program
 {
     static void Main()
     {
+        Employee emp = new Employee();
+        
+        emp.Name = "John Doe";
+        emp.Salary = 60000;
+        emp.Email = "john@example.com";
+        
+        Console.WriteLine($"Employee: {emp.Name}");
+        Console.WriteLine($"Email: {emp.Email}");
+        Console.WriteLine($"Annual Salary: ${'{'}emp.Salary{'}'}");
+        Console.WriteLine($"Monthly Salary: ${'{'}emp.MonthlySalary:F2{'}'}");
+        
+        // Try invalid values
         try
         {
-            UserProfile user = new UserProfile(
-                "johndoe",
-                "John.Doe@Example.COM",
-                25
-            );
-            
-            user.DisplayProfile();
-            
-            Console.WriteLine("\\nUpdating profile...");
-            user.Age = 26;
-            user.IsActive = false;
-            user.DisplayProfile();
+            emp.Email = "invalid-email";
         }
-        catch (Exception ex)
+        catch (ArgumentException ex)
+        {
+            Console.WriteLine($"\\nError: {ex.Message}");
+        }
+        
+        try
+        {
+            emp.Salary = -1000;
+        }
+        catch (ArgumentException ex)
         {
             Console.WriteLine($"Error: {ex.Message}");
         }
     }
 }`}
-  title="Complete User Profile Example"
 />
 
-## Properties vs Fields vs Methods
+## Init-Only Properties (C# 9+)
 
-| Feature | Field | Property | Method |
-|---------|-------|----------|--------|
-| Syntax | `public string name;` | `public string Name { get; set; }` | `public string GetName()` |
-| Validation | No | Yes | Yes |
-| Computation | No | Yes | Yes |
-| Access Control | Limited | Flexible | Full |
-| Performance | Fastest | Fast (inline) | Slower (call overhead) |
+Properties that can only be set during object initialization:
 
-## Best Practices
+<CodeEditor 
+  initialCode={`using System;
 
-1. **Use properties instead of public fields** - They provide better encapsulation
-2. **Use auto-properties for simple cases** - Less boilerplate code
-3. **Add validation in setters** - Ensure data integrity
-4. **Use private setters** when appropriate - Control who can modify
-5. **Use computed properties** for derived values - Don't store what you can calculate
-6. **Use init-only** for immutable data - Set once during construction
-7. **Keep property logic simple** - Complex logic belongs in methods
+class ImmutablePerson
+{
+    // Init-only properties - can only be set during initialization
+    public string FirstName { get; init; }
+    public string LastName { get; init; }
+    public DateTime BirthDate { get; init; }
+    
+    // Computed read-only properties
+    public string FullName => $"{FirstName} {LastName}";
+    public int Age => (int)((DateTime.Now - BirthDate).TotalDays / 365.25);
+}
+
+class Program
+{
+    static void Main()
+    {
+        // Using object initializer
+        var person = new ImmutablePerson
+        {
+            FirstName = "John",
+            LastName = "Doe",
+            BirthDate = new DateTime(1990, 5, 15)
+        };
+        
+        Console.WriteLine($"Full Name: {person.FullName}");
+        Console.WriteLine($"Birth Date: {person.BirthDate:d}");
+        Console.WriteLine($"Age: {person.Age}");
+        
+        // Cannot modify after initialization:
+        // person.FirstName = "Jane"; // Compile error!
+        
+        Console.WriteLine("\\nInit-only properties prevent modification after creation.");
+    }
+}`}
+/>
+
+## Property Access Modifiers
+
+<CodeEditor 
+  initialCode={`using System;
+
+class Account
+{
+    // Public get, private set
+    public string AccountNumber { get; private set; }
+    
+    // Public get, protected set
+    public decimal Balance { get; protected set; }
+    
+    // Public get and set
+    public string OwnerName { get; set; }
+    
+    // Internal property
+    internal string InternalCode { get; set; }
+    
+    public Account(string number, string owner)
+    {
+        AccountNumber = number;
+        OwnerName = owner;
+        Balance = 0;
+        InternalCode = "ACC-" + number;
+    }
+    
+    public void Deposit(decimal amount)
+    {
+        if (amount > 0)
+        {
+            Balance += amount;
+            Console.WriteLine($"Deposited ${'{'}amount{'}'}. Balance: ${'{'}Balance{'}'}");
+        }
+    }
+}
+
+class SavingsAccount : Account
+{
+    public decimal InterestRate { get; set; }
+    
+    public SavingsAccount(string number, string owner, decimal rate) 
+        : base(number, owner)
+    {
+        InterestRate = rate;
+    }
+    
+    public void AddInterest()
+    {
+        // Can access Balance because it's protected
+        decimal interest = Balance * InterestRate / 100;
+        Balance += interest;  // Can modify via protected setter
+        Console.WriteLine($"Added ${'{'}interest:F2{'}'} interest. Balance: ${'{'}Balance:F2{'}'}");
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        var account = new Account("12345", "John Doe");
+        
+        Console.WriteLine($"Account: {account.AccountNumber}");
+        Console.WriteLine($"Owner: {account.OwnerName}");
+        
+        account.Deposit(1000);
+        
+        // Can change owner name
+        account.OwnerName = "Jane Doe";
+        
+        // Cannot change account number or balance directly
+        // account.AccountNumber = "99999"; // Compile error!
+        // account.Balance = 1000000; // Compile error!
+        
+        Console.WriteLine("\\n--- Savings Account ---");
+        var savings = new SavingsAccount("67890", "Bob Smith", 2.5m);
+        savings.Deposit(1000);
+        savings.AddInterest();
+    }
+}`}
+/>
+
+## Indexers
+
+Special properties that allow array-like access to objects:
+
+<CodeEditor 
+  initialCode={`using System;
+using System.Collections.Generic;
+
+class Library
+{
+    private Dictionary<string, string> books = new Dictionary<string, string>();
+    
+    // Indexer by ISBN
+    public string this[string isbn]
+    {
+        get
+        {
+            if (books.ContainsKey(isbn))
+                return books[isbn];
+            return "Book not found";
+        }
+        set
+        {
+            books[isbn] = value;
+            Console.WriteLine($"Added/Updated: {value} (ISBN: {isbn})");
+        }
+    }
+    
+    public int Count => books.Count;
+    
+    public void ListAll()
+    {
+        Console.WriteLine($"\\nLibrary has {Count} books:");
+        foreach (var book in books)
+        {
+            Console.WriteLine($"  {book.Key}: {book.Value}");
+        }
+    }
+}
+
+class Matrix
+{
+    private int[,] data;
+    
+    public int Rows { get; }
+    public int Columns { get; }
+    
+    public Matrix(int rows, int cols)
+    {
+        Rows = rows;
+        Columns = cols;
+        data = new int[rows, cols];
+    }
+    
+    // Two-dimensional indexer
+    public int this[int row, int col]
+    {
+        get { return data[row, col]; }
+        set { data[row, col] = value; }
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        Library library = new Library();
+        
+        // Use indexer to add books
+        library["978-0-13-468599-1"] = "The C# Programming Language";
+        library["978-1-491-95025-9"] = "C# in Depth";
+        library["978-0-596-00712-6"] = "Head First C#";
+        
+        // Use indexer to access books
+        Console.WriteLine($"\\nLookup: {library["978-0-13-468599-1"]}");
+        Console.WriteLine($"Unknown: {library["000-0-000-00000-0"]}");
+        
+        library.ListAll();
+        
+        // Matrix with 2D indexer
+        Console.WriteLine("\\n--- Matrix ---");
+        Matrix m = new Matrix(2, 3);
+        m[0, 0] = 1; m[0, 1] = 2; m[0, 2] = 3;
+        m[1, 0] = 4; m[1, 1] = 5; m[1, 2] = 6;
+        
+        Console.WriteLine($"Matrix[1,2] = {m[1, 2]}");
+    }
+}`}
+/>
+
+## Complete Example: Student Management
+
+<CodeEditor 
+  initialCode={`using System;
+using System.Collections.Generic;
+
+class Student
+{
+    private static int nextId = 1;
+    private List<int> grades = new List<int>();
+    
+    // Auto properties
+    public int Id { get; }
+    public string Name { get; set; }
+    
+    // Property with validation
+    private int age;
+    public int Age
+    {
+        get => age;
+        set => age = (value >= 5 && value <= 100) ? value : age;
+    }
+    
+    // Computed properties
+    public double Average => grades.Count > 0 
+        ? grades.Average() 
+        : 0;
+    
+    public string Grade => Average switch
+    {
+        >= 90 => "A",
+        >= 80 => "B",
+        >= 70 => "C",
+        >= 60 => "D",
+        _ => "F"
+    };
+    
+    public int GradeCount => grades.Count;
+    
+    public Student(string name, int age)
+    {
+        Id = nextId++;
+        Name = name;
+        Age = age;
+    }
+    
+    public void AddGrade(int grade)
+    {
+        if (grade >= 0 && grade <= 100)
+        {
+            grades.Add(grade);
+        }
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        var students = new List<Student>
+        {
+            new Student("Alice", 20),
+            new Student("Bob", 22),
+            new Student("Charlie", 19)
+        };
+        
+        // Add grades
+        students[0].AddGrade(95);
+        students[0].AddGrade(88);
+        students[0].AddGrade(92);
+        
+        students[1].AddGrade(78);
+        students[1].AddGrade(82);
+        students[1].AddGrade(75);
+        
+        students[2].AddGrade(65);
+        students[2].AddGrade(70);
+        students[2].AddGrade(68);
+        
+        Console.WriteLine("Student Report:");
+        Console.WriteLine("================");
+        foreach (var s in students)
+        {
+            Console.WriteLine($"ID: {s.Id}");
+            Console.WriteLine($"Name: {s.Name}");
+            Console.WriteLine($"Age: {s.Age}");
+            Console.WriteLine($"Grades: {s.GradeCount}");
+            Console.WriteLine($"Average: {s.Average:F1}");
+            Console.WriteLine($"Letter Grade: {s.Grade}");
+            Console.WriteLine();
+        }
+    }
+}`}
+/>
 
 ## Key Takeaways
 
-- Properties provide **elegant encapsulation** with clean syntax
-- **Auto-implemented properties** reduce boilerplate for simple cases
-- Properties can include **validation**, **computation**, and **access control**
-- Use **expression-bodied** properties for simple computed values
-- Properties combine the **convenience of fields** with the **power of methods**
+- **Properties** provide controlled access to private fields
+- **Auto-implemented properties** reduce boilerplate code
+- **Expression-bodied properties** enable concise computed values
+- **Access modifiers** on getters/setters control read/write access
+- **Init-only properties** allow setting only during initialization
+- **Indexers** provide array-like access to objects
+
+## Best Practices
+
+1. Use **auto-properties** for simple get/set scenarios
+2. Add **validation** in setters for data integrity
+3. Use **expression-bodied** syntax for computed properties
+4. Make setters **private** when external modification isn't needed
+5. Consider **init-only** properties for immutable data
 
 ## Next Steps
 
-Next, we'll explore **Constructors** and learn how to properly initialize objects!
+Next lesson: **Constructors** - Learn how to properly initialize objects!

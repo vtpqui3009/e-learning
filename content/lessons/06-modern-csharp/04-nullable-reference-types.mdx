@@ -1,0 +1,689 @@
+---
+title: "Nullable Reference Types"
+description: "Learn how to handle nulls safely with nullable reference types in C# 8+"
+order: 4
+difficulty: "intermediate"
+tags: ["modern-csharp", "nullable", "null-safety", "best-practices"]
+duration: "30 minutes"
+---
+
+# Nullable Reference Types in C#
+
+C# 8.0 introduced nullable reference types to help eliminate null reference exceptions, one of the most common sources of bugs in software.
+
+## The Billion Dollar Mistake
+
+Null reference exceptions have been called the "billion dollar mistake" in programming. Nullable reference types help prevent these errors at compile time.
+
+## Enabling Nullable Reference Types
+
+<CodeEditor
+  initialCode={`// Enable nullable reference types in your project
+// Add to .csproj file:
+// <Nullable>enable</Nullable>
+
+using System;
+
+#nullable enable  // Enable for this file
+
+class Person
+{
+    // Non-nullable - must be initialized
+    public string Name { get; set; }
+
+    // Nullable - can be null
+    public string? MiddleName { get; set; }
+
+    public Person(string name)
+    {
+        Name = name;  // Required
+        MiddleName = null;  // Optional
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        // Valid
+        var person1 = new Person("John");
+        Console.WriteLine($"Name: {person1.Name}");
+        Console.WriteLine($"Middle Name: {person1.MiddleName ?? "None"}");
+
+        // Compiler warning if you try to assign null to non-nullable
+        // person1.Name = null;  // Warning CS8625
+
+        person1.MiddleName = "William";
+        Console.WriteLine($"Middle Name: {person1.MiddleName}");
+    }
+}`}
+/>
+
+## Nullable vs Non-Nullable Reference Types
+
+<CodeEditor
+  initialCode={`using System;
+
+#nullable enable
+
+class Product
+{
+    // Non-nullable - compiler enforces initialization
+    public string Name { get; set; }
+
+    // Non-nullable with default value
+    public string Category { get; set; } = "Uncategorized";
+
+    // Nullable - explicitly allows null
+    public string? Description { get; set; }
+
+    // Nullable - optional discount code
+    public string? DiscountCode { get; set; }
+
+    public Product(string name)
+    {
+        Name = name;
+    }
+
+    public void PrintInfo()
+    {
+        Console.WriteLine($"Name: {Name}");
+        Console.WriteLine($"Category: {Category}");
+
+        // Check for null before using
+        if (Description != null)
+        {
+            Console.WriteLine($"Description: {Description}");
+        }
+
+        // Null-coalescing operator
+        Console.WriteLine($"Discount: {DiscountCode ?? "None"}");
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        var product = new Product("Laptop")
+        {
+            Description = "High-performance laptop",
+            DiscountCode = "SAVE10"
+        };
+
+        product.PrintInfo();
+
+        Console.WriteLine();
+
+        var product2 = new Product("Mouse")
+        {
+            Category = "Accessories"
+        };
+
+        product2.PrintInfo();
+    }
+}`}
+/>
+
+## Null-Checking Patterns
+
+<CodeEditor
+  initialCode={`using System;
+
+#nullable enable
+
+class User
+{
+    public string Name { get; set; }
+    public string? Email { get; set; }
+    public string? PhoneNumber { get; set; }
+
+    public User(string name)
+    {
+        Name = name;
+    }
+
+    public void SendNotification(string message)
+    {
+        // Pattern 1: Traditional null check
+        if (Email != null)
+        {
+            Console.WriteLine($"Sending email to {Email}: {message}");
+        }
+
+        // Pattern 2: Null-coalescing
+        string contact = Email ?? PhoneNumber ?? "No contact info";
+        Console.WriteLine($"Contact: {contact}");
+
+        // Pattern 3: Null-conditional operator
+        int? emailLength = Email?.Length;
+        Console.WriteLine($"Email length: {emailLength ?? 0}");
+
+        // Pattern 4: Pattern matching
+        if (Email is string email)
+        {
+            Console.WriteLine($"Valid email: {email}");
+        }
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        var user1 = new User("Alice")
+        {
+            Email = "alice@example.com"
+        };
+        user1.SendNotification("Welcome!");
+
+        Console.WriteLine();
+
+        var user2 = new User("Bob")
+        {
+            PhoneNumber = "555-1234"
+        };
+        user2.SendNotification("Hello!");
+    }
+}`}
+/>
+
+## Null-Forgiving Operator (!)
+
+Sometimes you know a value isn't null but the compiler doesn't. Use ! to suppress warnings.
+
+<CodeEditor
+  initialCode={`using System;
+using System.Collections.Generic;
+
+#nullable enable
+
+class Database
+{
+    private Dictionary<int, string> data = new Dictionary<int, string>
+    {
+        { 1, "Alice" },
+        { 2, "Bob" },
+        { 3, "Charlie" }
+    };
+
+    // Returns nullable because key might not exist
+    public string? FindUser(int id)
+    {
+        return data.ContainsKey(id) ? data[id] : null;
+    }
+
+    public string GetUser(int id)
+    {
+        // We know this exists, but compiler sees nullable return
+        var user = FindUser(id);
+
+        if (user == null)
+        {
+            throw new Exception($"User {id} not found");
+        }
+
+        // Use null-forgiving operator when you're sure it's not null
+        return user!;
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        var db = new Database();
+
+        // Safe usage
+        var user1 = db.FindUser(1);
+        Console.WriteLine($"User 1: {user1 ?? "Not found"}");
+
+        // When you're certain it exists
+        try
+        {
+            var user2 = db.GetUser(2);
+            Console.WriteLine($"User 2: {user2}");
+
+            // This will throw
+            var user99 = db.GetUser(99);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error: {ex.Message}");
+        }
+    }
+}`}
+/>
+
+## Nullable Context and Annotations
+
+<CodeEditor
+  initialCode={`using System;
+
+// Different nullable contexts
+#nullable enable    // Enable nullable warnings
+// #nullable disable  // Disable nullable warnings
+// #nullable restore  // Restore to project setting
+
+class Address
+{
+    public string Street { get; set; }
+    public string City { get; set; }
+    public string? State { get; set; }
+    public string? PostalCode { get; set; }
+
+    public Address(string street, string city)
+    {
+        Street = street;
+        City = city;
+    }
+
+    public string GetFullAddress()
+    {
+        // Build address with optional parts
+        var parts = new[] { Street, City, State, PostalCode };
+        return string.Join(", ", parts.Where(p => p != null));
+    }
+}
+
+#nullable disable  // Disable for legacy code section
+
+class LegacyUser
+{
+    public string Name { get; set; }  // No warnings about null
+    public string Email { get; set; }
+}
+
+#nullable restore  // Back to project setting
+
+class Program
+{
+    static void Main()
+    {
+        var address = new Address("123 Main St", "Springfield")
+        {
+            State = "IL",
+            PostalCode = "62701"
+        };
+
+        Console.WriteLine(address.GetFullAddress());
+
+        var address2 = new Address("456 Oak Ave", "Portland");
+        Console.WriteLine(address2.GetFullAddress());
+    }
+}`}
+/>
+
+## Nullable Collections
+
+<CodeEditor
+  initialCode={`using System;
+using System.Collections.Generic;
+using System.Linq;
+
+#nullable enable
+
+class Library
+{
+    // Non-nullable list of non-nullable strings
+    public List<string> RequiredBooks { get; set; } = new List<string>();
+
+    // Non-nullable list of nullable strings
+    public List<string?> OptionalBooks { get; set; } = new List<string?>();
+
+    // Nullable list of non-nullable strings
+    public List<string>? ArchivedBooks { get; set; }
+
+    public void AddBook(string title, bool required)
+    {
+        if (required)
+        {
+            RequiredBooks.Add(title);
+        }
+        else
+        {
+            OptionalBooks.Add(title);
+        }
+    }
+
+    public void PrintInventory()
+    {
+        Console.WriteLine("Required Books:");
+        foreach (var book in RequiredBooks)
+        {
+            Console.WriteLine($"  - {book}");  // Never null
+        }
+
+        Console.WriteLine("\\nOptional Books:");
+        foreach (var book in OptionalBooks)
+        {
+            Console.WriteLine($"  - {book ?? "Unknown"}");  // Might be null
+        }
+
+        // Check if archived collection exists
+        if (ArchivedBooks != null)
+        {
+            Console.WriteLine("\\nArchived Books:");
+            foreach (var book in ArchivedBooks)
+            {
+                Console.WriteLine($"  - {book}");
+            }
+        }
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        var library = new Library();
+
+        library.AddBook("C# in Depth", true);
+        library.AddBook("Design Patterns", true);
+        library.AddBook("Clean Code", false);
+        library.OptionalBooks.Add(null);  // Allowed for nullable collection
+
+        library.ArchivedBooks = new List<string> { "Ancient Text", "Old Manual" };
+
+        library.PrintInventory();
+    }
+}`}
+/>
+
+## Generic Nullable Constraints
+
+<CodeEditor
+  initialCode={`using System;
+using System.Collections.Generic;
+
+#nullable enable
+
+class DataStore<T> where T : notnull
+{
+    private Dictionary<string, T> data = new Dictionary<string, T>();
+
+    public void Add(string key, T value)
+    {
+        // T is guaranteed to be non-nullable
+        data[key] = value;
+        Console.WriteLine($"Added: {key} = {value}");
+    }
+
+    public T? Get(string key)
+    {
+        // Return nullable because key might not exist
+        return data.ContainsKey(key) ? data[key] : default;
+    }
+
+    public T GetOrThrow(string key)
+    {
+        if (!data.ContainsKey(key))
+        {
+            throw new KeyNotFoundException($"Key not found: {key}");
+        }
+        return data[key];
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        // Store non-nullable strings
+        var stringStore = new DataStore<string>();
+        stringStore.Add("name", "Alice");
+        stringStore.Add("city", "Seattle");
+
+        Console.WriteLine($"\\nName: {stringStore.Get("name")}");
+        Console.WriteLine($"Country: {stringStore.Get("country") ?? "Unknown"}");
+
+        // Store non-nullable integers
+        var intStore = new DataStore<int>();
+        intStore.Add("age", 30);
+        intStore.Add("score", 95);
+
+        Console.WriteLine($"\\nAge: {intStore.Get("age")}");
+        Console.WriteLine($"Level: {intStore.Get("level")}");
+
+        try
+        {
+            var value = intStore.GetOrThrow("missing");
+        }
+        catch (KeyNotFoundException ex)
+        {
+            Console.WriteLine($"\\nError: {ex.Message}");
+        }
+    }
+}`}
+/>
+
+## Best Practices
+
+<CodeEditor
+  initialCode={`using System;
+
+#nullable enable
+
+class ValidationResult
+{
+    public bool IsValid { get; }
+    public string? ErrorMessage { get; }
+
+    private ValidationResult(bool isValid, string? errorMessage)
+    {
+        IsValid = isValid;
+        ErrorMessage = errorMessage;
+    }
+
+    // Factory methods make intent clear
+    public static ValidationResult Success() => new ValidationResult(true, null);
+    public static ValidationResult Failure(string error) => new ValidationResult(false, error);
+}
+
+class EmailValidator
+{
+    public ValidationResult Validate(string? email)
+    {
+        // Check for null or empty
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            return ValidationResult.Failure("Email is required");
+        }
+
+        // Check format
+        if (!email.Contains("@"))
+        {
+            return ValidationResult.Failure("Invalid email format");
+        }
+
+        return ValidationResult.Success();
+    }
+}
+
+class UserRegistration
+{
+    private EmailValidator validator = new EmailValidator();
+
+    public void Register(string name, string? email)
+    {
+        Console.WriteLine($"\\n=== Registering {name} ===");
+
+        // Validate email
+        var result = validator.Validate(email);
+
+        if (!result.IsValid)
+        {
+            Console.WriteLine($"❌ Registration failed: {result.ErrorMessage}");
+            return;
+        }
+
+        // Email is guaranteed to be valid here
+        Console.WriteLine($"✓ Registered successfully!");
+        Console.WriteLine($"Email: {email}");
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        var registration = new UserRegistration();
+
+        registration.Register("Alice", "alice@example.com");
+        registration.Register("Bob", "invalid-email");
+        registration.Register("Charlie", null);
+        registration.Register("Diana", "");
+    }
+}`}
+/>
+
+## Real-World Example: Optional Configuration
+
+<CodeEditor
+  initialCode={`using System;
+
+#nullable enable
+
+class DatabaseConfig
+{
+    public string ConnectionString { get; set; }
+    public int? Timeout { get; set; }
+    public string? Username { get; set; }
+    public string? Password { get; set; }
+
+    public DatabaseConfig(string connectionString)
+    {
+        ConnectionString = connectionString;
+    }
+
+    public string GetDisplayInfo()
+    {
+        var info = $"Connection: {ConnectionString}";
+
+        if (Timeout.HasValue)
+        {
+            info += $"\\nTimeout: {Timeout.Value}s";
+        }
+
+        if (Username != null)
+        {
+            info += $"\\nUsername: {Username}";
+            info += $"\\nPassword: {(Password != null ? "***" : "Not set")}";
+        }
+
+        return info;
+    }
+}
+
+class ApiConfig
+{
+    public string BaseUrl { get; set; }
+    public string? ApiKey { get; set; }
+    public int RetryCount { get; set; } = 3;
+    public bool UseCache { get; set; } = true;
+
+    public ApiConfig(string baseUrl)
+    {
+        BaseUrl = baseUrl;
+    }
+
+    public void PrintConfig()
+    {
+        Console.WriteLine($"Base URL: {BaseUrl}");
+        Console.WriteLine($"API Key: {(ApiKey != null ? "Configured" : "Not configured")}");
+        Console.WriteLine($"Retry Count: {RetryCount}");
+        Console.WriteLine($"Use Cache: {UseCache}");
+    }
+}
+
+class ConfigurationManager
+{
+    public DatabaseConfig? Database { get; set; }
+    public ApiConfig? Api { get; set; }
+
+    public void PrintAllConfigs()
+    {
+        Console.WriteLine("=== Configuration Summary ===");
+
+        if (Database != null)
+        {
+            Console.WriteLine("\\n[Database]");
+            Console.WriteLine(Database.GetDisplayInfo());
+        }
+        else
+        {
+            Console.WriteLine("\\n[Database] Not configured");
+        }
+
+        if (Api != null)
+        {
+            Console.WriteLine("\\n[API]");
+            Api.PrintConfig();
+        }
+        else
+        {
+            Console.WriteLine("\\n[API] Not configured");
+        }
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        var config = new ConfigurationManager();
+
+        // Configure database with optional settings
+        config.Database = new DatabaseConfig("Server=localhost;Database=test")
+        {
+            Timeout = 30,
+            Username = "admin",
+            Password = "secret123"
+        };
+
+        // Configure API with minimal settings
+        config.Api = new ApiConfig("https://api.example.com");
+
+        config.PrintAllConfigs();
+
+        // Reconfigure with different settings
+        Console.WriteLine("\\n\\n=== After Reconfiguration ===");
+        config.Database = new DatabaseConfig("Server=prod;Database=main");
+        config.Api = new ApiConfig("https://api.production.com")
+        {
+            ApiKey = "abc123xyz",
+            UseCache = false
+        };
+
+        config.PrintAllConfigs();
+    }
+}`}
+/>
+
+## Key Takeaways
+
+- **Non-nullable by default**: Reference types are non-nullable unless marked with `?`
+- **Compiler warnings**: Get warnings for potential null reference issues at compile time
+- **Explicit intent**: `?` makes it clear when null is expected
+- **Null checks**: Use pattern matching, null-conditional, and null-coalescing operators
+- **Null-forgiving operator**: Use `!` sparingly when you're certain a value isn't null
+- **Enable gradually**: Use `#nullable enable` to adopt in existing projects
+
+## Benefits
+
+1. **Catch bugs early** - Find null reference issues at compile time
+2. **Self-documenting** - API contracts are clear about null handling
+3. **Better tooling** - IDE can provide better null-related warnings
+4. **Safer code** - Fewer runtime null reference exceptions
+
+## Migration Strategy
+
+1. Enable nullable reference types in new projects
+2. For existing projects, enable gradually with `#nullable enable` per file
+3. Fix warnings incrementally
+4. Use `!` sparingly as a migration aid
+5. Aim for zero warnings in new code
+
+## Next Steps
+
+You've completed the Modern C# section! Next, explore **Async/Await** to write efficient concurrent code.

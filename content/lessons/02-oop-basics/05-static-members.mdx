@@ -1,45 +1,33 @@
 ---
 title: "Static Members"
-description: "Understand class-level members vs instance members"
+description: "Learn how to use static fields, properties, and methods in C#"
 order: 5
 difficulty: "intermediate"
-tags: ["oop", "static", "class-members"]
+tags: ["oop", "static", "class members"]
 duration: "25 minutes"
 ---
 
-# Static Members
+# Static Members in C#
 
-Static members belong to the **class itself** rather than to any specific instance. They're shared across all instances and can be accessed without creating an object.
+Static members belong to the class itself rather than individual instances. They're shared across all objects of that class.
 
-## Instance vs Static Members
+## Static vs Instance Members
 
 <CodeEditor 
-  language="csharp"
-  code={`using System;
+  initialCode={`using System;
 
 class Counter
 {
-    // Instance field - each object has its own copy
-    public int InstanceCount;
-    
     // Static field - shared across all instances
-    public static int TotalCount;
+    public static int TotalCount = 0;
+    
+    // Instance field - each object has its own
+    public int InstanceId;
     
     public Counter()
     {
-        InstanceCount = 0;
-        TotalCount++;  // Increment shared counter
-    }
-    
-    public void Increment()
-    {
-        InstanceCount++;
-        TotalCount++;
-    }
-    
-    public void Display()
-    {
-        Console.WriteLine($"Instance: {InstanceCount}, Total: {TotalCount}");
+        TotalCount++;           // Increment shared counter
+        InstanceId = TotalCount; // Assign unique ID
     }
 }
 
@@ -47,58 +35,64 @@ class Program
 {
     static void Main()
     {
+        Console.WriteLine($"Before: TotalCount = {Counter.TotalCount}");
+        
         Counter c1 = new Counter();
+        Console.WriteLine($"Created c1: ID = {c1.InstanceId}, Total = {Counter.TotalCount}");
+        
         Counter c2 = new Counter();
+        Console.WriteLine($"Created c2: ID = {c2.InstanceId}, Total = {Counter.TotalCount}");
+        
         Counter c3 = new Counter();
+        Console.WriteLine($"Created c3: ID = {c3.InstanceId}, Total = {Counter.TotalCount}");
         
-        c1.Increment();
-        c1.Increment();
-        c2.Increment();
-        
-        Console.WriteLine("Counter 1:");
-        c1.Display();  // Instance: 2, Total: 6
-        
-        Console.WriteLine("Counter 2:");
-        c2.Display();  // Instance: 1, Total: 6
-        
-        Console.WriteLine("Counter 3:");
-        c3.Display();  // Instance: 0, Total: 6
-        
-        Console.WriteLine($"\\nStatic TotalCount: {Counter.TotalCount}");
+        // Static accessed via class name
+        Console.WriteLine($"\\nFinal count: {Counter.TotalCount}");
     }
 }`}
-  title="Instance vs Static Example"
 />
 
-## Static Methods
-
-Static methods can only access static members and don't require an instance:
+## Static Fields
 
 <CodeEditor 
-  language="csharp"
-  code={`using System;
+  initialCode={`using System;
 
-class MathHelper
+class BankAccount
 {
-    // Static methods
-    public static int Add(int a, int b)
+    // Static fields - shared data
+    private static decimal interestRate = 0.05m;  // 5%
+    private static int accountCount = 0;
+    
+    // Instance fields - per-account data
+    public string AccountNumber { get; }
+    public decimal Balance { get; private set; }
+    
+    public BankAccount(decimal initialBalance)
     {
-        return a + b;
+        accountCount++;
+        AccountNumber = $"ACC-{accountCount:D4}";
+        Balance = initialBalance;
     }
     
-    public static int Multiply(int a, int b)
+    // Static method to access/modify static field
+    public static void SetInterestRate(decimal rate)
     {
-        return a * b;
+        if (rate >= 0 && rate <= 0.20m)
+        {
+            interestRate = rate;
+            Console.WriteLine($"Interest rate set to {rate:P1}");
+        }
     }
     
-    public static double CalculateCircleArea(double radius)
-    {
-        return Math.PI * radius * radius;
-    }
+    public static decimal GetInterestRate() => interestRate;
+    public static int GetAccountCount() => accountCount;
     
-    public static bool IsEven(int number)
+    // Instance method using static field
+    public void AddInterest()
     {
-        return number % 2 == 0;
+        decimal interest = Balance * interestRate;
+        Balance += interest;
+        Console.WriteLine($"{AccountNumber}: Added ${'{'}interest:F2{'}'} interest");
     }
 }
 
@@ -106,60 +100,128 @@ class Program
 {
     static void Main()
     {
-        // Call static methods without creating an instance
-        int sum = MathHelper.Add(5, 3);
-        int product = MathHelper.Multiply(4, 7);
-        double area = MathHelper.CalculateCircleArea(5);
+        Console.WriteLine($"Interest rate: {BankAccount.GetInterestRate():P1}");
         
-        Console.WriteLine($"Sum: {sum}");
-        Console.WriteLine($"Product: {product}");
-        Console.WriteLine($"Circle area: {area:F2}");
-        Console.WriteLine($"Is 10 even? {MathHelper.IsEven(10)}");
-        Console.WriteLine($"Is 7 even? {MathHelper.IsEven(7)}");
+        var acc1 = new BankAccount(1000);
+        var acc2 = new BankAccount(2000);
+        
+        Console.WriteLine($"\\nAccounts created: {BankAccount.GetAccountCount()}");
+        
+        acc1.AddInterest();
+        acc2.AddInterest();
+        
+        // Change rate for ALL accounts
+        BankAccount.SetInterestRate(0.07m);
+        
+        acc1.AddInterest();
+        acc2.AddInterest();
     }
 }`}
-  title="Static Methods"
 />
 
 ## Static Properties
 
 <CodeEditor 
-  language="csharp"
-  code={`using System;
+  initialCode={`using System;
 
-class AppConfig
+class Application
 {
-    private static string appName = "MyApp";
+    // Private static backing field
     private static string version = "1.0.0";
     
-    // Static properties
-    public static string AppName
+    // Static auto-property
+    public static string Name { get; set; } = "My App";
+    
+    // Static property with validation
+    public static string Version
     {
-        get { return appName; }
+        get => version;
         set
         {
-            if (string.IsNullOrWhiteSpace(value))
-                throw new ArgumentException("App name cannot be empty");
-            appName = value;
+            if (!string.IsNullOrWhiteSpace(value))
+            {
+                version = value;
+                Console.WriteLine($"Version updated to {value}");
+            }
         }
     }
     
-    public static string Version
-    {
-        get { return version; }
-        private set { version = value; }
-    }
-    
-    // Auto-implemented static property
-    public static bool IsDebugMode { get; set; } = false;
+    // Read-only static property
+    public static DateTime StartTime { get; } = DateTime.Now;
     
     // Computed static property
-    public static string FullVersion => $"{AppName} v{Version}";
-    
-    public static void DisplayConfig()
+    public static TimeSpan Uptime => DateTime.Now - StartTime;
+}
+
+class Program
+{
+    static void Main()
     {
-        Console.WriteLine($"Application: {FullVersion}");
-        Console.WriteLine($"Debug Mode: {IsDebugMode}");
+        Console.WriteLine($"App Name: {Application.Name}");
+        Console.WriteLine($"Version: {Application.Version}");
+        Console.WriteLine($"Started: {Application.StartTime}");
+        
+        Application.Name = "Super App";
+        Application.Version = "2.0.0";
+        
+        Console.WriteLine($"\\nUpdated Name: {Application.Name}");
+        
+        // Simulate some work
+        System.Threading.Thread.Sleep(1000);
+        
+        Console.WriteLine($"Uptime: {Application.Uptime.TotalSeconds:F1} seconds");
+    }
+}`}
+/>
+
+## Static Methods
+
+<CodeEditor 
+  initialCode={`using System;
+
+class MathHelper
+{
+    // Static methods - utility functions
+    public static int Max(int a, int b)
+    {
+        return a > b ? a : b;
+    }
+    
+    public static int Min(int a, int b)
+    {
+        return a < b ? a : b;
+    }
+    
+    public static double Average(params double[] numbers)
+    {
+        if (numbers.Length == 0) return 0;
+        
+        double sum = 0;
+        foreach (var n in numbers)
+        {
+            sum += n;
+        }
+        return sum / numbers.Length;
+    }
+    
+    public static bool IsPrime(int number)
+    {
+        if (number < 2) return false;
+        if (number == 2) return true;
+        if (number % 2 == 0) return false;
+        
+        for (int i = 3; i <= Math.Sqrt(number); i += 2)
+        {
+            if (number % i == 0) return false;
+        }
+        return true;
+    }
+    
+    public static int Factorial(int n)
+    {
+        if (n < 0) throw new ArgumentException("Must be non-negative");
+        if (n <= 1) return 1;
+        return n * Factorial(n - 1);
     }
 }
 
@@ -167,29 +229,96 @@ class Program
 {
     static void Main()
     {
-        AppConfig.DisplayConfig();
+        // Call static methods without creating instance
+        Console.WriteLine($"Max(5, 10) = {MathHelper.Max(5, 10)}");
+        Console.WriteLine($"Min(5, 10) = {MathHelper.Min(5, 10)}");
+        Console.WriteLine($"Average(1,2,3,4,5) = {MathHelper.Average(1, 2, 3, 4, 5)}");
         
-        Console.WriteLine("\\nChanging configuration...");
-        AppConfig.AppName = "SuperApp";
-        AppConfig.IsDebugMode = true;
+        Console.WriteLine("\\nPrime numbers from 1-20:");
+        for (int i = 1; i <= 20; i++)
+        {
+            if (MathHelper.IsPrime(i))
+            {
+                Console.Write($"{i} ");
+            }
+        }
         
-        AppConfig.DisplayConfig();
-        
-        Console.WriteLine($"\\nAccess anywhere: {AppConfig.FullVersion}");
+        Console.WriteLine($"\\n\\nFactorial(5) = {MathHelper.Factorial(5)}");
+        Console.WriteLine($"Factorial(10) = {MathHelper.Factorial(10)}");
     }
 }`}
-  title="Static Properties"
+/>
+
+## Static Constructors
+
+<CodeEditor 
+  initialCode={`using System;
+using System.Collections.Generic;
+
+class Database
+{
+    // Static fields to initialize
+    public static string ConnectionString { get; private set; }
+    public static bool IsConnected { get; private set; }
+    private static List<string> tables;
+    
+    // Static constructor - runs once before first access
+    static Database()
+    {
+        Console.WriteLine("Static constructor running...");
+        
+        // Initialize static members
+        ConnectionString = "Server=localhost;Database=test";
+        tables = new List<string> { "Users", "Products", "Orders" };
+        IsConnected = true;
+        
+        Console.WriteLine("Database initialized!\\n");
+    }
+    
+    public static void ListTables()
+    {
+        Console.WriteLine("Available tables:");
+        foreach (var table in tables)
+        {
+            Console.WriteLine($"  - {table}");
+        }
+    }
+    
+    public static void AddTable(string name)
+    {
+        tables.Add(name);
+        Console.WriteLine($"Added table: {name}");
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        Console.WriteLine("Program starting...");
+        
+        // First access triggers static constructor
+        Console.WriteLine($"Connected: {Database.IsConnected}");
+        Console.WriteLine($"Connection: {Database.ConnectionString}\\n");
+        
+        Database.ListTables();
+        
+        Database.AddTable("Inventory");
+        Console.WriteLine();
+        Database.ListTables();
+    }
+}`}
 />
 
 ## Static Classes
 
-Static classes can only contain static members and cannot be instantiated:
+Classes that can only contain static members:
 
 <CodeEditor 
-  language="csharp"
-  code={`using System;
+  initialCode={`using System;
 
-static class StringUtility
+// Static class - cannot be instantiated
+static class StringUtils
 {
     public static string Reverse(string input)
     {
@@ -198,204 +327,122 @@ static class StringUtility
         return new string(chars);
     }
     
-    public static int CountWords(string input)
-    {
-        if (string.IsNullOrWhiteSpace(input))
-            return 0;
-        return input.Split(' ', StringSplitOptions.RemoveEmptyEntries).Length;
-    }
-    
     public static string Capitalize(string input)
     {
-        if (string.IsNullOrEmpty(input))
-            return input;
+        if (string.IsNullOrEmpty(input)) return input;
         return char.ToUpper(input[0]) + input.Substring(1).ToLower();
     }
+    
+    public static int WordCount(string input)
+    {
+        if (string.IsNullOrWhiteSpace(input)) return 0;
+        return input.Split(new[] { ' ', '\\t', '\\n' }, 
+            StringSplitOptions.RemoveEmptyEntries).Length;
+    }
+    
+    public static bool IsPalindrome(string input)
+    {
+        string cleaned = input.ToLower().Replace(" ", "");
+        string reversed = Reverse(cleaned);
+        return cleaned == reversed;
+    }
+}
+
+static class NumberUtils
+{
+    public static bool IsEven(int n) => n % 2 == 0;
+    public static bool IsOdd(int n) => n % 2 != 0;
+    public static bool IsPositive(int n) => n > 0;
+    public static bool IsNegative(int n) => n < 0;
 }
 
 class Program
 {
     static void Main()
     {
-        string text = "hello world";
+        // Cannot do: var utils = new StringUtils(); // Compile error!
         
+        string text = "Hello World";
         Console.WriteLine($"Original: {text}");
-        Console.WriteLine($"Reversed: {StringUtility.Reverse(text)}");
-        Console.WriteLine($"Words: {StringUtility.CountWords(text)}");
-        Console.WriteLine($"Capitalized: {StringUtility.Capitalize(text)}");
+        Console.WriteLine($"Reversed: {StringUtils.Reverse(text)}");
+        Console.WriteLine($"Capitalized: {StringUtils.Capitalize(text)}");
+        Console.WriteLine($"Word count: {StringUtils.WordCount(text)}");
         
-        // Cannot create instance:
-        // StringUtility util = new StringUtility();  // ERROR!
+        string palindrome = "A man a plan a canal Panama";
+        Console.WriteLine($"\\n'{palindrome}'");
+        Console.WriteLine($"Is palindrome: {StringUtils.IsPalindrome(palindrome)}");
+        
+        Console.WriteLine("\\nNumber checks:");
+        Console.WriteLine($"4 is even: {NumberUtils.IsEven(4)}");
+        Console.WriteLine($"7 is odd: {NumberUtils.IsOdd(7)}");
     }
 }`}
-  title="Static Class"
-/>
-
-## Static Constructors
-
-Static constructors initialize static members:
-
-<CodeEditor 
-  language="csharp"
-  code={`using System;
-using System.Collections.Generic;
-
-class Database
-{
-    private static List<string> connectionStrings;
-    public static int MaxConnections { get; private set; }
-    public static DateTime InitializedAt { get; private set; }
-    
-    // Static constructor - runs once before first use
-    static Database()
-    {
-        Console.WriteLine("Initializing database configuration...");
-        connectionStrings = new List<string>
-        {
-            "Server=localhost;Database=db1",
-            "Server=localhost;Database=db2"
-        };
-        MaxConnections = 100;
-        InitializedAt = DateTime.Now;
-        Console.WriteLine("Database configuration complete");
-    }
-    
-    public static void ShowConnections()
-    {
-        Console.WriteLine($"\\nAvailable connections: {connectionStrings.Count}");
-        foreach (var conn in connectionStrings)
-        {
-            Console.WriteLine($"- {conn}");
-        }
-        Console.WriteLine($"Max connections: {MaxConnections}");
-        Console.WriteLine($"Initialized: {InitializedAt:HH:mm:ss}");
-    }
-}
-
-class Program
-{
-    static void Main()
-    {
-        Console.WriteLine("Program started");
-        
-        // Static constructor runs here (first access)
-        Database.ShowConnections();
-        
-        Console.WriteLine("\\nAccessing again...");
-        Database.ShowConnections();  // Constructor doesn't run again
-    }
-}`}
-  title="Static Constructor"
-/>
-
-## Real-World Example: ID Generator
-
-<CodeEditor 
-  language="csharp"
-  code={`using System;
-
-class User
-{
-    private static int nextId = 1;
-    private static int totalUsers = 0;
-    
-    public int Id { get; }
-    public string Username { get; set; }
-    public DateTime CreatedAt { get; }
-    
-    // Static property
-    public static int TotalUsers => totalUsers;
-    
-    public User(string username)
-    {
-        Id = nextId++;
-        Username = username;
-        CreatedAt = DateTime.Now;
-        totalUsers++;
-        
-        Console.WriteLine($"User created: {Username} (ID: {Id})");
-    }
-    
-    // Static method
-    public static void DisplayStatistics()
-    {
-        Console.WriteLine($"\\nTotal users: {totalUsers}");
-        Console.WriteLine($"Next ID: {nextId}");
-    }
-    
-    public void Display()
-    {
-        Console.WriteLine($"ID: {Id}, Username: {Username}, Created: {CreatedAt:HH:mm:ss}");
-    }
-}
-
-class Program
-{
-    static void Main()
-    {
-        User user1 = new User("alice");
-        User user2 = new User("bob");
-        User user3 = new User("charlie");
-        
-        User.DisplayStatistics();
-        
-        Console.WriteLine("\\nUser details:");
-        user1.Display();
-        user2.Display();
-        user3.Display();
-        
-        Console.WriteLine($"\\nTotal users from anywhere: {User.TotalUsers}");
-    }
-}`}
-  title="ID Generator Pattern"
 />
 
 ## Singleton Pattern
 
-Use static members to implement the Singleton pattern:
+Using static to ensure only one instance:
 
 <CodeEditor 
-  language="csharp"
-  code={`using System;
+  initialCode={`using System;
+using System.Collections.Generic;
 
-class Logger
+class GameManager
 {
-    private static Logger instance;
-    private static readonly object lockObj = new object();
+    // Static instance holder
+    private static GameManager instance;
     
-    private int messageCount = 0;
+    // Instance properties
+    public int Score { get; private set; }
+    public int Level { get; private set; }
+    public List<string> Achievements { get; } = new List<string>();
     
-    // Private constructor
-    private Logger()
+    // Private constructor prevents external instantiation
+    private GameManager()
     {
-        Console.WriteLine("Logger initialized");
+        Score = 0;
+        Level = 1;
+        Console.WriteLine("GameManager created!");
     }
     
-    // Static method to get single instance (thread-safe)
-    public static Logger GetInstance()
+    // Static property to get the singleton instance
+    public static GameManager Instance
     {
-        if (instance == null)
+        get
         {
-            lock (lockObj)
+            if (instance == null)
             {
-                if (instance == null)
-                {
-                    instance = new Logger();
-                }
+                instance = new GameManager();
             }
+            return instance;
         }
-        return instance;
     }
     
-    public void Log(string message)
+    // Instance methods
+    public void AddScore(int points)
     {
-        messageCount++;
-        Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Log #{messageCount}: {message}");
+        Score += points;
+        Console.WriteLine($"Score: {Score} (+{points})");
+        
+        if (Score >= Level * 100)
+        {
+            LevelUp();
+        }
+    }
+    
+    private void LevelUp()
+    {
+        Level++;
+        Console.WriteLine($"*** LEVEL UP! Now at level {Level} ***");
+        Achievements.Add($"Reached Level {Level}");
     }
     
     public void ShowStats()
     {
-        Console.WriteLine($"Total messages logged: {messageCount}");
+        Console.WriteLine($"\\nGame Stats:");
+        Console.WriteLine($"  Score: {Score}");
+        Console.WriteLine($"  Level: {Level}");
+        Console.WriteLine($"  Achievements: {Achievements.Count}");
     }
 }
 
@@ -403,137 +450,71 @@ class Program
 {
     static void Main()
     {
-        Logger logger1 = Logger.GetInstance();
-        Logger logger2 = Logger.GetInstance();
+        // Access via singleton property
+        GameManager.Instance.AddScore(50);
+        GameManager.Instance.AddScore(75);
+        GameManager.Instance.AddScore(100);
         
-        Console.WriteLine($"Same instance? {logger1 == logger2}\\n");
+        // Another reference to same instance
+        var game = GameManager.Instance;
+        game.AddScore(200);
         
-        logger1.Log("Application started");
-        logger2.Log("Processing request");
-        logger1.Log("Request completed");
+        GameManager.Instance.ShowStats();
         
-        Console.WriteLine();
-        logger1.ShowStats();
+        Console.WriteLine($"\\nSame instance: {game == GameManager.Instance}");
     }
 }`}
-  title="Singleton Pattern with Static"
 />
 
-## Constants and Static Readonly
+## Extension Methods
+
+Static methods that extend existing types:
 
 <CodeEditor 
-  language="csharp"
-  code={`using System;
+  initialCode={`using System;
 
-class Configuration
-{
-    // Compile-time constant (value known at compile time)
-    public const string AppName = "MyApp";
-    public const int MaxRetries = 3;
-    public const double Pi = 3.14159;
-    
-    // Static readonly (value set at runtime)
-    public static readonly DateTime StartTime = DateTime.Now;
-    public static readonly string MachineName = Environment.MachineName;
-    public static readonly Guid InstanceId = Guid.NewGuid();
-    
-    // Regular static field (can be modified)
-    public static int RequestCount = 0;
-    
-    public static void DisplayInfo()
-    {
-        Console.WriteLine($"App: {AppName}");
-        Console.WriteLine($"Max Retries: {MaxRetries}");
-        Console.WriteLine($"Started: {StartTime:HH:mm:ss}");
-        Console.WriteLine($"Machine: {MachineName}");
-        Console.WriteLine($"Instance: {InstanceId}");
-        Console.WriteLine($"Requests: {RequestCount}");
-    }
-}
-
-class Program
-{
-    static void Main()
-    {
-        Configuration.DisplayInfo();
-        
-        Configuration.RequestCount++;
-        Configuration.RequestCount++;
-        
-        Console.WriteLine("\\nAfter processing requests:");
-        Configuration.DisplayInfo();
-        
-        // Can modify static field:
-        Configuration.RequestCount = 100;
-        
-        // Cannot modify const or readonly:
-        // Configuration.AppName = "NewApp";  // ERROR - const
-        // Configuration.StartTime = DateTime.Now;  // ERROR - readonly
-    }
-}`}
-  title="Constants and Readonly"
-/>
-
-## Extension Methods (Static Classes)
-
-<CodeEditor 
-  language="csharp"
-  code={`using System;
-
+// Extension methods must be in a static class
 static class StringExtensions
 {
-    // Extension method for string
-    public static string ToTitleCase(this string input)
+    // 'this' keyword makes it an extension method
+    public static string Repeat(this string str, int count)
     {
-        if (string.IsNullOrEmpty(input))
-            return input;
-            
-        string[] words = input.Split(' ');
-        for (int i = 0; i < words.Length; i++)
-        {
-            if (words[i].Length > 0)
-            {
-                words[i] = char.ToUpper(words[i][0]) + 
-                          words[i].Substring(1).ToLower();
-            }
-        }
-        return string.Join(" ", words);
+        return string.Concat(System.Linq.Enumerable.Repeat(str, count));
     }
     
-    public static bool IsValidEmail(this string input)
+    public static bool IsNullOrEmpty(this string str)
     {
-        return !string.IsNullOrWhiteSpace(input) && 
-               input.Contains("@") && 
-               input.Contains(".");
+        return string.IsNullOrEmpty(str);
+    }
+    
+    public static string TruncateWithEllipsis(this string str, int maxLength)
+    {
+        if (str.Length <= maxLength) return str;
+        return str.Substring(0, maxLength - 3) + "...";
     }
 }
 
 static class IntExtensions
 {
-    public static bool IsPositive(this int number)
+    public static bool IsBetween(this int num, int min, int max)
     {
-        return number > 0;
+        return num >= min && num <= max;
     }
     
-    public static string ToOrdinal(this int number)
+    public static string ToOrdinal(this int num)
     {
-        if (number <= 0) return number.ToString();
-        
-        switch (number % 100)
+        string suffix = (num % 100) switch
         {
-            case 11:
-            case 12:
-            case 13:
-                return number + "th";
-        }
-        
-        switch (number % 10)
-        {
-            case 1: return number + "st";
-            case 2: return number + "nd";
-            case 3: return number + "rd";
-            default: return number + "th";
-        }
+            11 or 12 or 13 => "th",
+            _ => (num % 10) switch
+            {
+                1 => "st",
+                2 => "nd",
+                3 => "rd",
+                _ => "th"
+            }
+        };
+        return $"{num}{suffix}";
     }
 }
 
@@ -541,54 +522,158 @@ class Program
 {
     static void Main()
     {
-        // Using extension methods
-        string text = "hello world from C#";
-        Console.WriteLine($"Original: {text}");
-        Console.WriteLine($"Title Case: {text.ToTitleCase()}");
+        // Call extension method like instance method
+        string hello = "Hello! ";
+        Console.WriteLine(hello.Repeat(3));
         
-        string email = "user@example.com";
-        Console.WriteLine($"\\nIs valid email? {email.IsValidEmail()}");
-        Console.WriteLine($"Is valid email? {"invalid".IsValidEmail()}");
+        string longText = "This is a very long string that needs truncation";
+        Console.WriteLine(longText.TruncateWithEllipsis(20));
         
-        int num = 21;
-        Console.WriteLine($"\\n{num} is positive? {num.IsPositive()}");
-        Console.WriteLine($"Position: {num.ToOrdinal()}");
-        Console.WriteLine($"Position: {1.ToOrdinal()}");
-        Console.WriteLine($"Position: {22.ToOrdinal()}");
-        Console.WriteLine($"Position: {33.ToOrdinal()}");
+        string empty = "";
+        Console.WriteLine($"Empty string is null or empty: {empty.IsNullOrEmpty()}");
+        
+        Console.WriteLine("\\nNumber extensions:");
+        int num = 42;
+        Console.WriteLine($"{num} is between 1 and 50: {num.IsBetween(1, 50)}");
+        
+        for (int i = 1; i <= 5; i++)
+        {
+            Console.WriteLine($"{i} -> {i.ToOrdinal()}");
+        }
     }
 }`}
-  title="Extension Methods"
 />
 
-## When to Use Static Members
+## Complete Example: Logger System
 
-| Use Static When | Use Instance When |
-|----------------|-------------------|
-| Utility/helper methods | Object-specific behavior |
-| Shared configuration | Object-specific state |
-| Constants | Each object needs own value |
-| Singleton pattern | Multiple instances needed |
-| Extension methods | Polymorphism required |
+<CodeEditor 
+  initialCode={`using System;
+using System.Collections.Generic;
 
-## Best Practices
+static class Logger
+{
+    // Static fields
+    private static List<string> logs = new List<string>();
+    private static bool isEnabled = true;
+    private static LogLevel minLevel = LogLevel.Info;
+    
+    // Enum for log levels
+    public enum LogLevel { Debug = 0, Info = 1, Warning = 2, Error = 3 }
+    
+    // Static properties
+    public static bool IsEnabled
+    {
+        get => isEnabled;
+        set => isEnabled = value;
+    }
+    
+    public static LogLevel MinimumLevel
+    {
+        get => minLevel;
+        set => minLevel = value;
+    }
+    
+    public static int LogCount => logs.Count;
+    
+    // Static methods
+    public static void Log(LogLevel level, string message)
+    {
+        if (!isEnabled || level < minLevel) return;
+        
+        string entry = $"[{DateTime.Now:HH:mm:ss}] [{level}] {message}";
+        logs.Add(entry);
+        
+        // Color output based on level
+        ConsoleColor color = level switch
+        {
+            LogLevel.Debug => ConsoleColor.Gray,
+            LogLevel.Info => ConsoleColor.White,
+            LogLevel.Warning => ConsoleColor.Yellow,
+            LogLevel.Error => ConsoleColor.Red,
+            _ => ConsoleColor.White
+        };
+        
+        Console.ForegroundColor = color;
+        Console.WriteLine(entry);
+        Console.ResetColor();
+    }
+    
+    // Convenience methods
+    public static void Debug(string msg) => Log(LogLevel.Debug, msg);
+    public static void Info(string msg) => Log(LogLevel.Info, msg);
+    public static void Warning(string msg) => Log(LogLevel.Warning, msg);
+    public static void Error(string msg) => Log(LogLevel.Error, msg);
+    
+    public static void ShowAllLogs()
+    {
+        Console.WriteLine($"\\n=== All Logs ({logs.Count}) ===");
+        foreach (var log in logs)
+        {
+            Console.WriteLine(log);
+        }
+    }
+    
+    public static void Clear()
+    {
+        logs.Clear();
+        Console.WriteLine("Logs cleared.");
+    }
+}
 
-1. **Use static for utility classes** - Math helpers, string utilities, etc.
-2. **Don't overuse static** - Makes testing difficult
-3. **Avoid static mutable state** - Can cause threading issues
-4. **Use const or readonly** for values that don't change
-5. **Static classes for extension methods** - Add functionality to existing types
-6. **Document thread safety** - If static members can be accessed concurrently
+class Program
+{
+    static void Main()
+    {
+        Logger.Info("Application started");
+        Logger.Debug("Debug mode enabled");  // Won't show by default
+        Logger.Warning("Low memory warning");
+        Logger.Error("Failed to connect to database");
+        
+        Console.WriteLine($"\\nLog count: {Logger.LogCount}");
+        
+        // Enable debug logging
+        Logger.MinimumLevel = Logger.LogLevel.Debug;
+        Logger.Debug("Now debug messages show up!");
+        
+        // Disable logging
+        Logger.IsEnabled = false;
+        Logger.Info("This won't appear");
+        
+        Logger.IsEnabled = true;
+        Logger.Info("Logging re-enabled");
+        
+        Logger.ShowAllLogs();
+    }
+}`}
+/>
 
 ## Key Takeaways
 
 - **Static members** belong to the class, not instances
-- **Static methods** can't access instance members
-- **Static classes** can only contain static members
-- **Static constructors** run once before first use
-- Use `const` for compile-time constants, `static readonly` for runtime constants
-- **Extension methods** are static methods that extend existing types
+- **Static fields** are shared across all objects
+- **Static methods** can be called without creating an instance
+- **Static constructors** initialize static members once
+- **Static classes** contain only static members and cannot be instantiated
+- **Extension methods** add functionality to existing types
 
-## Next Steps
+## When to Use Static
 
-We've completed OOP Basics! Next, we'll dive into **Advanced OOP** concepts including Polymorphism, Interfaces, and Abstract Classes!
+| Use Static For | Use Instance For |
+|----------------|------------------|
+| Utility/helper methods | Object-specific data |
+| Constants and configuration | State that varies per object |
+| Factory methods | Behavior tied to object state |
+| Singleton patterns | Polymorphic behavior |
+| Extension methods | Data encapsulation |
+
+## Best Practices
+
+1. **Use static sparingly** - overuse makes testing difficult
+2. **Consider thread safety** for static fields
+3. **Prefer extension methods** over utility classes when possible
+4. **Use static readonly** for constants that need runtime initialization
+5. **Avoid mutable static state** when possible
+
+## Next Module
+
+You've completed OOP Basics! Continue to **Advanced OOP** to learn about inheritance, polymorphism, and interfaces!

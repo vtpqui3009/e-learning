@@ -4,5 +4,6 @@
   "description": "Master the basics of C# programming",
   "order": 1,
   "icon": "📚",
-  "color": "#3b82f6"
+  "color": "#3b82f6",
+  "lessonCount": 6
 }

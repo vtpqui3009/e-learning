@@ -125,6 +125,7 @@ export function CodeEditor({
               disabled={isRunning}
               size="sm"
               className="h-8 px-4 bg-green-600 hover:bg-green-700 text-white"
+              title="Run code (Ctrl+Enter or Cmd+Enter)"
             >
               {isRunning ? (
                 <>
@@ -135,6 +136,7 @@ export function CodeEditor({
                 <>
                   <Play className="w-4 h-4 mr-1.5" />
                   Run Code
+                  <span className="ml-2 text-xs opacity-70">⌘↵</span>
                 </>
               )}
             </Button>
@@ -150,6 +152,17 @@ export function CodeEditor({
           value={code}
           onChange={(value) => setCode(value || "")}
           theme="vs-dark"
+          onMount={(editor, monaco) => {
+            // Add keyboard shortcut: Ctrl+Enter (Cmd+Enter on Mac) to run code
+            if (!readOnly) {
+              editor.addCommand(
+                monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter,
+                () => {
+                  handleRunCode();
+                }
+              );
+            }
+          }}
           options={{
             readOnly,
             minimap: { enabled: false },

@@ -1,0 +1,531 @@
+---
+title: "Setting Up Your Test Environment"
+description: "Install tools and create your first test project"
+order: 2
+difficulty: "beginner"
+tags: ["testing", "setup", "dotnet", "xunit"]
+duration: "25 minutes"
+---
+
+# Setting Up Your Test Environment
+
+Let's set up everything you need to start writing automated tests with C#!
+
+## What You'll Install
+
+1. **.NET SDK** - Runs C# code
+2. **Visual Studio Code** - Code editor (recommended)
+3. **C# Extension** - Adds C# support to VS Code
+4. **xUnit** - Testing framework
+
+## Step 1: Install .NET SDK
+
+The .NET SDK lets you create and run C# projects.
+
+### Windows
+
+1. Visit: https://dotnet.microsoft.com/download
+2. Click "Download .NET SDK"
+3. Run the installer
+4. Follow the installation wizard
+
+### Mac
+
+```bash
+# Using Homebrew
+brew install dotnet-sdk
+```
+
+### Linux
+
+```bash
+# Ubuntu/Debian
+wget https://dot.net/v1/dotnet-install.sh
+sudo bash dotnet-install.sh
+```
+
+### Verify Installation
+
+Open a terminal/command prompt and type:
+
+```bash
+dotnet --version
+```
+
+You should see something like: `8.0.100`
+
+If you see a version number, you're ready to go! ✅
+
+## Step 2: Install Visual Studio Code
+
+VS Code is a lightweight, powerful code editor perfect for beginners.
+
+1. Visit: https://code.visualstudio.com/
+2. Download for your operating system
+3. Install and open VS Code
+
+### Install C# Extension
+
+1. Open VS Code
+2. Click the Extensions icon (or press Ctrl+Shift+X)
+3. Search for "C#"
+4. Install "C# Dev Kit" by Microsoft
+5. Restart VS Code
+
+## Step 3: Create Your First Test Project
+
+Now let's create a real test project!
+
+### Open Terminal in VS Code
+
+- Press **Ctrl+`** (backtick) or
+- Menu: Terminal → New Terminal
+
+### Create Project Folder
+
+```bash
+# Create a folder for your test projects
+mkdir C:\TestAutomation
+cd C:\TestAutomation
+```
+
+### Create a Solution
+
+A solution organizes your projects.
+
+```bash
+# Create solution
+dotnet new sln -n MyFirstTests
+```
+
+**What happened?**
+- Created file: `MyFirstTests.sln`
+- This organizes all your related projects
+
+### Create the Application Project
+
+First, let's create a simple calculator that we'll test.
+
+```bash
+# Create a class library (code to test)
+dotnet new classlib -n Calculator
+
+# Add it to the solution
+dotnet sln add Calculator/Calculator.csproj
+```
+
+**Project structure now:**
+```
+MyFirstTests/
+├── MyFirstTests.sln
+└── Calculator/
+    ├── Calculator.csproj
+    └── Class1.cs
+```
+
+### Create the Test Project
+
+```bash
+# Create test project with xUnit
+dotnet new xunit -n Calculator.Tests
+
+# Add to solution
+dotnet sln add Calculator.Tests/Calculator.Tests.csproj
+
+# Link test project to calculator project
+cd Calculator.Tests
+dotnet add reference ../Calculator/Calculator.csproj
+cd ..
+```
+
+**Complete structure:**
+```
+MyFirstTests/
+├── MyFirstTests.sln
+├── Calculator/
+│   ├── Calculator.csproj
+│   └── Class1.cs
+└── Calculator.Tests/
+    ├── Calculator.Tests.csproj
+    └── UnitTest1.cs
+```
+
+## Step 4: Write Calculator Code
+
+Open `Calculator/Class1.cs` in VS Code and replace with:
+
+<CodeEditor
+  initialCode={`namespace Calculator
+{
+    public class Calculator
+    {
+        public int Add(int a, int b)
+        {
+            return a + b;
+        }
+
+        public int Subtract(int a, int b)
+        {
+            return a - b;
+        }
+
+        public int Multiply(int a, int b)
+        {
+            return a * b;
+        }
+
+        public double Divide(double a, double b)
+        {
+            if (b == 0)
+            {
+                throw new DivideByZeroException("Cannot divide by zero");
+            }
+            return a / b;
+        }
+    }
+}`}
+/>
+
+**Save the file** (Ctrl+S)
+
+## Step 5: Write Your First Test
+
+Open `Calculator.Tests/UnitTest1.cs` and replace with:
+
+<CodeEditor
+  initialCode={`using Xunit;
+
+namespace Calculator.Tests
+{
+    public class CalculatorTests
+    {
+        [Fact]
+        public void Add_TwoPositiveNumbers_ReturnsSum()
+        {
+            // Arrange - Set up
+            var calculator = new Calculator();
+            int a = 5;
+            int b = 3;
+
+            // Act - Do the action
+            int result = calculator.Add(a, b);
+
+            // Assert - Check result
+            Assert.Equal(8, result);
+        }
+
+        [Fact]
+        public void Subtract_LargerFromSmaller_ReturnsNegative()
+        {
+            // Arrange
+            var calculator = new Calculator();
+
+            // Act
+            int result = calculator.Subtract(3, 5);
+
+            // Assert
+            Assert.Equal(-2, result);
+        }
+
+        [Fact]
+        public void Multiply_TwoNumbers_ReturnsProduct()
+        {
+            // Arrange
+            var calculator = new Calculator();
+
+            // Act
+            int result = calculator.Multiply(4, 5);
+
+            // Assert
+            Assert.Equal(20, result);
+        }
+
+        [Fact]
+        public void Divide_ByZero_ThrowsException()
+        {
+            // Arrange
+            var calculator = new Calculator();
+
+            // Act & Assert
+            Assert.Throws<DivideByZeroException>(() =>
+                calculator.Divide(10, 0)
+            );
+        }
+    }
+}`}
+/>
+
+## Step 6: Run Your Tests!
+
+In the terminal, run:
+
+```bash
+cd Calculator.Tests
+dotnet test
+```
+
+**You should see:**
+```
+Passed!  - Failed:     0, Passed:     4, Skipped:     0, Total:     4
+```
+
+🎉 **Congratulations!** You just ran your first automated tests!
+
+## Understanding the Test Output
+
+When you run `dotnet test`, you'll see:
+
+```
+Starting test execution, please wait...
+A total of 1 test files matched the specified pattern.
+
+Passed!  - Failed:     0, Passed:     4, Skipped:     0, Total:     4, Duration: 123 ms
+```
+
+**What this means:**
+- ✅ **Passed: 4** - All 4 tests passed!
+- ❌ **Failed: 0** - No tests failed
+- ⏭️ **Skipped: 0** - No tests were skipped
+- ⏱️ **Duration: 123 ms** - Tests ran in 123 milliseconds
+
+## Project Structure Explained
+
+```
+MyFirstTests/
+├── MyFirstTests.sln          # Solution file (container)
+├── Calculator/               # Application code
+│   ├── Calculator.csproj     # Project configuration
+│   └── Class1.cs             # Your calculator class
+└── Calculator.Tests/         # Test code
+    ├── Calculator.Tests.csproj  # Test project config
+    └── UnitTest1.cs             # Your tests
+```
+
+**Why two projects?**
+- **Calculator**: The actual code (what you're testing)
+- **Calculator.Tests**: The test code (tests the calculator)
+
+This separation is a best practice!
+
+## Common Commands Reference
+
+```bash
+# Create new solution
+dotnet new sln -n MyProject
+
+# Create class library
+dotnet new classlib -n MyLibrary
+
+# Create test project (xUnit)
+dotnet new xunit -n MyLibrary.Tests
+
+# Create test project (NUnit)
+dotnet new nunit -n MyLibrary.Tests
+
+# Create test project (MSTest)
+dotnet new mstest -n MyLibrary.Tests
+
+# Add project to solution
+dotnet sln add MyProject/MyProject.csproj
+
+# Add project reference
+dotnet add reference ../OtherProject/OtherProject.csproj
+
+# Restore packages
+dotnet restore
+
+# Build project
+dotnet build
+
+# Run tests
+dotnet test
+
+# Run tests with details
+dotnet test --logger "console;verbosity=detailed"
+
+# Run specific test
+dotnet test --filter "TestMethodName"
+```
+
+## Testing Frameworks Comparison
+
+### xUnit (Recommended for this course)
+```csharp
+[Fact]
+public void MyTest() { }
+
+[Theory]
+[InlineData(1, 2, 3)]
+public void MyParameterizedTest(int a, int b, int expected) { }
+```
+
+**Pros:**
+- Modern and popular
+- Clean syntax
+- Great documentation
+
+### NUnit
+```csharp
+[Test]
+public void MyTest() { }
+
+[TestCase(1, 2, 3)]
+public void MyParameterizedTest(int a, int b, int expected) { }
+```
+
+**Pros:**
+- Mature and stable
+- Rich assertion library
+
+### MSTest
+```csharp
+[TestMethod]
+public void MyTest() { }
+
+[DataTestMethod]
+[DataRow(1, 2, 3)]
+public void MyParameterizedTest(int a, int b, int expected) { }
+```
+
+**Pros:**
+- Built into Visual Studio
+- Microsoft support
+
+**We'll use xUnit** because it's modern and widely used!
+
+## Troubleshooting
+
+### Problem: "dotnet command not found"
+
+**Solution:**
+1. Install .NET SDK from https://dotnet.microsoft.com/download
+2. Restart terminal
+3. Try `dotnet --version` again
+
+### Problem: Tests won't run
+
+**Solution:**
+```bash
+# Make sure you're in the test project folder
+cd Calculator.Tests
+
+# Restore packages
+dotnet restore
+
+# Build
+dotnet build
+
+# Run tests
+dotnet test
+```
+
+### Problem: "Cannot find Calculator namespace"
+
+**Solution:**
+```bash
+# Add reference to main project
+cd Calculator.Tests
+dotnet add reference ../Calculator/Calculator.csproj
+```
+
+### Problem: Build errors
+
+**Solution:**
+```bash
+# Clean and rebuild
+dotnet clean
+dotnet build
+```
+
+## VS Code Tips
+
+### Running Tests in VS Code
+
+1. Open test file (`UnitTest1.cs`)
+2. You'll see "Run Test" | "Debug Test" above each test
+3. Click "Run Test" to run a single test
+4. Click "Run All Tests" to run all tests
+
+### Keyboard Shortcuts
+
+- **Ctrl+`**: Open terminal
+- **Ctrl+Shift+P**: Command palette
+- **F5**: Debug
+- **Ctrl+.**: Quick fixes
+- **Ctrl+Space**: IntelliSense
+
+### Extensions to Install
+
+- **C# Dev Kit** (Required)
+- **.NET Core Test Explorer** (Optional, shows tests in sidebar)
+- **C# XML Documentation Comments** (Helpful)
+
+## Practice Exercise
+
+Now that your environment is set up, try this:
+
+1. **Add a new method** to Calculator.cs:
+   ```csharp
+   public int GetMax(int a, int b)
+   {
+       return a > b ? a : b;
+   }
+   ```
+
+2. **Write a test** for it in UnitTest1.cs:
+   ```csharp
+   [Fact]
+   public void GetMax_FirstNumberLarger_ReturnsFirst()
+   {
+       var calc = new Calculator();
+       int result = calc.GetMax(10, 5);
+       Assert.Equal(10, result);
+   }
+   ```
+
+3. **Run the test**:
+   ```bash
+   dotnet test
+   ```
+
+Did it pass? ✅
+
+## Key Takeaways
+
+- ✅ .NET SDK lets you create and run C# projects
+- ✅ VS Code is a great editor for C# testing
+- ✅ xUnit is the testing framework we'll use
+- ✅ Test projects reference the code they test
+- ✅ `dotnet test` runs all your tests
+- ✅ Tests should run in milliseconds
+
+## What's Next?
+
+Your environment is ready! In the next lesson, you'll learn:
+- The Arrange-Act-Assert pattern in detail
+- How to write comprehensive unit tests
+- Understanding test attributes
+- Running and debugging tests
+
+**Ready to write more tests? Let's continue!** 🚀
+
+## Quick Reference Card
+
+```bash
+# Create test project
+dotnet new xunit -n MyProject.Tests
+
+# Run tests
+dotnet test
+
+# Run tests with details
+dotnet test -v detailed
+
+# Run specific test
+dotnet test --filter "TestName"
+
+# Watch mode (auto-run on changes)
+dotnet watch test
+```
+
+Save this for quick reference!

@@ -1,0 +1,634 @@
+---
+title: "Exception Handling"
+description: "Handle errors gracefully using try, catch, finally, and throw"
+order: 1
+difficulty: "intermediate"
+estimatedTime: "30 minutes"
+keywords: ["exceptions", "try", "catch", "finally", "throw", "error handling"]
+prerequisites: ["01-fundamentals/06-methods"]
+---
+
+# Exception Handling in C#
+
+Exceptions are runtime errors that disrupt the normal flow of your program. Exception handling allows you to respond to errors gracefully instead of crashing.
+
+## What is an Exception?
+
+An **exception** is an object that represents an error or unexpected condition. When something goes wrong, C# "throws" an exception that must be "caught" and handled.
+
+Common scenarios that cause exceptions:
+- Dividing by zero
+- Accessing null references
+- File not found
+- Invalid type conversions
+- Index out of bounds
+
+## The try-catch Block
+
+Use `try-catch` to handle exceptions:
+
+<CodeEditor 
+  initialCode={`using System;
+
+class Program
+{
+    static void Main()
+    {
+        // Without exception handling - program crashes!
+        // int x = 10;
+        // int y = 0;
+        // int result = x / y;  // DivideByZeroException!
+        
+        // With exception handling
+        try
+        {
+            int x = 10;
+            int y = 0;
+            int result = x / y;
+            Console.WriteLine($"Result: {result}");
+        }
+        catch (DivideByZeroException ex)
+        {
+            Console.WriteLine("Error: Cannot divide by zero!");
+            Console.WriteLine($"Exception message: {ex.Message}");
+        }
+        
+        Console.WriteLine("\\nProgram continues normally...");
+        
+        // Another example
+        try
+        {
+            string text = null;
+            int length = text.Length;  // NullReferenceException!
+        }
+        catch (NullReferenceException ex)
+        {
+            Console.WriteLine("\\nError: Tried to access a null object!");
+        }
+        
+        Console.WriteLine("Still running!");
+    }
+}`}
+/>
+
+## Catching Multiple Exception Types
+
+<CodeEditor 
+  initialCode={`using System;
+
+class Program
+{
+    static void Main()
+    {
+        string input = "abc";  // Try changing this to "5" or "0"
+        
+        try
+        {
+            int number = int.Parse(input);
+            int result = 100 / number;
+            Console.WriteLine($"100 / {number} = {result}");
+        }
+        catch (FormatException ex)
+        {
+            Console.WriteLine($"Format Error: '{input}' is not a valid number");
+        }
+        catch (DivideByZeroException ex)
+        {
+            Console.WriteLine("Math Error: Cannot divide by zero");
+        }
+        catch (Exception ex)
+        {
+            // Catches any other exception type
+            Console.WriteLine($"Unexpected error: {ex.Message}");
+        }
+        
+        Console.WriteLine("\\n--- Multiple exceptions example ---");
+        
+        string[] testValues = { "10", "abc", "0", null };
+        
+        foreach (string value in testValues)
+        {
+            try
+            {
+                Console.Write($"Processing '{value ?? "null"}': ");
+                int num = int.Parse(value);
+                int result = 100 / num;
+                Console.WriteLine($"Result = {result}");
+            }
+            catch (ArgumentNullException)
+            {
+                Console.WriteLine("Input was null");
+            }
+            catch (FormatException)
+            {
+                Console.WriteLine("Invalid format");
+            }
+            catch (DivideByZeroException)
+            {
+                Console.WriteLine("Division by zero");
+            }
+        }
+    }
+}`}
+/>
+
+## The finally Block
+
+The `finally` block always executes, whether an exception occurred or not. It's perfect for cleanup code.
+
+<CodeEditor 
+  initialCode={`using System;
+
+class Program
+{
+    static void Main()
+    {
+        // finally always runs
+        Console.WriteLine("=== Example 1: No exception ===");
+        try
+        {
+            Console.WriteLine("Try block executing...");
+            int result = 10 / 2;
+            Console.WriteLine($"Result: {result}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Catch block - error occurred");
+        }
+        finally
+        {
+            Console.WriteLine("Finally block - always runs!");
+        }
+        
+        Console.WriteLine("\\n=== Example 2: With exception ===");
+        try
+        {
+            Console.WriteLine("Try block executing...");
+            int result = 10 / 0;  // Exception!
+            Console.WriteLine($"Result: {result}");  // Never reached
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Catch block - handling error");
+        }
+        finally
+        {
+            Console.WriteLine("Finally block - still runs!");
+        }
+        
+        // Practical use: Cleanup resources
+        Console.WriteLine("\\n=== Cleanup Example ===");
+        DatabaseConnection db = null;
+        try
+        {
+            db = new DatabaseConnection();
+            db.Open();
+            db.ExecuteQuery("SELECT * FROM users");
+            // Simulate error
+            throw new Exception("Query failed!");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error: {ex.Message}");
+        }
+        finally
+        {
+            // Always close the connection
+            if (db != null)
+            {
+                db.Close();
+            }
+        }
+    }
+}
+
+// Simulated database class
+class DatabaseConnection
+{
+    public void Open() => Console.WriteLine("Database opened");
+    public void Close() => Console.WriteLine("Database closed");
+    public void ExecuteQuery(string query) => Console.WriteLine($"Executing: {query}");
+}`}
+/>
+
+## Throwing Exceptions
+
+Use `throw` to raise an exception when you detect an error condition:
+
+<CodeEditor 
+  initialCode={`using System;
+
+class Program
+{
+    static void Main()
+    {
+        // Throwing exceptions
+        try
+        {
+            SetAge(-5);
+        }
+        catch (ArgumentException ex)
+        {
+            Console.WriteLine($"Error: {ex.Message}");
+        }
+        
+        try
+        {
+            SetAge(200);
+        }
+        catch (ArgumentOutOfRangeException ex)
+        {
+            Console.WriteLine($"Error: {ex.Message}");
+        }
+        
+        // Valid age
+        try
+        {
+            SetAge(25);
+            Console.WriteLine("Age set successfully!");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error: {ex.Message}");
+        }
+        
+        // Withdraw example
+        Console.WriteLine("\\n=== Bank Account ===");
+        try
+        {
+            Withdraw(500, 100);
+        }
+        catch (InvalidOperationException ex)
+        {
+            Console.WriteLine($"Transaction failed: {ex.Message}");
+        }
+    }
+    
+    static void SetAge(int age)
+    {
+        if (age < 0)
+        {
+            throw new ArgumentException("Age cannot be negative");
+        }
+        if (age > 150)
+        {
+            throw new ArgumentOutOfRangeException(nameof(age), 
+                "Age must be between 0 and 150");
+        }
+        Console.WriteLine($"Age set to {age}");
+    }
+    
+    static void Withdraw(decimal amount, decimal balance)
+    {
+        if (amount <= 0)
+        {
+            throw new ArgumentException("Amount must be positive");
+        }
+        if (amount > balance)
+        {
+            throw new InvalidOperationException(
+                $"Insufficient funds. Balance: {balance}, Requested: {amount}");
+        }
+        Console.WriteLine($"Withdrew {amount}. New balance: {balance - amount}");
+    }
+}`}
+/>
+
+## Common Exception Types
+
+<CodeEditor 
+  initialCode={`using System;
+using System.Collections.Generic;
+using System.IO;
+
+class Program
+{
+    static void Main()
+    {
+        // ArgumentNullException
+        DemonstrateException("ArgumentNullException", () => {
+            string s = null;
+            if (s == null) throw new ArgumentNullException(nameof(s));
+        });
+        
+        // ArgumentException
+        DemonstrateException("ArgumentException", () => {
+            string email = "invalid";
+            if (!email.Contains("@"))
+                throw new ArgumentException("Invalid email format", nameof(email));
+        });
+        
+        // ArgumentOutOfRangeException
+        DemonstrateException("ArgumentOutOfRangeException", () => {
+            int index = -1;
+            if (index < 0)
+                throw new ArgumentOutOfRangeException(nameof(index), "Index must be >= 0");
+        });
+        
+        // InvalidOperationException
+        DemonstrateException("InvalidOperationException", () => {
+            Stack<int> stack = new Stack<int>();
+            int item = stack.Pop(); // Can't pop from empty stack
+        });
+        
+        // IndexOutOfRangeException
+        DemonstrateException("IndexOutOfRangeException", () => {
+            int[] arr = { 1, 2, 3 };
+            int x = arr[10];
+        });
+        
+        // KeyNotFoundException
+        DemonstrateException("KeyNotFoundException", () => {
+            var dict = new Dictionary<string, int> { { "a", 1 } };
+            int val = dict["b"];
+        });
+        
+        // FormatException
+        DemonstrateException("FormatException", () => {
+            int num = int.Parse("not a number");
+        });
+        
+        // OverflowException
+        DemonstrateException("OverflowException", () => {
+            checked {
+                int max = int.MaxValue;
+                int overflow = max + 1;
+            }
+        });
+    }
+    
+    static void DemonstrateException(string name, Action action)
+    {
+        try
+        {
+            action();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"{name}: {ex.Message}");
+        }
+    }
+}`}
+/>
+
+## Re-throwing Exceptions
+
+<CodeEditor 
+  initialCode={`using System;
+
+class Program
+{
+    static void Main()
+    {
+        try
+        {
+            ProcessData();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("=== Error in Main ===");
+            Console.WriteLine($"Message: {ex.Message}");
+            Console.WriteLine($"Source: {ex.Source}");
+            
+            // Check for inner exception
+            if (ex.InnerException != null)
+            {
+                Console.WriteLine($"\\nInner Exception: {ex.InnerException.Message}");
+            }
+        }
+    }
+    
+    static void ProcessData()
+    {
+        try
+        {
+            LoadFile("data.txt");
+        }
+        catch (Exception ex)
+        {
+            // Option 1: Re-throw preserving stack trace
+            // throw;
+            
+            // Option 2: Wrap in new exception with more context
+            throw new InvalidOperationException(
+                "Failed to process data file", ex);
+        }
+    }
+    
+    static void LoadFile(string filename)
+    {
+        // Simulate file not found
+        throw new System.IO.FileNotFoundException(
+            $"Could not find file: {filename}");
+    }
+}`}
+/>
+
+## Exception Filters (C# 6+)
+
+Use `when` to add conditions to catch blocks:
+
+<CodeEditor 
+  initialCode={`using System;
+using System.Net.Http;
+
+class Program
+{
+    static void Main()
+    {
+        // Exception filters with 'when'
+        int[] errorCodes = { 404, 500, 403, 200 };
+        
+        foreach (int code in errorCodes)
+        {
+            try
+            {
+                SimulateHttpError(code);
+            }
+            catch (HttpRequestException ex) when (ex.Message.Contains("404"))
+            {
+                Console.WriteLine("Not Found - The resource doesn't exist");
+            }
+            catch (HttpRequestException ex) when (ex.Message.Contains("500"))
+            {
+                Console.WriteLine("Server Error - Try again later");
+            }
+            catch (HttpRequestException ex) when (ex.Message.Contains("403"))
+            {
+                Console.WriteLine("Forbidden - Access denied");
+            }
+            catch (HttpRequestException ex)
+            {
+                Console.WriteLine($"HTTP Error: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Unexpected error: {ex.Message}");
+            }
+        }
+        
+        // Practical example: Retry logic
+        Console.WriteLine("\\n=== Retry Example ===");
+        int attempts = 0;
+        bool success = false;
+        
+        while (!success && attempts < 3)
+        {
+            try
+            {
+                attempts++;
+                Console.WriteLine($"Attempt {attempts}...");
+                PerformUnreliableOperation(attempts);
+                success = true;
+                Console.WriteLine("Operation succeeded!");
+            }
+            catch (Exception ex) when (attempts < 3)
+            {
+                Console.WriteLine($"Failed, will retry: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Final failure: {ex.Message}");
+            }
+        }
+    }
+    
+    static void SimulateHttpError(int code)
+    {
+        if (code != 200)
+            throw new HttpRequestException($"HTTP {code} error");
+        Console.WriteLine("Request successful (200)");
+    }
+    
+    static void PerformUnreliableOperation(int attempt)
+    {
+        if (attempt < 3)
+            throw new Exception("Connection timeout");
+    }
+}`}
+/>
+
+## Practical Example: User Input Validation
+
+<CodeEditor 
+  initialCode={`using System;
+
+class Program
+{
+    static void Main()
+    {
+        Console.WriteLine("=== User Registration ===\\n");
+        
+        // Simulated user inputs (in real app, would come from user)
+        string[] testInputs = {
+            "John|25|john@email.com",
+            "|30|test@email.com",           // Empty name
+            "Jane|-5|jane@email.com",       // Invalid age
+            "Bob|40|invalid-email",          // Invalid email
+            "Alice|28|alice@email.com"       // Valid
+        };
+        
+        foreach (string input in testInputs)
+        {
+            Console.WriteLine($"Processing: {input}");
+            
+            try
+            {
+                string[] parts = input.Split('|');
+                
+                string name = ValidateName(parts[0]);
+                int age = ValidateAge(parts[1]);
+                string email = ValidateEmail(parts[2]);
+                
+                Console.WriteLine($"  ✓ Registered: {name}, {age}, {email}\\n");
+            }
+            catch (ArgumentException ex)
+            {
+                Console.WriteLine($"  ✗ Validation failed: {ex.Message}\\n");
+            }
+            catch (FormatException ex)
+            {
+                Console.WriteLine($"  ✗ Invalid format: {ex.Message}\\n");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"  ✗ Unexpected error: {ex.Message}\\n");
+            }
+        }
+    }
+    
+    static string ValidateName(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            throw new ArgumentException("Name cannot be empty");
+        }
+        if (name.Length < 2)
+        {
+            throw new ArgumentException("Name must be at least 2 characters");
+        }
+        return name.Trim();
+    }
+    
+    static int ValidateAge(string ageStr)
+    {
+        if (!int.TryParse(ageStr, out int age))
+        {
+            throw new FormatException("Age must be a number");
+        }
+        if (age < 0 || age > 150)
+        {
+            throw new ArgumentOutOfRangeException(nameof(age), 
+                "Age must be between 0 and 150");
+        }
+        return age;
+    }
+    
+    static string ValidateEmail(string email)
+    {
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            throw new ArgumentException("Email cannot be empty");
+        }
+        if (!email.Contains("@") || !email.Contains("."))
+        {
+            throw new ArgumentException("Invalid email format");
+        }
+        return email.Trim().ToLower();
+    }
+}`}
+/>
+
+## Key Takeaways
+
+- Use `try-catch` to handle exceptions and prevent crashes
+- Catch **specific exceptions first**, then general ones
+- `finally` **always executes** - use for cleanup code
+- `throw` to raise exceptions when you detect errors
+- Use `throw;` (not `throw ex;`) to preserve stack trace
+- Exception filters (`when`) add conditions to catch blocks
+- Always validate input to prevent exceptions when possible
+
+## Best Practices
+
+1. **Catch specific exceptions** - avoid catching generic `Exception` when possible
+2. **Don't swallow exceptions** - always log or handle meaningfully
+3. **Use finally** for resource cleanup (or better, use `using` statement)
+4. **Fail fast** - throw exceptions early when detecting invalid state
+5. **Include context** - provide meaningful error messages
+6. **Don't use exceptions for flow control** - they're expensive
+
+## Common Exception Types Reference
+
+| Exception | When to Use |
+|-----------|-------------|
+| `ArgumentNullException` | Parameter is null when not allowed |
+| `ArgumentException` | Parameter value is invalid |
+| `ArgumentOutOfRangeException` | Parameter is outside valid range |
+| `InvalidOperationException` | Method call invalid for current state |
+| `NotSupportedException` | Method not supported |
+| `NotImplementedException` | Method not yet implemented |
+| `FormatException` | Invalid string format |
+| `IOException` | I/O operation failed |
+
+In the next lesson, we'll learn how to create custom exceptions!
