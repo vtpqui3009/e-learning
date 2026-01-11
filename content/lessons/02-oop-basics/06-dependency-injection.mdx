@@ -1,0 +1,526 @@
+---
+title: "Dependency Injection"
+description: "Learn about dependency injection and how it makes your code more testable and maintainable"
+order: 6
+difficulty: "intermediate"
+tags: ["oop", "dependency-injection", "testing", "design-patterns"]
+duration: "30 minutes"
+---
+
+# Dependency Injection
+
+Dependency Injection (DI) is a design pattern that makes your code more flexible, testable, and maintainable by providing dependencies from the outside instead of creating them inside a class.
+
+## The Problem: Tight Coupling
+
+Without dependency injection, classes create their own dependencies, making them hard to test and change:
+
+<CodeEditor
+  initialCode={`using System;
+
+// Email service that sends emails
+class EmailService
+{
+    public void SendEmail(string to, string message)
+    {
+        Console.WriteLine($"Sending email to {to}: {message}");
+        // In real app: connect to SMTP server, send email, etc.
+    }
+}
+
+// User service that depends on EmailService
+class UserService
+{
+    // Problem: UserService creates its own EmailService
+    private EmailService emailService = new EmailService();
+
+    public void RegisterUser(string username, string email)
+    {
+        Console.WriteLine($"Registering user: {username}");
+
+        // Send welcome email
+        emailService.SendEmail(email, "Welcome to our platform!");
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        var userService = new UserService();
+        userService.RegisterUser("Alice", "alice@example.com");
+    }
+}`}
+/>
+
+**Problems with this approach:**
+- Hard to test (can't mock EmailService)
+- Hard to change (what if you want to use a different email service?)
+- Tightly coupled (UserService depends directly on EmailService implementation)
+
+## The Solution: Constructor Injection
+
+Inject dependencies through the constructor:
+
+<CodeEditor
+  initialCode={`using System;
+
+// Email service interface
+interface IEmailService
+{
+    void SendEmail(string to, string message);
+}
+
+// Real email service implementation
+class EmailService : IEmailService
+{
+    public void SendEmail(string to, string message)
+    {
+        Console.WriteLine($"[REAL] Sending email to {to}: {message}");
+    }
+}
+
+// User service receives dependencies through constructor
+class UserService
+{
+    private readonly IEmailService emailService;
+
+    // Dependency is injected here!
+    public UserService(IEmailService emailService)
+    {
+        this.emailService = emailService;
+    }
+
+    public void RegisterUser(string username, string email)
+    {
+        Console.WriteLine($"Registering user: {username}");
+        emailService.SendEmail(email, "Welcome!");
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        // Create dependencies
+        IEmailService emailService = new EmailService();
+
+        // Inject into UserService
+        var userService = new UserService(emailService);
+
+        userService.RegisterUser("Alice", "alice@example.com");
+    }
+}`}
+/>
+
+**Benefits:**
+- UserService doesn't know about EmailService implementation
+- Easy to swap implementations (testing, different email providers)
+- Dependencies are explicit and visible
+
+## Why This Matters for Testing
+
+With dependency injection, you can easily create test versions:
+
+<CodeEditor
+  initialCode={`using System;
+using System.Collections.Generic;
+
+// Email service interface
+interface IEmailService
+{
+    void SendEmail(string to, string message);
+}
+
+// REAL implementation for production
+class EmailService : IEmailService
+{
+    public void SendEmail(string to, string message)
+    {
+        Console.WriteLine($"[PRODUCTION] Sending real email to {to}");
+    }
+}
+
+// FAKE implementation for testing
+class FakeEmailService : IEmailService
+{
+    public List<string> SentEmails = new List<string>();
+
+    public void SendEmail(string to, string message)
+    {
+        Console.WriteLine($"[TEST] Fake email to {to}: {message}");
+        SentEmails.Add($"{to}: {message}");
+    }
+}
+
+class UserService
+{
+    private readonly IEmailService emailService;
+
+    public UserService(IEmailService emailService)
+    {
+        this.emailService = emailService;
+    }
+
+    public void RegisterUser(string username, string email)
+    {
+        Console.WriteLine($"Registering: {username}");
+        emailService.SendEmail(email, "Welcome!");
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        Console.WriteLine("=== Production Use ===");
+        var prodService = new UserService(new EmailService());
+        prodService.RegisterUser("Alice", "alice@example.com");
+
+        Console.WriteLine("\n=== Testing Use ===");
+        var fakeEmail = new FakeEmailService();
+        var testService = new UserService(fakeEmail);
+        testService.RegisterUser("Bob", "bob@example.com");
+
+        // Verify in tests
+        Console.WriteLine($"\nEmails sent: {fakeEmail.SentEmails.Count}");
+        Console.WriteLine($"First email: {fakeEmail.SentEmails[0]}");
+    }
+}`}
+/>
+
+## Real-World Example: Order Processing
+
+Here's a complete example with multiple dependencies:
+
+<CodeEditor
+  initialCode={`using System;
+
+// Payment service interface
+interface IPaymentService
+{
+    bool ProcessPayment(decimal amount);
+}
+
+// Notification service interface
+interface INotificationService
+{
+    void Notify(string message);
+}
+
+// Real implementations
+class PaymentService : IPaymentService
+{
+    public bool ProcessPayment(decimal amount)
+    {
+        Console.WriteLine($"Processing payment: ${'{'}amount{'}'}");
+        return true; // Assume success
+    }
+}
+
+class NotificationService : INotificationService
+{
+    public void Notify(string message)
+    {
+        Console.WriteLine($"Notification: {message}");
+    }
+}
+
+// Order service with multiple dependencies
+class OrderService
+{
+    private readonly IPaymentService paymentService;
+    private readonly INotificationService notificationService;
+
+    // Inject multiple dependencies
+    public OrderService(
+        IPaymentService paymentService,
+        INotificationService notificationService)
+    {
+        this.paymentService = paymentService;
+        this.notificationService = notificationService;
+    }
+
+    public void PlaceOrder(string product, decimal price)
+    {
+        Console.WriteLine($"\n--- Placing order for {product} ---");
+
+        // Process payment
+        bool paymentSuccess = paymentService.ProcessPayment(price);
+
+        if (paymentSuccess)
+        {
+            Console.WriteLine("Order confirmed!");
+            notificationService.Notify($"Your order for {product} is confirmed");
+        }
+        else
+        {
+            Console.WriteLine("Payment failed!");
+            notificationService.Notify("Payment failed, please try again");
+        }
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        // Create dependencies
+        IPaymentService payment = new PaymentService();
+        INotificationService notification = new NotificationService();
+
+        // Inject into OrderService
+        var orderService = new OrderService(payment, notification);
+
+        // Use the service
+        orderService.PlaceOrder("Laptop", 999.99m);
+        orderService.PlaceOrder("Mouse", 29.99m);
+    }
+}`}
+/>
+
+## Database Example
+
+Another common use case - injecting database access:
+
+<CodeEditor
+  initialCode={`using System;
+using System.Collections.Generic;
+using System.Linq;
+
+// User model
+class User
+{
+    public int Id { get; set; }
+    public string Name { get; set; }
+    public string Email { get; set; }
+}
+
+// Database interface
+interface IUserRepository
+{
+    User GetById(int id);
+    List<User> GetAll();
+    void Add(User user);
+}
+
+// Real database implementation
+class UserRepository : IUserRepository
+{
+    private List<User> database = new List<User>();
+    private int nextId = 1;
+
+    public User GetById(int id)
+    {
+        return database.FirstOrDefault(u => u.Id == id);
+    }
+
+    public List<User> GetAll()
+    {
+        return database;
+    }
+
+    public void Add(User user)
+    {
+        user.Id = nextId++;
+        database.Add(user);
+        Console.WriteLine($"[DB] User {user.Name} added with ID {user.Id}");
+    }
+}
+
+// Business logic service
+class UserManager
+{
+    private readonly IUserRepository repository;
+
+    public UserManager(IUserRepository repository)
+    {
+        this.repository = repository;
+    }
+
+    public void CreateUser(string name, string email)
+    {
+        var user = new User
+        {
+            Name = name,
+            Email = email
+        };
+
+        repository.Add(user);
+        Console.WriteLine($"User created: {name}");
+    }
+
+    public void ListAllUsers()
+    {
+        Console.WriteLine("\n=== All Users ===");
+        var users = repository.GetAll();
+
+        if (users.Count == 0)
+        {
+            Console.WriteLine("No users found");
+            return;
+        }
+
+        foreach (var user in users)
+        {
+            Console.WriteLine($"ID: {user.Id}, Name: {user.Name}, Email: {user.Email}");
+        }
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        // Create repository
+        IUserRepository repository = new UserRepository();
+
+        // Inject into manager
+        var userManager = new UserManager(repository);
+
+        // Use the manager
+        userManager.CreateUser("Alice", "alice@example.com");
+        userManager.CreateUser("Bob", "bob@example.com");
+        userManager.CreateUser("Charlie", "charlie@example.com");
+
+        userManager.ListAllUsers();
+    }
+}`}
+/>
+
+## Key Concepts
+
+### 1. Interfaces Define Contracts
+
+```csharp
+interface IEmailService
+{
+    void SendEmail(string to, string message);
+}
+```
+
+The interface defines **what** the service does, not **how** it does it.
+
+### 2. Constructor Injection
+
+```csharp
+public UserService(IEmailService emailService)
+{
+    this.emailService = emailService;
+}
+```
+
+Dependencies are provided when creating the object.
+
+### 3. readonly Fields
+
+```csharp
+private readonly IEmailService emailService;
+```
+
+Use `readonly` to prevent accidental changes to injected dependencies.
+
+## Benefits of Dependency Injection
+
+| Benefit | Description |
+|---------|-------------|
+| **Testability** | Easy to replace real services with test doubles |
+| **Flexibility** | Swap implementations without changing code |
+| **Maintainability** | Clear dependencies, easier to understand |
+| **Loose Coupling** | Classes don't depend on concrete implementations |
+| **Reusability** | Services can be reused with different dependencies |
+
+## When to Use Dependency Injection
+
+✅ **Use DI when:**
+- Your class needs external services (database, email, API)
+- You want to write unit tests
+- You might change the implementation later
+- You're building a larger application
+
+❌ **Don't need DI for:**
+- Simple value objects (Person, Product)
+- Utility classes with only static methods
+- Very small, simple programs
+
+## Common Patterns
+
+### Pattern 1: Service Layer
+
+```csharp
+class OrderController
+{
+    private readonly IOrderService orderService;
+
+    public OrderController(IOrderService orderService)
+    {
+        this.orderService = orderService;
+    }
+}
+```
+
+### Pattern 2: Repository Pattern
+
+```csharp
+class ProductService
+{
+    private readonly IProductRepository repository;
+
+    public ProductService(IProductRepository repository)
+    {
+        this.repository = repository;
+    }
+}
+```
+
+### Pattern 3: Multiple Dependencies
+
+```csharp
+class CheckoutService
+{
+    private readonly IPaymentService payment;
+    private readonly IInventoryService inventory;
+    private readonly INotificationService notification;
+
+    public CheckoutService(
+        IPaymentService payment,
+        IInventoryService inventory,
+        INotificationService notification)
+    {
+        this.payment = payment;
+        this.inventory = inventory;
+        this.notification = notification;
+    }
+}
+```
+
+## Practice Exercise
+
+Try creating a logging system with dependency injection:
+
+1. Create an `ILogger` interface with a `Log(string message)` method
+2. Create two implementations:
+   - `ConsoleLogger` - prints to console
+   - `FileLogger` - stores messages in a list (simulating file)
+3. Create a `Calculator` class that uses `ILogger` to log operations
+4. Test it with both logger implementations
+
+## Next Steps
+
+Now that you understand dependency injection, you're ready to:
+- Write more testable code
+- Learn about mocking frameworks (in Testing section)
+- Explore IoC containers (advanced topic)
+- Build larger, maintainable applications
+
+## Key Takeaways
+
+- Dependency Injection provides dependencies from outside a class
+- Use interfaces to define contracts
+- Constructor injection is the most common pattern
+- DI makes code testable, flexible, and maintainable
+- Essential for unit testing and mocking
+
+---
+
+**Next Lesson**: Move on to OOP Advanced concepts, or jump to the Testing section to see how DI enables powerful testing techniques!

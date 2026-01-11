@@ -1,0 +1,338 @@
+### Null Assertions
+
+<CodeEditor
+  initialCode={`using System;
+using Xunit;
+
+public class NullTests
+{
+    [Fact]
+    public void TestNull()
+    {
+        string nullString = null;
+        string notNullString = "hello";
+
+        // Null - checks if value is null
+        Assert.Null(nullString);
+
+        // NotNull - checks if value is not null
+        Assert.NotNull(notNullString);
+
+        Console.WriteLine("All null assertions passed!");
+    }
+}`}
+/>
+
+### String Assertions
+
+<CodeEditor
+  initialCode={`using System;
+using Xunit;
+
+public class StringTests
+{
+    [Fact]
+    public void TestStrings()
+    {
+        string greeting = "Hello, World!";
+
+        // Contains - checks if string contains substring
+        Assert.Contains("World", greeting);
+
+        // DoesNotContain - checks if string doesn't contain substring
+        Assert.DoesNotContain("xyz", greeting);
+
+        // StartsWith - checks if string starts with prefix
+        Assert.StartsWith("Hello", greeting);
+
+        // EndsWith - checks if string ends with suffix
+        Assert.EndsWith("World!", greeting);
+
+        Console.WriteLine("All string assertions passed!");
+    }
+}`}
+/>
+
+### Collection Assertions
+
+<CodeEditor
+  initialCode={`using System;
+using System.Collections.Generic;
+using Xunit;
+
+public class CollectionTests
+{
+    [Fact]
+    public void TestCollections()
+    {
+        List<int> numbers = new List<int> { 1, 2, 3, 4, 5 };
+        List<int> emptyList = new List<int>();
+
+        // Empty - checks if collection is empty
+        Assert.Empty(emptyList);
+
+        // NotEmpty - checks if collection has items
+        Assert.NotEmpty(numbers);
+
+        // Contains - checks if collection contains item
+        Assert.Contains(3, numbers);
+
+        // DoesNotContain - checks if collection doesn't contain item
+        Assert.DoesNotContain(10, numbers);
+
+        // Single - checks if collection has exactly one item
+        List<int> single = new List<int> { 42 };
+        Assert.Single(single);
+
+        // All - checks if all items meet condition
+        Assert.All(numbers, n => Assert.True(n > 0));
+
+        Console.WriteLine("All collection assertions passed!");
+    }
+}`}
+/>
+
+## Testing Exceptions
+
+When you expect code to throw an exception, test for it!
+
+<CodeEditor
+  initialCode={`using System;
+using Xunit;
+
+public class Calculator
+{
+    public double Divide(double a, double b)
+    {
+        if (b == 0)
+        {
+            throw new DivideByZeroException("Cannot divide by zero");
+        }
+        return a / b;
+    }
+
+    public void ProcessAge(int age)
+    {
+        if (age < 0)
+        {
+            throw new ArgumentException("Age cannot be negative");
+        }
+        Console.WriteLine($"Processing age: {age}");
+    }
+}
+
+public class ExceptionTests
+{
+    [Fact]
+    public void Divide_ByZero_ThrowsException()
+    {
+        // Arrange
+        var calculator = new Calculator();
+
+        // Act & Assert - check that exception is thrown
+        Assert.Throws<DivideByZeroException>(() =>
+            calculator.Divide(10, 0)
+        );
+    }
+
+    [Fact]
+    public void ProcessAge_NegativeAge_ThrowsArgumentException()
+    {
+        // Arrange
+        var calculator = new Calculator();
+
+        // Act & Assert
+        var exception = Assert.Throws<ArgumentException>(() =>
+            calculator.ProcessAge(-5)
+        );
+
+        // You can also check the exception message
+        Assert.Contains("negative", exception.Message.ToLower());
+    }
+
+    [Fact]
+    public void Divide_NormalNumbers_DoesNotThrow()
+    {
+        // Arrange
+        var calculator = new Calculator();
+
+        // Act & Assert - verify NO exception is thrown
+        var exception = Record.Exception(() =>
+            calculator.Divide(10, 2)
+        );
+
+        Assert.Null(exception);
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        Console.WriteLine("Exception tests demonstrate proper error handling!");
+    }
+}`}
+/>
+
+## Complete Example: String Validator
+
+Let's build and test a complete string validator:
+
+<CodeEditor
+  initialCode={`using System;
+using System.Text.RegularExpressions;
+using Xunit;
+
+namespace StringValidation
+{
+    public class StringValidator
+    {
+        public bool IsValidEmail(string email)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+                return false;
+
+            return email.Contains("@") &&
+                   email.Contains(".") &&
+                   email.IndexOf("@") < email.LastIndexOf(".");
+        }
+
+        public bool HasMinimumLength(string text, int minLength)
+        {
+            if (text == null)
+                return false;
+
+            return text.Length >= minLength;
+        }
+
+        public bool ContainsOnlyLetters(string text)
+        {
+            if (string.IsNullOrEmpty(text))
+                return false;
+
+            return Regex.IsMatch(text, "^[a-zA-Z]+$");
+        }
+    }
+
+    public class StringValidatorTests
+    {
+        // Email validation tests
+        [Fact]
+        public void IsValidEmail_ValidEmail_ReturnsTrue()
+        {
+            var validator = new StringValidator();
+            Assert.True(validator.IsValidEmail("user@example.com"));
+        }
+
+        [Fact]
+        public void IsValidEmail_NoAtSymbol_ReturnsFalse()
+        {
+            var validator = new StringValidator();
+            Assert.False(validator.IsValidEmail("userexample.com"));
+        }
+
+        [Fact]
+        public void IsValidEmail_NoDot_ReturnsFalse()
+        {
+            var validator = new StringValidator();
+            Assert.False(validator.IsValidEmail("user@examplecom"));
+        }
+
+        [Fact]
+        public void IsValidEmail_EmptyString_ReturnsFalse()
+        {
+            var validator = new StringValidator();
+            Assert.False(validator.IsValidEmail(""));
+        }
+
+        [Fact]
+        public void IsValidEmail_Null_ReturnsFalse()
+        {
+            var validator = new StringValidator();
+            Assert.False(validator.IsValidEmail(null));
+        }
+
+        // Minimum length tests
+        [Fact]
+        public void HasMinimumLength_MeetsRequirement_ReturnsTrue()
+        {
+            var validator = new StringValidator();
+            Assert.True(validator.HasMinimumLength("hello", 5));
+        }
+
+        [Fact]
+        public void HasMinimumLength_TooShort_ReturnsFalse()
+        {
+            var validator = new StringValidator();
+            Assert.False(validator.HasMinimumLength("hi", 5));
+        }
+
+        [Fact]
+        public void HasMinimumLength_NullString_ReturnsFalse()
+        {
+            var validator = new StringValidator();
+            Assert.False(validator.HasMinimumLength(null, 5));
+        }
+
+        // Letters only tests
+        [Fact]
+        public void ContainsOnlyLetters_OnlyLetters_ReturnsTrue()
+        {
+            var validator = new StringValidator();
+            Assert.True(validator.ContainsOnlyLetters("Hello"));
+        }
+
+        [Fact]
+        public void ContainsOnlyLetters_HasNumbers_ReturnsFalse()
+        {
+            var validator = new StringValidator();
+            Assert.False(validator.ContainsOnlyLetters("Hello123"));
+        }
+
+        [Fact]
+        public void ContainsOnlyLetters_HasSpaces_ReturnsFalse()
+        {
+            var validator = new StringValidator();
+            Assert.False(validator.ContainsOnlyLetters("Hello World"));
+        }
+    }
+
+    class Program
+    {
+        static void Main()
+        {
+            Console.WriteLine("String Validator with comprehensive tests!");
+            Console.WriteLine("Run: dotnet test");
+        }
+    }
+}`}
+/>
+
+## Key Takeaways
+
+- ✅ Use Arrange-Act-Assert pattern for clear tests
+- ✅ Name tests: `MethodName_Scenario_ExpectedResult`
+- ✅ Test one thing per test method
+- ✅ Use appropriate assertions (Equal, True, Contains, etc.)
+- ✅ Always test exception scenarios
+- ✅ Test edge cases (null, empty, zero, negative)
+
+## Practice Exercise
+
+Create a `PasswordValidator` class that checks:
+1. Password has minimum 8 characters
+2. Password contains at least one uppercase letter
+3. Password contains at least one number
+4. Password is not null or empty
+
+Write at least 6 tests for it!
+
+## Next Steps
+
+In the next lesson, you'll learn:
+- Testing multiple scenarios with `[Theory]`
+- Data-driven testing
+- Testing complex scenarios
+- Advanced testing patterns
+
+Continue to **Advanced Testing Patterns** →

@@ -33,46 +33,10 @@ Integration testing requires solid understanding of OOP and data manipulation.
 
 ⏱️ **If starting from scratch:** Complete fundamentals + OOP + LINQ + testing basics = ~8-10 hours, then return here.
 
----
-
-## 📋 Important Note About Code Examples
-
-**The code examples in this lesson use xUnit framework and won't run in the browser editor.**
-
-To test these examples:
-1. ✅ Follow lesson **10-testing/02-setup-environment** to install .NET SDK and xUnit
-2. ✅ Create a test project locally: `dotnet new xunit -n MyTests`
-3. ✅ Copy the code examples from this lesson to your test project
-4. ✅ Run with: `dotnet test`
-
-The examples below show **proper xUnit syntax** that you'll use in real projects. They demonstrate integration testing patterns with `[Fact]`, `Assert.*` methods, and testing complete workflows.
-
----
-
 ## What is Integration Testing?
 
-**Unit tests** check individual methods in isolation (e.g., testing `TaskService` methods).
-**Integration tests** check how multiple components work together (e.g., testing API endpoints end-to-end).
-
-### Task Manager API Example
-
-The Task Manager API includes **20+ integration tests** that test the entire request/response cycle:
-
-```
-HTTP Request → Controller → Service → Database → Response
-```
-
-**Unit Test** (isolated):
-```csharp
-// Tests just the service method
-var result = await _taskService.CreateTaskAsync(request);
-```
-
-**Integration Test** (end-to-end):
-```csharp
-// Tests the complete API endpoint
-var response = await _client.PostAsJsonAsync("/api/tasks", request);
-```
+**Unit tests** check individual methods in isolation.
+**Integration tests** check how multiple components work together.
 
 ### Example: User Registration System
 
@@ -622,109 +586,6 @@ public void Feature_BoundaryValues_WorksCorrectly(int value) { }
 public void Feature_CompleteWorkflow_Success() { }
 ```
 
-## Real Integration Tests: Task Manager API
-
-The Task Manager API demonstrates professional integration testing! Let's look at actual examples.
-
-### Example 1: Complete CRUD Test
-
-From `TasksControllerIntegrationTests.cs`:
-
-```csharp
-[Fact]
-public async Task GetTasks_ShouldReturnOkWithTasks()
-{
-    // Act - Call the API endpoint
-    var response = await _client.GetAsync("/api/tasks");
-
-    // Assert - Verify response
-    response.StatusCode.Should().Be(HttpStatusCode.OK);
-    var tasks = await response.Content.ReadFromJsonAsync<List<TaskResponse>>();
-    tasks.Should().NotBeNull();
-    tasks.Should().NotBeEmpty();
-}
-```
-
-This tests the ENTIRE flow:
-1. HTTP request to controller
-2. Controller calls service
-3. Service queries database
-4. Data returned as JSON
-5. HTTP response status and body
-
-### Example 2: Workflow Test
-
-```csharp
-[Fact]
-public async Task CompleteWorkflow_CreateUpdateStatusDelete_ShouldWork()
-{
-    // Step 1: Create task
-    var createResponse = await _client.PostAsJsonAsync("/api/tasks", request);
-    createResponse.StatusCode.Should().Be(HttpStatusCode.Created);
-
-    // Step 2: Update to InProgress
-    await _client.PatchAsJsonAsync($"/api/tasks/{taskId}/status",
-        TaskStatus.InProgress);
-
-    // Step 3: Complete task
-    await _client.PatchAsJsonAsync($"/api/tasks/{taskId}/status",
-        TaskStatus.Done);
-
-    // Step 4: Verify completed
-    var doneTask = await statusResponse.Content.ReadFromJsonAsync<TaskResponse>();
-    doneTask!.CompletedAt.Should().NotBeNull();
-
-    // Step 5: Delete task
-    var deleteResponse = await _client.DeleteAsync($"/api/tasks/{taskId}");
-    deleteResponse.StatusCode.Should().Be(HttpStatusCode.NoContent);
-
-    // Step 6: Verify deletion
-    var getResponse = await _client.GetAsync($"/api/tasks/{taskId}");
-    getResponse.StatusCode.Should().Be(HttpStatusCode.NotFound);
-}
-```
-
-This tests a complete user journey from creation to deletion!
-
-### Example 3: Validation Test
-
-```csharp
-[Fact]
-public async Task CreateTask_WithEmptyTitle_ShouldReturnBadRequest()
-{
-    // Arrange
-    var request = new CreateTaskRequest(
-        Title: "",  // Invalid!
-        UserId: 1
-    );
-
-    // Act
-    var response = await _client.PostAsJsonAsync("/api/tasks", request);
-
-    // Assert
-    response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-}
-```
-
-### Explore the Full Test Suite
-
-Open `sample-projects/TaskManagerAPI.Tests/Controllers/TasksControllerIntegrationTests.cs`
-
-You'll find 20+ tests covering:
-- ✅ All CRUD operations
-- ✅ Filtering and querying
-- ✅ Status transitions
-- ✅ Validation errors
-- ✅ Complete workflows
-- ✅ Edge cases
-
-### Run the Integration Tests
-
-```bash
-cd sample-projects/TaskManagerAPI.Tests
-dotnet test --filter "TasksControllerIntegrationTests"
-```
-
 ## Key Takeaways
 
 - ✅ Integration tests verify components work together
@@ -735,55 +596,27 @@ dotnet test --filter "TasksControllerIntegrationTests"
 - ✅ Make tests robust, not brittle
 - ✅ Follow Arrange-Act-Assert pattern consistently
 - ✅ Run tests frequently during development
-- ✅ Study real examples from Task Manager API
 
-## Practice Exercise: Extend Task Manager API Tests
+## Final Practice Exercise
 
-Instead of creating a new project, extend the existing Task Manager API tests!
+Create a `LibrarySystem` with:
+- `Book` class (Title, Author, ISBN, IsAvailable)
+- `LibraryService` class with methods:
+  - AddBook
+  - CheckoutBook
+  - ReturnBook
+  - SearchByAuthor
+  - GetAvailableBooks
 
-### Exercise 1: Add Filter Test
+Write comprehensive tests covering:
+1. Adding books
+2. Checking out books
+3. Returning books
+4. Complete borrow/return workflow
+5. Edge cases (null values, non-existent books)
+6. Business rules (can't checkout unavailable books)
 
-In `TasksControllerIntegrationTests.cs`, add:
-
-```csharp
-[Fact]
-public async Task GetTasks_FilteredByCategory_ShouldReturnFilteredTasks()
-{
-    // Call GET /api/tasks?categoryId=1
-    // Verify all returned tasks have categoryId = 1
-}
-```
-
-### Exercise 2: Add Statistics Test
-
-```csharp
-[Fact]
-public async Task GetStatistics_AfterCreatingTasks_ShouldReflectChanges()
-{
-    // Get initial statistics
-    // Create a new task
-    // Get statistics again
-    // Verify the count increased
-}
-```
-
-### Exercise 3: Add Error Handling Test
-
-```csharp
-[Fact]
-public async Task UpdateTask_WithNonExistentId_ShouldReturn404()
-{
-    // Try to update task with ID 99999
-    // Verify 404 NotFound response
-}
-```
-
-Run your new tests:
-```bash
-dotnet test
-```
-
-All tests (original + yours) should pass!
+Aim for at least 15 tests!
 
 ## Congratulations! 🎉
 

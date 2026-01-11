@@ -1,0 +1,754 @@
+---
+title: "Manual API Testing Strategies"
+description: "Master manual API testing before automation - understand REST, HTTP, and testing tools"
+order: 6
+difficulty: "beginner"
+tags: ["api", "rest", "http", "postman", "manual-testing"]
+duration: "40 minutes"
+---
+
+# Manual API Testing Strategies
+
+Before automating API tests, you need to understand how APIs work and how to test them manually. This foundation is essential for writing effective automated tests.
+
+## Prerequisites
+
+This lesson is mostly conceptual and perfect for manual testers transitioning to API testing.
+
+**Required knowledge:**
+- ✅ Basic understanding of how web applications work
+- ✅ Familiarity with web browsers
+
+**Recommended (helpful for context):**
+- 11-working-with-json/01-json-basics (understanding JSON format)
+- Manual testing experience
+
+**What you need to know:**
+- How to use a computer and browser
+- Basic understanding of data formats
+
+⏱️ **If starting from scratch:** You can start here! Optionally complete JSON basics lesson first (~20 minutes).
+
+## What is an API?
+
+**API** (Application Programming Interface) is a way for applications to communicate with each other.
+
+Think of it like a restaurant:
+- **You** (the client) → Order food from a menu
+- **Waiter** (the API) → Takes your request to the kitchen
+- **Kitchen** (the server) → Prepares and returns your food
+
+### REST API Basics
+
+**REST** (Representational State Transfer) is the most common API style. It uses:
+
+- **URLs** to identify resources
+- **HTTP methods** to perform actions
+- **JSON** for data format
+
+## HTTP Methods (CRUD Operations)
+
+| Method | Action | Example |
+|--------|--------|---------|
+| **GET** | Read data | Get all users |
+| **POST** | Create new data | Create a new user |
+| **PUT** | Update entire resource | Update all user fields |
+| **PATCH** | Update partial resource | Update only email |
+| **DELETE** | Remove data | Delete a user |
+
+### Visual Representation
+
+<CodeEditor
+  initialCode={`// HTTP Methods in Action
+// Let's understand each method with examples
+
+// GET - Retrieve data (no body needed)
+// URL: GET https://api.example.com/users
+// Response: List of all users
+
+// GET single item
+// URL: GET https://api.example.com/users/1
+// Response: User with ID 1
+
+// POST - Create new data (requires body)
+// URL: POST https://api.example.com/users
+// Body: { "name": "Alice", "email": "alice@example.com" }
+// Response: Created user with new ID
+
+// PUT - Replace entire resource
+// URL: PUT https://api.example.com/users/1
+// Body: { "name": "Alice Updated", "email": "newemail@example.com" }
+// Response: Updated user
+
+// PATCH - Partial update
+// URL: PATCH https://api.example.com/users/1
+// Body: { "email": "just-email@example.com" }
+// Response: Updated user (only email changed)
+
+// DELETE - Remove resource
+// URL: DELETE https://api.example.com/users/1
+// Response: Success confirmation
+
+using System;
+
+class Program
+{
+    static void Main()
+    {
+        Console.WriteLine("HTTP Methods:");
+        Console.WriteLine("GET    - Read data (safe, no changes)");
+        Console.WriteLine("POST   - Create new resource");
+        Console.WriteLine("PUT    - Replace entire resource");
+        Console.WriteLine("PATCH  - Update part of resource");
+        Console.WriteLine("DELETE - Remove resource");
+    }
+}`}
+/>
+
+## HTTP Status Codes
+
+Status codes tell you if your request succeeded or failed.
+
+### Success Codes (2xx)
+
+| Code | Meaning | When Used |
+|------|---------|-----------|
+| **200** | OK | Request succeeded |
+| **201** | Created | New resource created (POST) |
+| **204** | No Content | Success, no response body (DELETE) |
+
+### Client Error Codes (4xx)
+
+| Code | Meaning | When Used |
+|------|---------|-----------|
+| **400** | Bad Request | Invalid data sent |
+| **401** | Unauthorized | Not logged in |
+| **403** | Forbidden | No permission |
+| **404** | Not Found | Resource doesn't exist |
+| **422** | Unprocessable Entity | Validation failed |
+
+### Server Error Codes (5xx)
+
+| Code | Meaning | When Used |
+|------|---------|-----------|
+| **500** | Internal Server Error | Server crashed |
+| **502** | Bad Gateway | Server communication failed |
+| **503** | Service Unavailable | Server overloaded |
+
+<CodeEditor
+  initialCode={`using System;
+
+class HttpStatusCodes
+{
+    static void Main()
+    {
+        // Understanding status codes is crucial for testing
+        
+        Console.WriteLine("=== Status Code Categories ===\\n");
+        
+        Console.WriteLine("2xx - SUCCESS");
+        Console.WriteLine("  200 OK - Request worked");
+        Console.WriteLine("  201 Created - New item created");
+        Console.WriteLine("  204 No Content - Success, nothing to return\\n");
+        
+        Console.WriteLine("4xx - CLIENT ERRORS (Your fault)");
+        Console.WriteLine("  400 Bad Request - Invalid data");
+        Console.WriteLine("  401 Unauthorized - Need to login");
+        Console.WriteLine("  403 Forbidden - No permission");
+        Console.WriteLine("  404 Not Found - Doesn't exist\\n");
+        
+        Console.WriteLine("5xx - SERVER ERRORS (Their fault)");
+        Console.WriteLine("  500 Internal Error - Server crashed");
+        Console.WriteLine("  503 Unavailable - Server overloaded");
+    }
+}`}
+/>
+
+## Request and Response Structure
+
+### HTTP Request Components
+
+<CodeEditor
+  initialCode={`using System;
+
+class HttpRequestStructure
+{
+    static void Main()
+    {
+        Console.WriteLine("=== HTTP Request Structure ===\\n");
+        
+        // 1. Request Line
+        Console.WriteLine("1. REQUEST LINE:");
+        Console.WriteLine("   POST https://api.example.com/users HTTP/1.1");
+        Console.WriteLine("   [Method] [URL] [HTTP Version]\\n");
+        
+        // 2. Headers
+        Console.WriteLine("2. HEADERS (metadata about request):");
+        Console.WriteLine("   Content-Type: application/json");
+        Console.WriteLine("   Authorization: Bearer eyJhbGciOiJIUzI1...");
+        Console.WriteLine("   Accept: application/json");
+        Console.WriteLine("   User-Agent: MyTestApp/1.0\\n");
+        
+        // 3. Body (for POST, PUT, PATCH)
+        Console.WriteLine("3. BODY (data you're sending):");
+        Console.WriteLine("   {");
+        Console.WriteLine("     \\"name\\": \\"Alice\\",");
+        Console.WriteLine("     \\"email\\": \\"alice@example.com\\",");
+        Console.WriteLine("     \\"age\\": 28");
+        Console.WriteLine("   }");
+    }
+}`}
+/>
+
+### HTTP Response Components
+
+<CodeEditor
+  initialCode={`using System;
+
+class HttpResponseStructure
+{
+    static void Main()
+    {
+        Console.WriteLine("=== HTTP Response Structure ===\\n");
+        
+        // 1. Status Line
+        Console.WriteLine("1. STATUS LINE:");
+        Console.WriteLine("   HTTP/1.1 201 Created");
+        Console.WriteLine("   [HTTP Version] [Status Code] [Status Text]\\n");
+        
+        // 2. Response Headers
+        Console.WriteLine("2. RESPONSE HEADERS:");
+        Console.WriteLine("   Content-Type: application/json");
+        Console.WriteLine("   Content-Length: 156");
+        Console.WriteLine("   Date: Mon, 10 Jan 2026 10:30:00 GMT");
+        Console.WriteLine("   X-RateLimit-Remaining: 99\\n");
+        
+        // 3. Response Body
+        Console.WriteLine("3. RESPONSE BODY:");
+        Console.WriteLine("   {");
+        Console.WriteLine("     \\"id\\": 101,");
+        Console.WriteLine("     \\"name\\": \\"Alice\\",");
+        Console.WriteLine("     \\"email\\": \\"alice@example.com\\",");
+        Console.WriteLine("     \\"createdAt\\": \\"2026-01-10T10:30:00Z\\"");
+        Console.WriteLine("   }");
+    }
+}`}
+/>
+
+## Common Request Headers
+
+| Header | Purpose | Example |
+|--------|---------|---------|
+| **Content-Type** | Format of data you're sending | `application/json` |
+| **Accept** | Format you want back | `application/json` |
+| **Authorization** | Authentication token | `Bearer eyJ...` |
+| **User-Agent** | Client identification | `MyApp/1.0` |
+| **X-API-Key** | API key authentication | `abc123xyz` |
+
+## Manual Testing with Tools
+
+### Tool 1: Using cURL (Command Line)
+
+cURL is available on all operating systems:
+
+```bash
+# GET request
+curl https://jsonplaceholder.typicode.com/users/1
+
+# POST request with JSON body
+curl -X POST https://jsonplaceholder.typicode.com/posts \
+  -H "Content-Type: application/json" \
+  -d '{"title": "Test", "body": "Hello", "userId": 1}'
+
+# GET with headers
+curl -H "Authorization: Bearer token123" \
+  https://api.example.com/protected
+```
+
+### Tool 2: Postman (Recommended for Beginners)
+
+Postman is a free GUI tool for API testing:
+
+1. **Download**: https://www.postman.com/downloads/
+2. **Install** and create free account
+3. **Create new request**
+4. **Enter URL and method**
+5. **Add headers and body**
+6. **Click Send**
+
+### Tool 3: REST Client in VS Code
+
+Install "REST Client" extension and create `.http` files:
+
+```http
+### Get all users
+GET https://jsonplaceholder.typicode.com/users
+
+### Get single user
+GET https://jsonplaceholder.typicode.com/users/1
+
+### Create new post
+POST https://jsonplaceholder.typicode.com/posts
+Content-Type: application/json
+
+{
+  "title": "My Test Post",
+  "body": "This is the content",
+  "userId": 1
+}
+```
+
+## Practice: Testing a Real API
+
+Let's practice with JSONPlaceholder, a free fake API for testing.
+
+### API Endpoints
+
+| Endpoint | Description |
+|----------|-------------|
+| `/posts` | 100 posts |
+| `/users` | 10 users |
+| `/comments` | 500 comments |
+| `/todos` | 200 todos |
+
+<CodeEditor
+  initialCode={`using System;
+
+class ApiTestingPlan
+{
+    static void Main()
+    {
+        Console.WriteLine("=== Manual API Testing Checklist ===\\n");
+        
+        string baseUrl = "https://jsonplaceholder.typicode.com";
+        
+        Console.WriteLine("1. GET ALL POSTS");
+        Console.WriteLine($"   URL: {baseUrl}/posts");
+        Console.WriteLine("   Expected: 200 OK, array of 100 posts\\n");
+        
+        Console.WriteLine("2. GET SINGLE POST");
+        Console.WriteLine($"   URL: {baseUrl}/posts/1");
+        Console.WriteLine("   Expected: 200 OK, post object with id=1\\n");
+        
+        Console.WriteLine("3. GET NON-EXISTENT POST");
+        Console.WriteLine($"   URL: {baseUrl}/posts/999");
+        Console.WriteLine("   Expected: 404 Not Found\\n");
+        
+        Console.WriteLine("4. CREATE NEW POST");
+        Console.WriteLine($"   URL: POST {baseUrl}/posts");
+        Console.WriteLine("   Body: {{ title, body, userId }}");
+        Console.WriteLine("   Expected: 201 Created, new post with id\\n");
+        
+        Console.WriteLine("5. UPDATE POST");
+        Console.WriteLine($"   URL: PUT {baseUrl}/posts/1");
+        Console.WriteLine("   Body: {{ id, title, body, userId }}");
+        Console.WriteLine("   Expected: 200 OK, updated post\\n");
+        
+        Console.WriteLine("6. DELETE POST");
+        Console.WriteLine($"   URL: DELETE {baseUrl}/posts/1");
+        Console.WriteLine("   Expected: 200 OK or 204 No Content");
+    }
+}`}
+/>
+
+## API Testing Checklist
+
+When manually testing an API, verify these aspects:
+
+### 1. Functionality Testing
+
+<CodeEditor
+  initialCode={`using System;
+
+class FunctionalityChecklist
+{
+    static void Main()
+    {
+        Console.WriteLine("=== Functionality Testing ===\\n");
+        
+        Console.WriteLine("✓ Does the endpoint exist?");
+        Console.WriteLine("  - Try accessing the URL");
+        Console.WriteLine("  - Should not get 404 for valid endpoints\\n");
+        
+        Console.WriteLine("✓ Does it return correct data?");
+        Console.WriteLine("  - Check response matches expected format");
+        Console.WriteLine("  - Verify all required fields are present\\n");
+        
+        Console.WriteLine("✓ Does it handle valid input correctly?");
+        Console.WriteLine("  - POST with valid data creates resource");
+        Console.WriteLine("  - PUT with valid data updates resource\\n");
+        
+        Console.WriteLine("✓ Does CRUD work end-to-end?");
+        Console.WriteLine("  - Create → Read → Update → Delete");
+        Console.WriteLine("  - Verify each step reflects changes");
+    }
+}`}
+/>
+
+### 2. Validation Testing
+
+<CodeEditor
+  initialCode={`using System;
+
+class ValidationChecklist
+{
+    static void Main()
+    {
+        Console.WriteLine("=== Validation Testing ===\\n");
+        
+        Console.WriteLine("Test INVALID inputs:\\n");
+        
+        Console.WriteLine("1. Missing required fields");
+        Console.WriteLine("   Body: { }  (empty)");
+        Console.WriteLine("   Expected: 400 Bad Request\\n");
+        
+        Console.WriteLine("2. Wrong data types");
+        Console.WriteLine("   Body: { \\"age\\": \\"not-a-number\\" }");
+        Console.WriteLine("   Expected: 400 or 422\\n");
+        
+        Console.WriteLine("3. Invalid email format");
+        Console.WriteLine("   Body: { \\"email\\": \\"invalid-email\\" }");
+        Console.WriteLine("   Expected: 422 Validation Error\\n");
+        
+        Console.WriteLine("4. Too long values");
+        Console.WriteLine("   Body: { \\"name\\": \\"a\\" * 1000 }");
+        Console.WriteLine("   Expected: 400 or 422\\n");
+        
+        Console.WriteLine("5. Negative numbers where positive expected");
+        Console.WriteLine("   Body: { \\"quantity\\": -5 }");
+        Console.WriteLine("   Expected: 422 Validation Error");
+    }
+}`}
+/>
+
+### 3. Error Handling Testing
+
+<CodeEditor
+  initialCode={`using System;
+
+class ErrorHandlingChecklist
+{
+    static void Main()
+    {
+        Console.WriteLine("=== Error Handling Testing ===\\n");
+        
+        Console.WriteLine("1. Non-existent resource");
+        Console.WriteLine("   GET /users/99999");
+        Console.WriteLine("   Expected: 404 Not Found\\n");
+        
+        Console.WriteLine("2. Invalid endpoint");
+        Console.WriteLine("   GET /invalid-endpoint");
+        Console.WriteLine("   Expected: 404 Not Found\\n");
+        
+        Console.WriteLine("3. Wrong HTTP method");
+        Console.WriteLine("   DELETE /users (if not allowed)");
+        Console.WriteLine("   Expected: 405 Method Not Allowed\\n");
+        
+        Console.WriteLine("4. Unauthorized access");
+        Console.WriteLine("   GET /admin/users (without token)");
+        Console.WriteLine("   Expected: 401 Unauthorized\\n");
+        
+        Console.WriteLine("5. Forbidden access");
+        Console.WriteLine("   DELETE /users/1 (not owner)");
+        Console.WriteLine("   Expected: 403 Forbidden");
+    }
+}`}
+/>
+
+### 4. Response Validation
+
+<CodeEditor
+  initialCode={`using System;
+using System.Collections.Generic;
+
+class ResponseValidation
+{
+    static void Main()
+    {
+        Console.WriteLine("=== Response Validation Checklist ===\\n");
+        
+        Console.WriteLine("CHECK STATUS CODE:");
+        Console.WriteLine("  ✓ Is it the expected code?");
+        Console.WriteLine("  ✓ 200 for GET success");
+        Console.WriteLine("  ✓ 201 for POST success");
+        Console.WriteLine("  ✓ 204 for DELETE success\\n");
+        
+        Console.WriteLine("CHECK RESPONSE HEADERS:");
+        Console.WriteLine("  ✓ Content-Type is application/json");
+        Console.WriteLine("  ✓ CORS headers if needed");
+        Console.WriteLine("  ✓ Cache headers appropriate\\n");
+        
+        Console.WriteLine("CHECK RESPONSE BODY:");
+        Console.WriteLine("  ✓ JSON is valid (no syntax errors)");
+        Console.WriteLine("  ✓ All expected fields present");
+        Console.WriteLine("  ✓ Data types are correct");
+        Console.WriteLine("  ✓ Values are reasonable\\n");
+        
+        Console.WriteLine("CHECK RESPONSE TIME:");
+        Console.WriteLine("  ✓ Response time acceptable");
+        Console.WriteLine("  ✓ Typically < 200ms for simple requests");
+    }
+}`}
+/>
+
+## Testing Documentation: API Test Cases
+
+Before automating, document your test cases:
+
+<CodeEditor
+  initialCode={`using System;
+
+class TestCaseDocumentation
+{
+    static void Main()
+    {
+        Console.WriteLine("=== API Test Case Template ===\\n");
+        
+        // Test Case 1
+        Console.WriteLine("TEST CASE: TC-001");
+        Console.WriteLine("Title: Get User by Valid ID");
+        Console.WriteLine("Priority: High");
+        Console.WriteLine("Endpoint: GET /users/{id}");
+        Console.WriteLine("Prerequisites: User with ID 1 exists");
+        Console.WriteLine("Test Data: id = 1");
+        Console.WriteLine("Expected Result:");
+        Console.WriteLine("  - Status: 200 OK");
+        Console.WriteLine("  - Body contains: id, name, email");
+        Console.WriteLine("  - id equals 1");
+        Console.WriteLine("\\n---\\n");
+        
+        // Test Case 2
+        Console.WriteLine("TEST CASE: TC-002");
+        Console.WriteLine("Title: Get User by Invalid ID");
+        Console.WriteLine("Priority: Medium");
+        Console.WriteLine("Endpoint: GET /users/{id}");
+        Console.WriteLine("Prerequisites: None");
+        Console.WriteLine("Test Data: id = 99999");
+        Console.WriteLine("Expected Result:");
+        Console.WriteLine("  - Status: 404 Not Found");
+        Console.WriteLine("  - Error message in body");
+        Console.WriteLine("\\n---\\n");
+        
+        // Test Case 3
+        Console.WriteLine("TEST CASE: TC-003");
+        Console.WriteLine("Title: Create User with Valid Data");
+        Console.WriteLine("Priority: High");
+        Console.WriteLine("Endpoint: POST /users");
+        Console.WriteLine("Prerequisites: None");
+        Console.WriteLine("Test Data:");
+        Console.WriteLine("  { \\"name\\": \\"Test\\", \\"email\\": \\"test@test.com\\" }");
+        Console.WriteLine("Expected Result:");
+        Console.WriteLine("  - Status: 201 Created");
+        Console.WriteLine("  - Body contains new user with ID");
+    }
+}`}
+/>
+
+## Hands-On Practice: Task Manager API
+
+Now let's apply what you've learned to the **Task Manager API** project!
+
+### Setup
+
+Make sure the Task Manager API is running:
+
+```bash
+cd sample-projects/TaskManagerAPI
+dotnet run
+```
+
+Then open Swagger UI at `https://localhost:5001`
+
+### Practice Exercise 1: Basic CRUD Operations
+
+Test these operations using Swagger UI or Postman:
+
+1. **GET all tasks**
+   - Endpoint: `GET /api/tasks`
+   - Expected: 200 OK with array of tasks
+   - Verify: Response contains at least 3 seeded tasks
+
+2. **GET single task**
+   - Endpoint: `GET /api/tasks/1`
+   - Expected: 200 OK with task details
+   - Verify: Task has title, status, priority fields
+
+3. **CREATE a task**
+   - Endpoint: `POST /api/tasks`
+   - Body:
+     ```json
+     {
+       "title": "Learn Manual Testing",
+       "description": "Practice with Task Manager API",
+       "priority": "High",
+       "userId": 1,
+       "categoryId": 1
+     }
+     ```
+   - Expected: 201 Created with task ID
+   - Verify: Location header points to new task
+
+4. **UPDATE the task**
+   - Endpoint: `PUT /api/tasks/{id}` (use ID from step 3)
+   - Body:
+     ```json
+     {
+       "title": "Updated Title",
+       "priority": "Critical"
+     }
+     ```
+   - Expected: 200 OK with updated task
+
+5. **DELETE the task**
+   - Endpoint: `DELETE /api/tasks/{id}`
+   - Expected: 204 No Content
+   - Verify: GET same task returns 404
+
+### Practice Exercise 2: Validation Testing
+
+Test the validation rules:
+
+1. **Empty title** (should fail)
+   ```json
+   {
+     "title": "",
+     "userId": 1
+   }
+   ```
+   Expected: 400 Bad Request
+
+2. **Past due date** (should fail)
+   ```json
+   {
+     "title": "Test",
+     "dueDate": "2020-01-01T00:00:00Z",
+     "userId": 1
+   }
+   ```
+   Expected: 400 Bad Request with error about past date
+
+3. **Non-existent user** (should fail)
+   ```json
+   {
+     "title": "Test",
+     "userId": 999
+   }
+   ```
+   Expected: 400 Bad Request with error about user not found
+
+### Practice Exercise 3: Status Workflow Testing
+
+Test the status transitions:
+
+1. Create a task (starts as "Todo")
+2. Update status to "InProgress":
+   - Endpoint: `PATCH /api/tasks/{id}/status`
+   - Body: `"InProgress"`
+   - Expected: 200 OK
+
+3. Update status to "Done":
+   - Body: `"Done"`
+   - Expected: 200 OK
+   - Verify: `completedAt` field is now set
+
+4. Try invalid transition (Todo → Done):
+   - Create a new task
+   - Try: `PATCH /api/tasks/{id}/status` with `"Done"`
+   - Expected: 400 Bad Request (invalid transition)
+
+### Practice Exercise 4: Filter Testing
+
+Test the filtering capabilities:
+
+1. **Filter by user**
+   - `GET /api/tasks?userId=1`
+   - Verify: All tasks belong to user 1
+
+2. **Filter by status**
+   - `GET /api/tasks?status=Todo`
+   - Verify: All tasks have status "Todo"
+
+3. **Get statistics**
+   - `GET /api/tasks/statistics/1`
+   - Verify: Counts match actual data
+
+4. **Get overdue tasks**
+   - `GET /api/tasks/overdue`
+   - Verify: Only tasks with past due dates (none in seed data)
+
+### Practice Exercise 5: Document Your Tests
+
+Create a test case document for the Task Manager API:
+
+```
+TEST CASE: TC-001
+Title: Create Task with Valid Data
+Endpoint: POST /api/tasks
+Priority: High
+Test Data:
+  {
+    "title": "Test Task",
+    "description": "Test description",
+    "priority": "High",
+    "userId": 1,
+    "categoryId": 1
+  }
+Expected:
+  - Status: 201 Created
+  - Response contains task with ID
+  - Default status is "Todo"
+  - CreatedAt is set
+
+TEST CASE: TC-002
+Title: Create Task with Empty Title
+Endpoint: POST /api/tasks
+Priority: High
+Test Data:
+  {
+    "title": "",
+    "userId": 1
+  }
+Expected:
+  - Status: 400 Bad Request
+  - Error message about required title
+```
+
+Document at least **10 test cases** covering:
+- Happy path scenarios
+- Validation errors
+- Edge cases
+- Status transitions
+
+### Detailed Testing Guide
+
+For comprehensive manual testing scenarios, refer to:
+`sample-projects/TaskManagerAPI/MANUAL_TESTING_GUIDE.md`
+
+This guide includes:
+- 10+ detailed test scenarios
+- Expected responses
+- Validation test cases
+- Error handling tests
+- Complete workflow tests
+
+## Key Takeaways
+
+- **APIs** enable applications to communicate using HTTP
+- **REST** uses URLs, HTTP methods, and JSON
+- **HTTP Methods**: GET (read), POST (create), PUT/PATCH (update), DELETE (remove)
+- **Status Codes**: 2xx (success), 4xx (client error), 5xx (server error)
+- **Manual testing** builds understanding before automation
+- **Always test**: Happy path, edge cases, errors, and validation
+- **Document test cases** before writing automated tests
+- **Practice with real projects** like Task Manager API
+
+## What's Next?
+
+Now that you understand API concepts and manual testing with a real project, you're ready to automate! In the next lesson, we'll use C# HttpClient to make real API calls programmatically and automate these manual tests.
+
+**Recommended Practice:**
+1. ✅ Complete all 5 practice exercises above
+2. ✅ Document your test cases
+3. ✅ Test error scenarios
+4. ✅ Try edge cases not listed here
+5. ✅ Review the MANUAL_TESTING_GUIDE.md

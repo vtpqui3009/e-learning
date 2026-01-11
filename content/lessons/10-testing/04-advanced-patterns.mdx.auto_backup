@@ -31,75 +31,57 @@ This lesson covers intermediate testing concepts that require solid C# fundament
 
 ⏱️ **If starting from scratch:** Complete fundamentals + basic OOP + data structures = ~5-6 hours, then return here.
 
----
-
-## 📋 Important Note About Code Examples
-
-**The code examples in this lesson use xUnit framework and won't run in the browser editor.**
-
-To test these examples:
-1. ✅ Follow lesson **10-testing/02-setup-environment** to install .NET SDK and xUnit
-2. ✅ Create a test project locally: `dotnet new xunit -n MyTests`
-3. ✅ Copy the code examples from this lesson to your test project
-4. ✅ Run with: `dotnet test`
-
-The examples below show **proper xUnit syntax** that you'll use in real projects. They demonstrate testing concepts with `[Fact]`, `[Theory]`, `[InlineData]`, and `Assert.*` methods.
-
----
-
 ## Theory Tests: Testing Multiple Scenarios
 
-Instead of writing many similar tests, use `[Theory]` with `[InlineData]`. Let's see this with the **Task Manager API**!
+Instead of writing many similar tests, use `[Theory]` with `[InlineData]`:
 
 <CodeEditor
   initialCode={`using System;
 using Xunit;
 
-public enum TaskPriority { Low, Medium, High, Critical }
-
-public class TaskValidator
+public class Calculator
 {
-    public bool IsHighPriority(TaskPriority priority)
+    public int Add(int a, int b)
     {
-        return priority == TaskPriority.High || priority == TaskPriority.Critical;
+        return a + b;
     }
 
-    public bool IsValidTitleLength(string title)
+    public int Multiply(int a, int b)
     {
-        return !string.IsNullOrWhiteSpace(title) && title.Length <= 200;
+        return a * b;
     }
 }
 
-public class TaskValidatorTests
+public class CalculatorTests
 {
-    // Without Theory - repetitive! (DON'T DO THIS)
+    // Without Theory - repetitive!
     [Fact]
-    public void IsHighPriority_High_ReturnsTrue()
+    public void Add_2And3_Returns5()
     {
-        var validator = new TaskValidator();
-        Assert.True(validator.IsHighPriority(TaskPriority.High));
+        var calc = new Calculator();
+        Assert.Equal(5, calc.Add(2, 3));
     }
 
     [Fact]
-    public void IsHighPriority_Critical_ReturnsTrue()
+    public void Add_0And0_Returns0()
     {
-        var validator = new TaskValidator();
-        Assert.True(validator.IsHighPriority(TaskPriority.Critical));
+        var calc = new Calculator();
+        Assert.Equal(0, calc.Add(0, 0));
     }
 
     [Fact]
-    public void IsHighPriority_Medium_ReturnsFalse()
+    public void Add_Negative1AndNegative1_ReturnsNegative2()
     {
-        var validator = new TaskValidator();
-        Assert.False(validator.IsHighPriority(TaskPriority.Medium));
+        var calc = new Calculator();
+        Assert.Equal(-2, calc.Add(-1, -1));
     }
 
-    // With Theory - much cleaner! (DO THIS)
+    // With Theory - much cleaner!
     [Theory]
-    [InlineData(TaskPriority.High, true)]
-    [InlineData(TaskPriority.Critical, true)]
-    [InlineData(TaskPriority.Medium, false)]
-    [InlineData(TaskPriority.Low, false)]
+    [InlineData(2, 3, 5)]
+    [InlineData(0, 0, 0)]
+    [InlineData(-1, -1, -2)]
+    [InlineData(100, 200, 300)]
     [InlineData(-5, 5, 0)]
     public void Add_VariousInputs_ReturnsCorrectSum(int a, int b, int expected)
     {
@@ -570,42 +552,6 @@ class Program
 }`}
 />
 
-## Real Example: Task Manager API Theory Tests
-
-The Task Manager API uses `[Theory]` tests! Look at this actual example:
-
-```csharp
-[Theory]
-[InlineData(TaskPriority.Low)]
-[InlineData(TaskPriority.Medium)]
-[InlineData(TaskPriority.High)]
-[InlineData(TaskPriority.Critical)]
-public async Task CreateTaskAsync_WithDifferentPriorities_ShouldCreateTask(
-    TaskPriority priority)
-{
-    // Arrange
-    var request = new CreateTaskRequest(
-        Title: $"Task with {priority} priority",
-        Description: "Test",
-        Priority: priority,
-        DueDate: null,
-        UserId: 1,
-        CategoryId: null
-    );
-
-    // Act
-    var result = await _taskService.CreateTaskAsync(request);
-
-    // Assert
-    result.Should().NotBeNull();
-    result.Priority.Should().Be(priority);
-}
-```
-
-Find this in: `sample-projects/TaskManagerAPI.Tests/Services/TaskServiceTests.cs`
-
-This ONE test runs FOUR times with different priorities - much better than writing 4 separate tests!
-
 ## Key Takeaways
 
 - ✅ Use `[Theory]` for testing multiple similar scenarios
@@ -614,48 +560,20 @@ This ONE test runs FOUR times with different priorities - much better than writi
 - ✅ Test collections with `Assert.All`, `Assert.Contains`, etc.
 - ✅ Use constructor/Dispose for test setup/cleanup
 - ✅ Test one scenario per test method
-- ✅ Study Task Manager API tests for real-world examples
 
-## Practice Exercise: Extend Task Manager API Tests
+## Practice Exercise
 
-Open `sample-projects/TaskManagerAPI.Tests/Services/TaskServiceTests.cs` and add:
-
-### Exercise 1: Theory Test for Status Transitions
-
+Create a `DiscountCalculator` class with:
 ```csharp
-[Theory]
-[InlineData(TaskStatus.Todo, TaskStatus.InProgress)]
-[InlineData(TaskStatus.InProgress, TaskStatus.Done)]
-[InlineData(TaskStatus.InProgress, TaskStatus.Todo)]
-public async Task UpdateTaskStatusAsync_ValidTransitions_ShouldSucceed(
-    TaskStatus fromStatus, TaskStatus toStatus)
-{
-    // Create a task in the starting status
-    // Update to target status
-    // Verify it succeeded
-}
+public decimal ApplyDiscount(decimal price, decimal discountPercent)
 ```
 
-### Exercise 2: Theory Test for Validation
+Write `[Theory]` tests for:
+- Normal discounts (10%, 20%, 50%)
+- Edge cases (0%, 100%, negative prices)
+- Invalid discounts (negative %, over 100%)
 
-```csharp
-[Theory]
-[InlineData("")]  // Empty string
-[InlineData(null)]  // Null
-[InlineData("a")]  // Too short? (if you add min length validation)
-public async Task CreateTaskAsync_InvalidTitle_ShouldThrowException(
-    string invalidTitle)
-{
-    // Try to create task with invalid title
-    // Verify exception is thrown
-}
-```
-
-Run your tests with:
-```bash
-cd sample-projects/TaskManagerAPI.Tests
-dotnet test
-```
+Aim for at least 10 test cases!
 
 ## Next Steps
 

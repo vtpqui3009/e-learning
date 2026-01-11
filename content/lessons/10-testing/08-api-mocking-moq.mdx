@@ -1,0 +1,1811 @@
+---
+title: "API Mocking with Moq"
+description: "Learn to mock HTTP responses for isolated, fast, and reliable API tests"
+order: 8
+difficulty: "intermediate"
+tags: ["mocking", "moq", "unit-testing", "dependency-injection", "isolation"]
+duration: "45 minutes"
+---
+
+# API Mocking with Moq
+
+When testing code that calls APIs, you don't always want to hit the real API. Mocking lets you simulate API responses for fast, reliable, and isolated tests.
+
+## Prerequisites
+
+⚠️ **ADVANCED LESSON** - Requires solid understanding of OOP, interfaces, and dependency injection.
+
+**Required lessons:**
+- ✅ 01-fundamentals (complete section)
+- ✅ 02-oop-basics (all 6 lessons including interfaces)
+- ✅ 02-oop-basics/06-dependency-injection (**CRITICAL** - mocking requires DI understanding)
+- ✅ 03-oop-advanced/03-interfaces (interface implementation)
+- ✅ 06-modern-csharp/01-async-await (`Task<T>` and async operations)
+- ✅ 09-generics/01-generic-classes (`Mock<T>` uses generics)
+- ✅ 11-working-with-json/02-json-serialization
+- ✅ 10-testing/03-writing-first-tests
+- ✅ 10-testing/07-http-client-testing
+
+**What you need to know:**
+- Dependency injection pattern (constructor injection)
+- Interfaces and why they enable testing
+- Generic types (`Mock<T>`)
+- async/await and `Task<T>`
+- JSON serialization
+- Lambda expressions (x => x.Method())
+
+⏱️ **If starting from scratch:** Complete fundamentals + OOP + interfaces + DI + async + generics = ~12-15 hours, then return here.
+
+**💡 TIP:** If dependency injection is new to you, spend extra time on lesson 02-oop-basics/06-dependency-injection before continuing!
+
+## Why Mock API Calls?
+
+### Problems with Real API Calls in Tests
+
+<CodeEditor
+  initialCode={`using System;
+
+class WhyMocking
+{
+    static void Main()
+    {
+        Console.WriteLine("=== Problems with Real API Calls in Tests ===\\n");
+        
+        Console.WriteLine("❌ SLOW");
+        Console.WriteLine("   - Network requests take 100ms-2000ms each");
+        Console.WriteLine("   - 100 tests = 1-3 minutes wait time\\n");
+        
+        Console.WriteLine("❌ UNRELIABLE");
+        Console.WriteLine("   - API might be down");
+        Console.WriteLine("   - Network issues cause flaky tests");
+        Console.WriteLine("   - Rate limiting blocks your tests\\n");
+        
+        Console.WriteLine("❌ DEPENDENCIES");
+        Console.WriteLine("   - Need internet connection");
+        Console.WriteLine("   - CI/CD pipelines may not have access\\n");
+        
+        Console.WriteLine("❌ UNCONTROLLABLE");
+        Console.WriteLine("   - Can't test error scenarios easily");
+        Console.WriteLine("   - Data changes between test runs\\n");
+        
+        Console.WriteLine("=== Benefits of Mocking ===\\n");
+        
+        Console.WriteLine("✓ FAST - Tests run in milliseconds");
+        Console.WriteLine("✓ RELIABLE - No network dependencies");
+        Console.WriteLine("✓ CONTROLLABLE - Test any scenario");
+        Console.WriteLine("✓ ISOLATED - Test your code, not the API");
+    }
+}`}
+/>
+
+## Setting Up Moq
+
+### Install Required Packages
+
+```bash
+dotnet add package Moq
+dotnet add package Moq.Contrib.HttpClient
+```
+
+### Understanding Interfaces for Mocking
+
+To mock effectively, you need to understand interfaces and dependency injection.
+
+<CodeEditor
+  initialCode={`using System;
+using System.Threading.Tasks;
+
+// BAD: Hard to test - directly creates HttpClient
+public class BadUserService
+{
+    private readonly System.Net.Http.HttpClient _client = new();
+    
+    public async Task<string> GetUserName(int id)
+    {
+        // Can't mock this - it always calls the real API!
+        var response = await _client.GetAsync($"https://api.example.com/users/{id}");
+        return await response.Content.ReadAsStringAsync();
+    }
+}
+
+// GOOD: Easy to test - accepts HttpClient via constructor
+public class GoodUserService
+{
+    private readonly System.Net.Http.HttpClient _client;
+    
+    public GoodUserService(System.Net.Http.HttpClient client)
+    {
+        _client = client;  // Inject dependency - can be mocked!
+    }
+    
+    public async Task<string> GetUserName(int id)
+    {
+        var response = await _client.GetAsync($"users/{id}");
+        return await response.Content.ReadAsStringAsync();
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        Console.WriteLine("Dependency Injection enables mocking!");
+        Console.WriteLine();
+        Console.WriteLine("❌ Bad: new HttpClient() inside class");
+        Console.WriteLine("✓ Good: HttpClient passed via constructor");
+    }
+}`}
+/>
+
+## Creating Mockable Services
+
+### Step 1: Define an Interface
+
+<CodeEditor
+  initialCode={`using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+
+// Step 1: Define what your API client should do
+public interface IApiClient
+{
+    Task<User> GetUserAsync(int id);
+    Task<List<User>> GetAllUsersAsync();
+    Task<User> CreateUserAsync(CreateUserRequest request);
+    Task<bool> DeleteUserAsync(int id);
+}
+
+public class User
+{
+    public int Id { get; set; }
+    public string Name { get; set; }
+    public string Email { get; set; }
+}
+
+public class CreateUserRequest
+{
+    public string Name { get; set; }
+    public string Email { get; set; }
+}
+
+// Step 2: Create the real implementation
+public class ApiClient : IApiClient
+{
+    private readonly System.Net.Http.HttpClient _httpClient;
+    
+    public ApiClient(System.Net.Http.HttpClient httpClient)
+    {
+        _httpClient = httpClient;
+    }
+    
+    public async Task<User> GetUserAsync(int id)
+    {
+        // Real HTTP call
+        var response = await _httpClient.GetAsync($"users/{id}");
+        // Deserialize and return...
+        throw new NotImplementedException();
+    }
+    
+    public async Task<List<User>> GetAllUsersAsync()
+    {
+        throw new NotImplementedException();
+    }
+    
+    public async Task<User> CreateUserAsync(CreateUserRequest request)
+    {
+        throw new NotImplementedException();
+    }
+    
+    public async Task<bool> DeleteUserAsync(int id)
+    {
+        throw new NotImplementedException();
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        Console.WriteLine("Interface allows us to create mock implementations!");
+    }
+}`}
+/>
+
+### Step 2: Create a Service That Uses the Interface
+
+<CodeEditor
+  initialCode={`using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+
+public interface IApiClient
+{
+    Task<User> GetUserAsync(int id);
+    Task<List<User>> GetAllUsersAsync();
+}
+
+public class User
+{
+    public int Id { get; set; }
+    public string Name { get; set; }
+    public string Email { get; set; }
+    public bool IsActive { get; set; }
+}
+
+// Service that depends on IApiClient (can be mocked!)
+public class UserManager
+{
+    private readonly IApiClient _apiClient;
+    
+    public UserManager(IApiClient apiClient)
+    {
+        _apiClient = apiClient;  // Dependency injection
+    }
+    
+    public async Task<string> GetUserDisplayName(int id)
+    {
+        User user = await _apiClient.GetUserAsync(id);
+        
+        if (user == null)
+            return "Unknown User";
+            
+        return $"{user.Name} ({user.Email})";
+    }
+    
+    public async Task<List<User>> GetActiveUsers()
+    {
+        List<User> allUsers = await _apiClient.GetAllUsersAsync();
+        return allUsers.Where(u => u.IsActive).ToList();
+    }
+    
+    public async Task<int> CountUsers()
+    {
+        List<User> users = await _apiClient.GetAllUsersAsync();
+        return users.Count;
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        Console.WriteLine("UserManager depends on IApiClient interface");
+        Console.WriteLine("In tests, we can mock IApiClient!");
+    }
+}`}
+/>
+
+## Mocking with Moq - Basics
+
+<CodeEditor
+  initialCode={`using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+// using Moq;  // Add in real project
+// using Xunit;
+
+public interface IApiClient
+{
+    Task<User> GetUserAsync(int id);
+    Task<List<User>> GetAllUsersAsync();
+}
+
+public class User
+{
+    public int Id { get; set; }
+    public string Name { get; set; }
+    public string Email { get; set; }
+    public bool IsActive { get; set; }
+}
+
+public class UserManager
+{
+    private readonly IApiClient _apiClient;
+    
+    public UserManager(IApiClient apiClient)
+    {
+        _apiClient = apiClient;
+    }
+    
+    public async Task<string> GetUserDisplayName(int id)
+    {
+        User user = await _apiClient.GetUserAsync(id);
+        if (user == null) return "Unknown User";
+        return $"{user.Name} ({user.Email})";
+    }
+    
+    public async Task<List<User>> GetActiveUsers()
+    {
+        List<User> allUsers = await _apiClient.GetAllUsersAsync();
+        return allUsers.Where(u => u.IsActive).ToList();
+    }
+}
+
+// === TESTS WITH MOQT (Conceptual - syntax shown in comments) ===
+public class UserManagerTests
+{
+    // Moq syntax example:
+    // var mockApiClient = new Mock<IApiClient>();
+    
+    // Setup return value:
+    // mockApiClient
+    //     .Setup(x => x.GetUserAsync(1))
+    //     .ReturnsAsync(new User { Id = 1, Name = "Alice", Email = "alice@test.com" });
+    
+    // Use the mock:
+    // var userManager = new UserManager(mockApiClient.Object);
+    
+    // Test:
+    // var result = await userManager.GetUserDisplayName(1);
+    // Assert.Equal("Alice (alice@test.com)", result);
+    
+    public async Task GetUserDisplayName_ValidId_ReturnsFormattedName()
+    {
+        // This shows the CONCEPT - real Moq code below
+        Console.WriteLine("Test: GetUserDisplayName with mocked API");
+        Console.WriteLine();
+        Console.WriteLine("// Arrange");
+        Console.WriteLine("var mock = new Mock<IApiClient>();");
+        Console.WriteLine("mock.Setup(x => x.GetUserAsync(1))");
+        Console.WriteLine("    .ReturnsAsync(new User { Name = \\"Alice\\", Email = \\"a@b.com\\" });");
+        Console.WriteLine();
+        Console.WriteLine("var manager = new UserManager(mock.Object);");
+        Console.WriteLine();
+        Console.WriteLine("// Act");
+        Console.WriteLine("var result = await manager.GetUserDisplayName(1);");
+        Console.WriteLine();
+        Console.WriteLine("// Assert");
+        Console.WriteLine("Assert.Equal(\\"Alice (a@b.com)\\", result);");
+        
+        await Task.CompletedTask;
+    }
+}
+
+class Program
+{
+    static async Task Main()
+    {
+        var tests = new UserManagerTests();
+        await tests.GetUserDisplayName_ValidId_ReturnsFormattedName();
+    }
+}`}
+/>
+
+## Complete Moq Examples
+
+### Example 1: Mocking Simple Return Values
+
+<CodeEditor
+  initialCode={`using System;
+using System.Threading.Tasks;
+using Xunit;
+// using Moq;  // Install: dotnet add package Moq
+
+public interface IUserRepository
+{
+    Task<User> GetByIdAsync(int id);
+    Task<User> GetByEmailAsync(string email);
+    Task<bool> ExistsAsync(int id);
+}
+
+public class User
+{
+    public int Id { get; set; }
+    public string Name { get; set; }
+    public string Email { get; set; }
+}
+
+public class UserService
+{
+    private readonly IUserRepository _repository;
+    
+    public UserService(IUserRepository repository)
+    {
+        _repository = repository;
+    }
+    
+    public async Task<string> GetGreeting(int userId)
+    {
+        var user = await _repository.GetByIdAsync(userId);
+        if (user == null)
+            return "Hello, Guest!";
+        return $"Hello, {user.Name}!";
+    }
+    
+    public async Task<bool> IsEmailTaken(string email)
+    {
+        var user = await _repository.GetByEmailAsync(email);
+        return user != null;
+    }
+}
+
+// Test examples (conceptual - showing Moq patterns)
+public class UserServiceTests
+{
+    /*
+    [Fact]
+    public async Task GetGreeting_ExistingUser_ReturnsPersonalizedGreeting()
+    {
+        // Arrange
+        var mockRepo = new Mock<IUserRepository>();
+        mockRepo.Setup(r => r.GetByIdAsync(1))
+                .ReturnsAsync(new User { Id = 1, Name = "Alice" });
+        
+        var service = new UserService(mockRepo.Object);
+        
+        // Act
+        var result = await service.GetGreeting(1);
+        
+        // Assert
+        Assert.Equal("Hello, Alice!", result);
+    }
+    
+    [Fact]
+    public async Task GetGreeting_NonExistentUser_ReturnsGuestGreeting()
+    {
+        // Arrange
+        var mockRepo = new Mock<IUserRepository>();
+        mockRepo.Setup(r => r.GetByIdAsync(999))
+                .ReturnsAsync((User)null);  // Return null
+        
+        var service = new UserService(mockRepo.Object);
+        
+        // Act
+        var result = await service.GetGreeting(999);
+        
+        // Assert
+        Assert.Equal("Hello, Guest!", result);
+    }
+    
+    [Fact]
+    public async Task IsEmailTaken_ExistingEmail_ReturnsTrue()
+    {
+        // Arrange
+        var mockRepo = new Mock<IUserRepository>();
+        mockRepo.Setup(r => r.GetByEmailAsync("alice@test.com"))
+                .ReturnsAsync(new User { Email = "alice@test.com" });
+        
+        var service = new UserService(mockRepo.Object);
+        
+        // Act
+        var result = await service.IsEmailTaken("alice@test.com");
+        
+        // Assert
+        Assert.True(result);
+    }
+    */
+}
+
+class Program
+{
+    static void Main()
+    {
+        Console.WriteLine("=== Moq Setup Patterns ===\\n");
+        
+        Console.WriteLine("1. Return a specific value:");
+        Console.WriteLine("   mock.Setup(x => x.Method()).Returns(value);\\n");
+        
+        Console.WriteLine("2. Return async value:");
+        Console.WriteLine("   mock.Setup(x => x.MethodAsync()).ReturnsAsync(value);\\n");
+        
+        Console.WriteLine("3. Return null:");
+        Console.WriteLine("   mock.Setup(x => x.Method()).Returns((User)null);\\n");
+        
+        Console.WriteLine("4. Match any argument:");
+        Console.WriteLine("   mock.Setup(x => x.Method(It.IsAny<int>())).Returns(value);\\n");
+        
+        Console.WriteLine("5. Match specific argument:");
+        Console.WriteLine("   mock.Setup(x => x.Method(42)).Returns(value);");
+    }
+}`}
+/>
+
+### Example 2: Mocking with Argument Matching
+
+<CodeEditor
+  initialCode={`using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+// using Moq;
+
+public interface IProductApi
+{
+    Task<Product> GetProductAsync(int id);
+    Task<List<Product>> SearchAsync(string query, int maxResults);
+    Task<List<Product>> GetByCategoryAsync(string category);
+}
+
+public class Product
+{
+    public int Id { get; set; }
+    public string Name { get; set; }
+    public decimal Price { get; set; }
+    public string Category { get; set; }
+}
+
+public class ProductService
+{
+    private readonly IProductApi _api;
+    
+    public ProductService(IProductApi api)
+    {
+        _api = api;
+    }
+    
+    public async Task<decimal> GetPrice(int productId)
+    {
+        var product = await _api.GetProductAsync(productId);
+        return product?.Price ?? 0;
+    }
+    
+    public async Task<int> CountSearchResults(string query)
+    {
+        var products = await _api.SearchAsync(query, 100);
+        return products.Count;
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        Console.WriteLine("=== Moq Argument Matching ===\\n");
+        
+        Console.WriteLine("It.IsAny<T>() - Match ANY value of type T");
+        Console.WriteLine("  mock.Setup(x => x.GetProduct(It.IsAny<int>()))");
+        Console.WriteLine("       .Returns(product);\\n");
+        
+        Console.WriteLine("It.Is<T>(predicate) - Match if predicate is true");
+        Console.WriteLine("  mock.Setup(x => x.GetProduct(It.Is<int>(id => id > 0)))");
+        Console.WriteLine("       .Returns(product);\\n");
+        
+        Console.WriteLine("It.IsIn<T>(values) - Match if value is in list");
+        Console.WriteLine("  mock.Setup(x => x.GetProduct(It.IsIn(1, 2, 3)))");
+        Console.WriteLine("       .Returns(product);\\n");
+        
+        Console.WriteLine("It.IsInRange<T>(min, max) - Match if in range");
+        Console.WriteLine("  mock.Setup(x => x.GetProduct(It.IsInRange(1, 100, Range.Inclusive)))");
+        Console.WriteLine("       .Returns(product);\\n");
+        
+        Console.WriteLine("It.IsRegex(pattern) - Match string by regex");
+        Console.WriteLine("  mock.Setup(x => x.Search(It.IsRegex(\\"^test.*\\")))");
+        Console.WriteLine("       .Returns(results);");
+    }
+}`}
+/>
+
+### Example 3: Mocking Exceptions
+
+<CodeEditor
+  initialCode={`using System;
+using System.Net.Http;
+using System.Threading.Tasks;
+// using Moq;
+// using Xunit;
+
+public interface IPaymentGateway
+{
+    Task<PaymentResult> ProcessPaymentAsync(decimal amount, string cardNumber);
+}
+
+public class PaymentResult
+{
+    public bool Success { get; set; }
+    public string TransactionId { get; set; }
+    public string ErrorMessage { get; set; }
+}
+
+public class PaymentService
+{
+    private readonly IPaymentGateway _gateway;
+    
+    public PaymentService(IPaymentGateway gateway)
+    {
+        _gateway = gateway;
+    }
+    
+    public async Task<string> Pay(decimal amount, string cardNumber)
+    {
+        try
+        {
+            var result = await _gateway.ProcessPaymentAsync(amount, cardNumber);
+            
+            if (result.Success)
+                return $"Payment successful: {result.TransactionId}";
+            else
+                return $"Payment failed: {result.ErrorMessage}";
+        }
+        catch (HttpRequestException)
+        {
+            return "Payment service unavailable. Please try again.";
+        }
+        catch (TimeoutException)
+        {
+            return "Payment timed out. Please try again.";
+        }
+    }
+}
+
+// Test examples showing how to mock exceptions
+class Program
+{
+    static void Main()
+    {
+        Console.WriteLine("=== Mocking Exceptions ===\\n");
+        
+        Console.WriteLine("Throw exception:");
+        Console.WriteLine("  mock.Setup(x => x.Method())");
+        Console.WriteLine("      .Throws(new HttpRequestException());\\n");
+        
+        Console.WriteLine("Throw async exception:");
+        Console.WriteLine("  mock.Setup(x => x.MethodAsync())");
+        Console.WriteLine("      .ThrowsAsync(new TimeoutException());\\n");
+        
+        Console.WriteLine("Example test:");
+        Console.WriteLine("  [Fact]");
+        Console.WriteLine("  public async Task Pay_ServiceUnavailable_ReturnsErrorMessage()");
+        Console.WriteLine("  {");
+        Console.WriteLine("      var mock = new Mock<IPaymentGateway>();");
+        Console.WriteLine("      mock.Setup(x => x.ProcessPaymentAsync(");
+        Console.WriteLine("              It.IsAny<decimal>(), It.IsAny<string>()))");
+        Console.WriteLine("          .ThrowsAsync(new HttpRequestException());");
+        Console.WriteLine();
+        Console.WriteLine("      var service = new PaymentService(mock.Object);");
+        Console.WriteLine("      var result = await service.Pay(100, \\"1234\\");");
+        Console.WriteLine();
+        Console.WriteLine("      Assert.Contains(\\"unavailable\\", result);");
+        Console.WriteLine("  }");
+    }
+}`}
+/>
+
+### Example 4: Verifying Method Calls
+
+<CodeEditor
+  initialCode={`using System;
+using System.Threading.Tasks;
+// using Moq;
+// using Xunit;
+
+public interface IEmailService
+{
+    Task SendEmailAsync(string to, string subject, string body);
+    Task SendWelcomeEmailAsync(string to, string userName);
+}
+
+public interface IAuditLogger
+{
+    void Log(string action, string details);
+    void LogError(string error);
+}
+
+public class RegistrationService
+{
+    private readonly IEmailService _emailService;
+    private readonly IAuditLogger _logger;
+    
+    public RegistrationService(IEmailService emailService, IAuditLogger logger)
+    {
+        _emailService = emailService;
+        _logger = logger;
+    }
+    
+    public async Task RegisterUser(string email, string name)
+    {
+        // Log the registration
+        _logger.Log("UserRegistration", $"Registering {email}");
+        
+        // Send welcome email
+        await _emailService.SendWelcomeEmailAsync(email, name);
+        
+        // Log success
+        _logger.Log("UserRegistration", $"Completed for {email}");
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        Console.WriteLine("=== Verifying Method Calls ===\\n");
+        
+        Console.WriteLine("Verify method was called:");
+        Console.WriteLine("  mock.Verify(x => x.Method(), Times.Once());\\n");
+        
+        Console.WriteLine("Verify with specific arguments:");
+        Console.WriteLine("  mock.Verify(x => x.SendEmail(\\"test@test.com\\", ");
+        Console.WriteLine("      It.IsAny<string>(), It.IsAny<string>()));\\n");
+        
+        Console.WriteLine("Times options:");
+        Console.WriteLine("  Times.Once()      - Exactly once");
+        Console.WriteLine("  Times.Never()     - Never called");
+        Console.WriteLine("  Times.Exactly(n)  - Exactly n times");
+        Console.WriteLine("  Times.AtLeast(n)  - At least n times");
+        Console.WriteLine("  Times.AtMost(n)   - At most n times");
+        Console.WriteLine("  Times.Between(m,n) - Between m and n times\\n");
+        
+        Console.WriteLine("Example test:");
+        Console.WriteLine("  [Fact]");
+        Console.WriteLine("  public async Task RegisterUser_SendsWelcomeEmail()");
+        Console.WriteLine("  {");
+        Console.WriteLine("      var mockEmail = new Mock<IEmailService>();");
+        Console.WriteLine("      var mockLogger = new Mock<IAuditLogger>();");
+        Console.WriteLine();
+        Console.WriteLine("      var service = new RegistrationService(");
+        Console.WriteLine("          mockEmail.Object, mockLogger.Object);");
+        Console.WriteLine();
+        Console.WriteLine("      await service.RegisterUser(\\"alice@test.com\\", \\"Alice\\");");
+        Console.WriteLine();
+        Console.WriteLine("      // Verify email was sent");
+        Console.WriteLine("      mockEmail.Verify(x => x.SendWelcomeEmailAsync(");
+        Console.WriteLine("          \\"alice@test.com\\", \\"Alice\\"), Times.Once());");
+        Console.WriteLine();
+        Console.WriteLine("      // Verify logging happened");
+        Console.WriteLine("      mockLogger.Verify(x => x.Log(");
+        Console.WriteLine("          \\"UserRegistration\\", It.IsAny<string>()), Times.Exactly(2));");
+        Console.WriteLine("  }");
+    }
+}`}
+/>
+
+## Mocking HttpClient with HttpMessageHandler
+
+<CodeEditor
+  initialCode={`using System;
+using System.Net;
+using System.Net.Http;
+using System.Text;
+using System.Text.Json;
+using System.Threading;
+using System.Threading.Tasks;
+// using Moq;
+// using Moq.Protected;
+// using Xunit;
+
+public class User
+{
+    public int Id { get; set; }
+    public string Name { get; set; }
+    public string Email { get; set; }
+}
+
+public class UserApiClient
+{
+    private readonly HttpClient _client;
+    private readonly JsonSerializerOptions _jsonOptions;
+    
+    public UserApiClient(HttpClient client)
+    {
+        _client = client;
+        _jsonOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+    }
+    
+    public async Task<User> GetUserAsync(int id)
+    {
+        var response = await _client.GetAsync($"users/{id}");
+        
+        if (!response.IsSuccessStatusCode)
+            return null;
+            
+        var json = await response.Content.ReadAsStringAsync();
+        return JsonSerializer.Deserialize<User>(json, _jsonOptions);
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        Console.WriteLine("=== Mocking HttpClient ===\\n");
+        
+        Console.WriteLine("HttpClient uses HttpMessageHandler internally.");
+        Console.WriteLine("We mock the handler to control responses.\\n");
+        
+        Console.WriteLine("Pattern:");
+        Console.WriteLine("  var mockHandler = new Mock<HttpMessageHandler>();");
+        Console.WriteLine();
+        Console.WriteLine("  mockHandler.Protected()");
+        Console.WriteLine("      .Setup<Task<HttpResponseMessage>>(");
+        Console.WriteLine("          \\"SendAsync\\",");
+        Console.WriteLine("          ItExpr.IsAny<HttpRequestMessage>(),");
+        Console.WriteLine("          ItExpr.IsAny<CancellationToken>())");
+        Console.WriteLine("      .ReturnsAsync(new HttpResponseMessage");
+        Console.WriteLine("      {");
+        Console.WriteLine("          StatusCode = HttpStatusCode.OK,");
+        Console.WriteLine("          Content = new StringContent(json)");
+        Console.WriteLine("      });");
+        Console.WriteLine();
+        Console.WriteLine("  var client = new HttpClient(mockHandler.Object);");
+        Console.WriteLine("  var apiClient = new UserApiClient(client);\\n");
+        
+        Console.WriteLine("Benefits:");
+        Console.WriteLine("  ✓ Full control over HTTP responses");
+        Console.WriteLine("  ✓ Test error scenarios (500, 404, timeouts)");
+        Console.WriteLine("  ✓ No network calls - fast tests");
+    }
+}`}
+/>
+
+## Complete Mocking Test Class
+
+<CodeEditor
+  initialCode={`using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+// using Moq;
+// using Xunit;
+
+// Interfaces
+public interface IUserApi
+{
+    Task<User> GetUserAsync(int id);
+    Task<List<User>> GetAllUsersAsync();
+    Task<User> CreateUserAsync(string name, string email);
+}
+
+public interface INotificationService
+{
+    Task SendNotificationAsync(int userId, string message);
+}
+
+// Models
+public class User
+{
+    public int Id { get; set; }
+    public string Name { get; set; }
+    public string Email { get; set; }
+}
+
+// Service under test
+public class UserManagementService
+{
+    private readonly IUserApi _userApi;
+    private readonly INotificationService _notifications;
+    
+    public UserManagementService(IUserApi userApi, INotificationService notifications)
+    {
+        _userApi = userApi;
+        _notifications = notifications;
+    }
+    
+    public async Task<string> GetUserSummary(int id)
+    {
+        var user = await _userApi.GetUserAsync(id);
+        if (user == null) return "User not found";
+        return $"{user.Name} - {user.Email}";
+    }
+    
+    public async Task<int> GetActiveUserCount()
+    {
+        var users = await _userApi.GetAllUsersAsync();
+        return users?.Count ?? 0;
+    }
+    
+    public async Task<User> RegisterAndNotify(string name, string email)
+    {
+        var user = await _userApi.CreateUserAsync(name, email);
+        await _notifications.SendNotificationAsync(user.Id, "Welcome!");
+        return user;
+    }
+}
+
+// Comprehensive test class
+public class UserManagementServiceTests
+{
+    /*
+    private readonly Mock<IUserApi> _mockUserApi;
+    private readonly Mock<INotificationService> _mockNotifications;
+    private readonly UserManagementService _service;
+    
+    public UserManagementServiceTests()
+    {
+        _mockUserApi = new Mock<IUserApi>();
+        _mockNotifications = new Mock<INotificationService>();
+        _service = new UserManagementService(_mockUserApi.Object, _mockNotifications.Object);
+    }
+    
+    [Fact]
+    public async Task GetUserSummary_ExistingUser_ReturnsFormattedSummary()
+    {
+        // Arrange
+        _mockUserApi.Setup(x => x.GetUserAsync(1))
+            .ReturnsAsync(new User { Id = 1, Name = "Alice", Email = "alice@test.com" });
+        
+        // Act
+        var result = await _service.GetUserSummary(1);
+        
+        // Assert
+        Assert.Equal("Alice - alice@test.com", result);
+    }
+    
+    [Fact]
+    public async Task GetUserSummary_NonExistentUser_ReturnsNotFound()
+    {
+        // Arrange
+        _mockUserApi.Setup(x => x.GetUserAsync(999))
+            .ReturnsAsync((User)null);
+        
+        // Act
+        var result = await _service.GetUserSummary(999);
+        
+        // Assert
+        Assert.Equal("User not found", result);
+    }
+    
+    [Fact]
+    public async Task GetActiveUserCount_ReturnsCorrectCount()
+    {
+        // Arrange
+        var users = new List<User>
+        {
+            new User { Id = 1, Name = "Alice" },
+            new User { Id = 2, Name = "Bob" },
+            new User { Id = 3, Name = "Charlie" }
+        };
+        _mockUserApi.Setup(x => x.GetAllUsersAsync()).ReturnsAsync(users);
+        
+        // Act
+        var count = await _service.GetActiveUserCount();
+        
+        // Assert
+        Assert.Equal(3, count);
+    }
+    
+    [Fact]
+    public async Task GetActiveUserCount_EmptyList_ReturnsZero()
+    {
+        // Arrange
+        _mockUserApi.Setup(x => x.GetAllUsersAsync())
+            .ReturnsAsync(new List<User>());
+        
+        // Act
+        var count = await _service.GetActiveUserCount();
+        
+        // Assert
+        Assert.Equal(0, count);
+    }
+    
+    [Fact]
+    public async Task RegisterAndNotify_CreatesUserAndSendsNotification()
+    {
+        // Arrange
+        var createdUser = new User { Id = 42, Name = "NewUser", Email = "new@test.com" };
+        _mockUserApi.Setup(x => x.CreateUserAsync("NewUser", "new@test.com"))
+            .ReturnsAsync(createdUser);
+        
+        // Act
+        var result = await _service.RegisterAndNotify("NewUser", "new@test.com");
+        
+        // Assert
+        Assert.Equal(42, result.Id);
+        
+        // Verify notification was sent
+        _mockNotifications.Verify(
+            x => x.SendNotificationAsync(42, "Welcome!"),
+            Times.Once());
+    }
+    */
+}
+
+class Program
+{
+    static void Main()
+    {
+        Console.WriteLine("=== Complete Mocking Example ===\\n");
+        Console.WriteLine("Run tests with: dotnet test\\n");
+        
+        Console.WriteLine("Test patterns demonstrated:");
+        Console.WriteLine("  1. Mocking return values");
+        Console.WriteLine("  2. Returning null for not found");
+        Console.WriteLine("  3. Returning collections");
+        Console.WriteLine("  4. Verifying method calls");
+        Console.WriteLine("  5. Multiple mock dependencies");
+    }
+}`}
+/>
+
+## Mocking Best Practices
+
+<CodeEditor
+  initialCode={`using System;
+
+class MockingBestPractices
+{
+    static void Main()
+    {
+        Console.WriteLine("=== Mocking Best Practices ===\\n");
+        
+        Console.WriteLine("✓ DO:");
+        Console.WriteLine("  • Mock external dependencies (APIs, databases, file system)");
+        Console.WriteLine("  • Use interfaces for mockable dependencies");
+        Console.WriteLine("  • Keep mocks simple - only setup what you need");
+        Console.WriteLine("  • Verify important interactions");
+        Console.WriteLine("  • Use descriptive test names");
+        Console.WriteLine("  • Test one behavior per test\\n");
+        
+        Console.WriteLine("✗ DON'T:");
+        Console.WriteLine("  • Mock everything - some things should be real");
+        Console.WriteLine("  • Over-verify - don't check every method call");
+        Console.WriteLine("  • Mock value objects (DTOs, models)");
+        Console.WriteLine("  • Make mocks too complex");
+        Console.WriteLine("  • Forget to test error scenarios\\n");
+        
+        Console.WriteLine("=== When to Use Real vs Mock ===\\n");
+        
+        Console.WriteLine("USE REAL:");
+        Console.WriteLine("  • Value objects / DTOs");
+        Console.WriteLine("  • Simple utility classes");
+        Console.WriteLine("  • In-memory collections");
+        Console.WriteLine("  • Pure functions\\n");
+        
+        Console.WriteLine("USE MOCK:");
+        Console.WriteLine("  • HTTP clients");
+        Console.WriteLine("  • Database connections");
+        Console.WriteLine("  • File system access");
+        Console.WriteLine("  • External services");
+        Console.WriteLine("  • Time-dependent code");
+        Console.WriteLine("  • Random number generators");
+    }
+}`}
+/>
+
+## Mocking in the Task Manager API
+
+Now let's see how mocking is used in the **Task Manager API** project! This is a real-world example of when and how to use mocking effectively.
+
+### Architecture Overview
+
+The Task Manager API uses a layered architecture:
+
+```
+TasksController → ITaskService → TaskManagerDbContext
+     (API)         (Business)        (Database)
+```
+
+**Key insight**: We have two types of tests:
+1. **Unit Tests** - Mock ITaskService to test controller logic in isolation
+2. **Integration Tests** - Use real in-memory database to test the entire flow
+
+### The ITaskService Interface
+
+The service layer is defined as an interface, making it mockable:
+
+<CodeEditor
+  initialCode={`using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+
+// From TaskManagerAPI project
+public interface ITaskService
+{
+    Task<TaskResponse> CreateTaskAsync(CreateTaskRequest request);
+    Task<TaskResponse> GetTaskByIdAsync(int id);
+    Task<List<TaskResponse>> GetAllTasksAsync();
+    Task<List<TaskResponse>> GetTasksByUserIdAsync(int userId);
+    Task<TaskResponse> UpdateTaskAsync(int id, UpdateTaskRequest request);
+    Task<TaskResponse> UpdateTaskStatusAsync(int id, TaskStatus newStatus);
+    Task<bool> DeleteTaskAsync(int id);
+    Task<TaskStatistics> GetStatisticsAsync();
+}
+
+// Request/Response models
+public class CreateTaskRequest
+{
+    public string Title { get; set; }
+    public string Description { get; set; }
+    public TaskPriority Priority { get; set; }
+    public DateTime? DueDate { get; set; }
+    public int UserId { get; set; }
+    public int? CategoryId { get; set; }
+}
+
+public class UpdateTaskRequest
+{
+    public string Title { get; set; }
+    public string Description { get; set; }
+    public TaskPriority Priority { get; set; }
+    public DateTime? DueDate { get; set; }
+}
+
+public class TaskResponse
+{
+    public int Id { get; set; }
+    public string Title { get; set; }
+    public string Description { get; set; }
+    public TaskStatus Status { get; set; }
+    public TaskPriority Priority { get; set; }
+    public DateTime? DueDate { get; set; }
+    public int UserId { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime? CompletedAt { get; set; }
+}
+
+public class TaskStatistics
+{
+    public int TotalTasks { get; set; }
+    public int TodoCount { get; set; }
+    public int InProgressCount { get; set; }
+    public int DoneCount { get; set; }
+}
+
+public enum TaskStatus { Todo, InProgress, Done }
+public enum TaskPriority { Low, Medium, High, Critical }
+
+class Program
+{
+    static void Main()
+    {
+        Console.WriteLine("ITaskService - The interface we'll mock!");
+        Console.WriteLine("This allows testing TasksController without a database.");
+    }
+}`}
+/>
+
+### The TasksController
+
+The controller depends on ITaskService through dependency injection:
+
+<CodeEditor
+  initialCode={`using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+// using Microsoft.AspNetCore.Mvc;
+
+// Simplified version from TaskManagerAPI
+// [ApiController]
+// [Route("api/[controller]")]
+public class TasksController  // : ControllerBase
+{
+    private readonly ITaskService _taskService;
+
+    // Dependency injection - ITaskService can be mocked!
+    public TasksController(ITaskService taskService)
+    {
+        _taskService = taskService;
+    }
+
+    // [HttpPost]
+    public async Task<object> CreateTask(CreateTaskRequest request)
+    {
+        // Validation would happen here
+        if (string.IsNullOrWhiteSpace(request.Title))
+        {
+            // return BadRequest("Title is required");
+            return new { error = "Title is required", status = 400 };
+        }
+
+        var task = await _taskService.CreateTaskAsync(request);
+        // return CreatedAtAction(nameof(GetTask), new { id = task.Id }, task);
+        return new { status = 201, data = task };
+    }
+
+    // [HttpGet("{id}")]
+    public async Task<object> GetTask(int id)
+    {
+        var task = await _taskService.GetTaskByIdAsync(id);
+
+        if (task == null)
+        {
+            // return NotFound();
+            return new { error = "Not found", status = 404 };
+        }
+
+        // return Ok(task);
+        return new { status = 200, data = task };
+    }
+
+    // [HttpPatch("{id}/status")]
+    public async Task<object> UpdateStatus(int id, UpdateStatusRequest request)
+    {
+        try
+        {
+            var task = await _taskService.UpdateTaskStatusAsync(id, request.NewStatus);
+            // return Ok(task);
+            return new { status = 200, data = task };
+        }
+        catch (InvalidOperationException ex)
+        {
+            // return BadRequest(ex.Message);
+            return new { error = ex.Message, status = 400 };
+        }
+    }
+}
+
+public class UpdateStatusRequest
+{
+    public TaskStatus NewStatus { get; set; }
+}
+
+class Program
+{
+    static void Main()
+    {
+        Console.WriteLine("TasksController receives ITaskService via constructor");
+        Console.WriteLine("This is dependency injection - makes it mockable!");
+    }
+}`}
+/>
+
+### Example 1: Mocking CreateTask
+
+Let's mock ITaskService to test the controller's CreateTask method:
+
+<CodeEditor
+  initialCode={`using System;
+using System.Threading.Tasks;
+// using Moq;
+// using Xunit;
+// using Microsoft.AspNetCore.Mvc;
+
+public class TasksControllerTests
+{
+    /*
+    [Fact]
+    public async Task CreateTask_ValidData_ReturnsCreatedResponse()
+    {
+        // Arrange - Create mock service
+        var mockService = new Mock<ITaskService>();
+
+        var request = new CreateTaskRequest
+        {
+            Title = "Write unit tests",
+            Description = "Test the controller",
+            Priority = TaskPriority.High,
+            UserId = 1
+        };
+
+        var expectedResponse = new TaskResponse
+        {
+            Id = 42,
+            Title = "Write unit tests",
+            Description = "Test the controller",
+            Status = TaskStatus.Todo,
+            Priority = TaskPriority.High,
+            UserId = 1,
+            CreatedAt = DateTime.Now
+        };
+
+        // Setup the mock to return our expected response
+        mockService
+            .Setup(s => s.CreateTaskAsync(It.IsAny<CreateTaskRequest>()))
+            .ReturnsAsync(expectedResponse);
+
+        var controller = new TasksController(mockService.Object);
+
+        // Act
+        var result = await controller.CreateTask(request);
+        var createdResult = result as CreatedAtActionResult;
+
+        // Assert
+        Assert.NotNull(createdResult);
+        Assert.Equal(201, createdResult.StatusCode);
+
+        var task = createdResult.Value as TaskResponse;
+        Assert.Equal(42, task.Id);
+        Assert.Equal("Write unit tests", task.Title);
+        Assert.Equal(TaskStatus.Todo, task.Status);
+
+        // Verify the service was called exactly once
+        mockService.Verify(
+            s => s.CreateTaskAsync(It.Is<CreateTaskRequest>(
+                r => r.Title == "Write unit tests" && r.UserId == 1
+            )),
+            Times.Once()
+        );
+    }
+    */
+}
+
+class Program
+{
+    static void Main()
+    {
+        Console.WriteLine("=== Mocking CreateTask ===\\n");
+        Console.WriteLine("Benefits:");
+        Console.WriteLine("  ✓ No database needed");
+        Console.WriteLine("  ✓ Test runs in milliseconds");
+        Console.WriteLine("  ✓ Full control over service response");
+        Console.WriteLine("  ✓ Can verify service was called correctly");
+    }
+}`}
+/>
+
+### Example 2: Mocking Error Scenarios
+
+Testing validation errors without a real service:
+
+<CodeEditor
+  initialCode={`using System;
+using System.Threading.Tasks;
+// using Moq;
+// using Xunit;
+// using Microsoft.AspNetCore.Mvc;
+
+public class TasksControllerErrorTests
+{
+    /*
+    [Fact]
+    public async Task CreateTask_EmptyTitle_ReturnsBadRequest()
+    {
+        // Arrange
+        var mockService = new Mock<ITaskService>();
+        var controller = new TasksController(mockService.Object);
+
+        var invalidRequest = new CreateTaskRequest
+        {
+            Title = "",  // Invalid!
+            Priority = TaskPriority.Medium,
+            UserId = 1
+        };
+
+        // Act
+        var result = await controller.CreateTask(invalidRequest);
+        var badRequestResult = result as BadRequestObjectResult;
+
+        // Assert
+        Assert.NotNull(badRequestResult);
+        Assert.Equal(400, badRequestResult.StatusCode);
+        Assert.Contains("Title is required", badRequestResult.Value.ToString());
+
+        // Service should NEVER be called for invalid requests
+        mockService.Verify(
+            s => s.CreateTaskAsync(It.IsAny<CreateTaskRequest>()),
+            Times.Never()
+        );
+    }
+
+    [Fact]
+    public async Task GetTask_NonExistent_ReturnsNotFound()
+    {
+        // Arrange
+        var mockService = new Mock<ITaskService>();
+
+        // Setup mock to return null (task not found)
+        mockService
+            .Setup(s => s.GetTaskByIdAsync(999))
+            .ReturnsAsync((TaskResponse)null);
+
+        var controller = new TasksController(mockService.Object);
+
+        // Act
+        var result = await controller.GetTask(999);
+        var notFoundResult = result as NotFoundResult;
+
+        // Assert
+        Assert.NotNull(notFoundResult);
+        Assert.Equal(404, notFoundResult.StatusCode);
+    }
+
+    [Fact]
+    public async Task UpdateStatus_InvalidTransition_ReturnsBadRequest()
+    {
+        // Arrange
+        var mockService = new Mock<ITaskService>();
+
+        // Setup mock to throw exception for invalid status transition
+        mockService
+            .Setup(s => s.UpdateTaskStatusAsync(1, TaskStatus.Done))
+            .ThrowsAsync(new InvalidOperationException(
+                "Cannot transition from Todo to Done directly"
+            ));
+
+        var controller = new TasksController(mockService.Object);
+
+        var request = new UpdateStatusRequest
+        {
+            NewStatus = TaskStatus.Done
+        };
+
+        // Act
+        var result = await controller.UpdateStatus(1, request);
+        var badRequestResult = result as BadRequestObjectResult;
+
+        // Assert
+        Assert.NotNull(badRequestResult);
+        Assert.Equal(400, badRequestResult.StatusCode);
+        Assert.Contains("Cannot transition", badRequestResult.Value.ToString());
+    }
+    */
+}
+
+class Program
+{
+    static void Main()
+    {
+        Console.WriteLine("=== Testing Error Scenarios with Mocks ===\\n");
+        Console.WriteLine("We can test:");
+        Console.WriteLine("  1. Validation errors (empty title)");
+        Console.WriteLine("  2. Not found scenarios (null returns)");
+        Console.WriteLine("  3. Business rule violations (exceptions)");
+        Console.WriteLine("\\nAll without touching a database!");
+    }
+}`}
+/>
+
+### Example 3: Mocking Complex Scenarios
+
+Testing the status update workflow:
+
+<CodeEditor
+  initialCode={`using System;
+using System.Threading.Tasks;
+// using Moq;
+// using Xunit;
+// using FluentAssertions;
+
+public class TaskStatusTests
+{
+    /*
+    [Theory]
+    [InlineData(TaskStatus.Todo, TaskStatus.InProgress, true)]
+    [InlineData(TaskStatus.InProgress, TaskStatus.Done, true)]
+    [InlineData(TaskStatus.Done, TaskStatus.InProgress, true)]
+    [InlineData(TaskStatus.Todo, TaskStatus.Done, false)]  // Invalid!
+    public async Task UpdateStatus_VariousTransitions_ReturnsExpectedResult(
+        TaskStatus currentStatus,
+        TaskStatus newStatus,
+        bool shouldSucceed)
+    {
+        // Arrange
+        var mockService = new Mock<ITaskService>();
+        var taskId = 1;
+
+        if (shouldSucceed)
+        {
+            // Setup successful transition
+            mockService
+                .Setup(s => s.UpdateTaskStatusAsync(taskId, newStatus))
+                .ReturnsAsync(new TaskResponse
+                {
+                    Id = taskId,
+                    Title = "Test Task",
+                    Status = newStatus  // Updated status
+                });
+        }
+        else
+        {
+            // Setup failed transition
+            mockService
+                .Setup(s => s.UpdateTaskStatusAsync(taskId, newStatus))
+                .ThrowsAsync(new InvalidOperationException(
+                    $"Cannot transition from {currentStatus} to {newStatus}"
+                ));
+        }
+
+        var controller = new TasksController(mockService.Object);
+        var request = new UpdateStatusRequest { NewStatus = newStatus };
+
+        // Act
+        var result = await controller.UpdateStatus(taskId, request);
+
+        // Assert
+        if (shouldSucceed)
+        {
+            var okResult = result as OkObjectResult;
+            okResult.Should().NotBeNull();
+            var task = okResult.Value as TaskResponse;
+            task.Status.Should().Be(newStatus);
+        }
+        else
+        {
+            var badRequestResult = result as BadRequestObjectResult;
+            badRequestResult.Should().NotBeNull();
+        }
+    }
+    */
+}
+
+class Program
+{
+    static void Main()
+    {
+        Console.WriteLine("=== Testing Status Transitions with Mocks ===\\n");
+        Console.WriteLine("Valid transitions:");
+        Console.WriteLine("  ✓ Todo → InProgress");
+        Console.WriteLine("  ✓ InProgress → Done");
+        Console.WriteLine("  ✓ Done → InProgress\\n");
+        Console.WriteLine("Invalid transitions:");
+        Console.WriteLine("  ✗ Todo → Done (must go through InProgress)");
+    }
+}`}
+/>
+
+### When to Use Mocking vs Integration Tests
+
+The Task Manager project uses **both** approaches strategically:
+
+<CodeEditor
+  initialCode={`using System;
+
+class TestingStrategy
+{
+    static void Main()
+    {
+        Console.WriteLine("=== Task Manager API Testing Strategy ===\\n");
+
+        Console.WriteLine("📁 Unit Tests (Services/TaskServiceTests.cs)");
+        Console.WriteLine("   Uses: In-memory database");
+        Console.WriteLine("   Tests: Business logic, validations, status transitions");
+        Console.WriteLine("   Why: Fast, isolated service layer tests\\n");
+
+        Console.WriteLine("📁 Integration Tests (Controllers/TasksControllerIntegrationTests.cs)");
+        Console.WriteLine("   Uses: WebApplicationFactory + In-memory database");
+        Console.WriteLine("   Tests: Complete HTTP request → response flow");
+        Console.WriteLine("   Why: End-to-end testing of actual API behavior\\n");
+
+        Console.WriteLine("📁 Unit Tests with Mocking (Hypothetical - not in project)");
+        Console.WriteLine("   Uses: Moq to mock ITaskService");
+        Console.WriteLine("   Tests: Controller logic, routing, error handling");
+        Console.WriteLine("   Why: Test controller without service/database\\n");
+
+        Console.WriteLine("=== When to Use Each Approach ===\\n");
+
+        Console.WriteLine("✓ USE MOCKING (Moq) WHEN:");
+        Console.WriteLine("  • Testing controller logic in isolation");
+        Console.WriteLine("  • Verifying specific method calls");
+        Console.WriteLine("  • Simulating external service failures");
+        Console.WriteLine("  • Testing error handling paths");
+        Console.WriteLine("  • You need the FASTEST possible tests\\n");
+
+        Console.WriteLine("✓ USE IN-MEMORY DATABASE WHEN:");
+        Console.WriteLine("  • Testing business logic with data persistence");
+        Console.WriteLine("  • Testing query logic and filtering");
+        Console.WriteLine("  • Verifying data relationships");
+        Console.WriteLine("  • Testing the service layer");
+        Console.WriteLine("  • You want tests close to production behavior\\n");
+
+        Console.WriteLine("✓ USE INTEGRATION TESTS (WebApplicationFactory) WHEN:");
+        Console.WriteLine("  • Testing complete API endpoints");
+        Console.WriteLine("  • Verifying HTTP status codes and responses");
+        Console.WriteLine("  • Testing middleware, filters, authentication");
+        Console.WriteLine("  • End-to-end workflow testing");
+        Console.WriteLine("  • You need confidence the API works as a whole\\n");
+
+        Console.WriteLine("🎯 TASK MANAGER PROJECT APPROACH:");
+        Console.WriteLine("   - Service tests: In-memory DB (fast, tests business logic)");
+        Console.WriteLine("   - Controller tests: Integration tests (realistic HTTP testing)");
+        Console.WriteLine("   - Mocking: Could be added for pure controller logic tests");
+        Console.WriteLine("\\n   This gives good coverage without over-mocking!");
+    }
+}`}
+/>
+
+### Comparing the Approaches: Same Test, Different Techniques
+
+Here's how the same "create task" test looks with each approach:
+
+**Approach 1: Mocking ITaskService (Unit Test)**
+```csharp
+[Fact]
+public async Task CreateTask_Mocked()
+{
+    // Mock the service
+    var mockService = new Mock<ITaskService>();
+    mockService.Setup(s => s.CreateTaskAsync(It.IsAny<CreateTaskRequest>()))
+        .ReturnsAsync(new TaskResponse { Id = 1, Title = "Test" });
+
+    var controller = new TasksController(mockService.Object);
+
+    var result = await controller.CreateTask(new CreateTaskRequest { Title = "Test", UserId = 1 });
+
+    // Fast, isolated, tests controller only
+}
+```
+
+**Approach 2: In-Memory Database (Service Test)**
+```csharp
+[Fact]
+public async Task CreateTask_InMemoryDb()
+{
+    // Real DbContext with in-memory database
+    var options = new DbContextOptionsBuilder<TaskManagerDbContext>()
+        .UseInMemoryDatabase("TestDb")
+        .Options;
+    var context = new TaskManagerDbContext(options);
+    var service = new TaskService(context);
+
+    var result = await service.CreateTaskAsync(new CreateTaskRequest { Title = "Test", UserId = 1 });
+
+    // Tests service + database interaction
+}
+```
+
+**Approach 3: Integration Test (End-to-End)**
+```csharp
+[Fact]
+public async Task CreateTask_Integration()
+{
+    // WebApplicationFactory - full API stack
+    var response = await _client.PostAsJsonAsync("/api/tasks",
+        new CreateTaskRequest { Title = "Test", UserId = 1 });
+
+    response.StatusCode.Should().Be(HttpStatusCode.Created);
+
+    // Tests entire HTTP request/response cycle
+}
+```
+
+**Which is best?**
+- **Mocking**: Fastest, most isolated, but furthest from reality
+- **In-Memory DB**: Good balance of speed and realism
+- **Integration**: Slowest, but most realistic
+
+**Task Manager uses #2 and #3** - a practical combination!
+
+### Practice: Add Mocking to Task Manager
+
+The Task Manager project doesn't currently use Moq, but you could add it! Here's how:
+
+<CodeEditor
+  initialCode={`using System;
+using System.Threading.Tasks;
+// using Moq;
+// using Xunit;
+// using Microsoft.AspNetCore.Mvc;
+
+// Add this new test file: Tests/Controllers/TasksControllerUnitTests.cs
+public class TasksControllerUnitTests
+{
+    /*
+    private readonly Mock<ITaskService> _mockTaskService;
+    private readonly TasksController _controller;
+
+    public TasksControllerUnitTests()
+    {
+        _mockTaskService = new Mock<ITaskService>();
+        _controller = new TasksController(_mockTaskService.Object);
+    }
+
+    [Fact]
+    public async Task GetAllTasks_ReturnsOkWithTasks()
+    {
+        // Arrange
+        var tasks = new List<TaskResponse>
+        {
+            new TaskResponse { Id = 1, Title = "Task 1" },
+            new TaskResponse { Id = 2, Title = "Task 2" }
+        };
+
+        _mockTaskService
+            .Setup(s => s.GetAllTasksAsync())
+            .ReturnsAsync(tasks);
+
+        // Act
+        var result = await _controller.GetAllTasks();
+        var okResult = result as OkObjectResult;
+
+        // Assert
+        Assert.NotNull(okResult);
+        Assert.Equal(200, okResult.StatusCode);
+
+        var returnedTasks = okResult.Value as List<TaskResponse>;
+        Assert.Equal(2, returnedTasks.Count);
+    }
+
+    [Fact]
+    public async Task DeleteTask_ExistingTask_ReturnsNoContent()
+    {
+        // Arrange
+        _mockTaskService
+            .Setup(s => s.DeleteTaskAsync(1))
+            .ReturnsAsync(true);
+
+        // Act
+        var result = await _controller.DeleteTask(1);
+        var noContentResult = result as NoContentResult;
+
+        // Assert
+        Assert.NotNull(noContentResult);
+        Assert.Equal(204, noContentResult.StatusCode);
+
+        // Verify delete was called
+        _mockTaskService.Verify(s => s.DeleteTaskAsync(1), Times.Once());
+    }
+
+    [Fact]
+    public async Task GetStatistics_ReturnsCorrectCounts()
+    {
+        // Arrange
+        var stats = new TaskStatistics
+        {
+            TotalTasks = 10,
+            TodoCount = 3,
+            InProgressCount = 4,
+            DoneCount = 3
+        };
+
+        _mockTaskService
+            .Setup(s => s.GetStatisticsAsync())
+            .ReturnsAsync(stats);
+
+        // Act
+        var result = await _controller.GetStatistics();
+        var okResult = result as OkObjectResult;
+
+        // Assert
+        var returnedStats = okResult.Value as TaskStatistics;
+        Assert.Equal(10, returnedStats.TotalTasks);
+        Assert.Equal(3, returnedStats.TodoCount);
+    }
+    */
+}
+
+class Program
+{
+    static void Main()
+    {
+        Console.WriteLine("💡 EXERCISE: Add these unit tests to Task Manager API!\\n");
+        Console.WriteLine("Steps:");
+        Console.WriteLine("  1. Install Moq: dotnet add package Moq");
+        Console.WriteLine("  2. Create Controllers/TasksControllerUnitTests.cs");
+        Console.WriteLine("  3. Add the tests above");
+        Console.WriteLine("  4. Run: dotnet test");
+        Console.WriteLine("  5. Compare with existing integration tests\\n");
+        Console.WriteLine("You'll see:");
+        Console.WriteLine("  • Mocked tests run slightly faster");
+        Console.WriteLine("  • More control over exact scenarios");
+        Console.WriteLine("  • But integration tests catch more issues");
+    }
+}`}
+/>
+
+## Key Takeaways
+
+- **Mocking** simulates dependencies for isolated, fast tests
+- **Interfaces** enable mocking through dependency injection
+- **Moq** is the most popular C# mocking framework
+- **Setup()** defines what the mock returns
+- **Verify()** checks if methods were called
+- **It.IsAny&lt;T&gt;()** matches any argument value
+- Mock **external dependencies**, not internal logic
+- **HttpClient** is mocked via HttpMessageHandler
+- **Task Manager API** uses in-memory DB + integration tests (a practical approach)
+- **Mocking is optional** - choose the right tool for each test
+- **Different test types** serve different purposes (unit vs integration vs E2E)
+
+## Practice Exercises
+
+### Generic Practice
+
+1. Create an interface for a weather API and mock it
+2. Write tests that verify error handling with mocked exceptions
+3. Create a service with multiple dependencies and mock all of them
+4. Practice verification patterns with Times options
+5. Mock an HttpClient to return different responses
+
+### Task Manager API Practice
+
+1. **Add Moq to the Project**:
+   - Install Moq package in TaskManagerAPI.Tests
+   - Create a new test file: `TasksControllerUnitTests.cs`
+   - Write 5 unit tests using mocked ITaskService
+
+2. **Compare Testing Approaches**:
+   - Take one test from `TasksControllerIntegrationTests.cs`
+   - Rewrite it as a unit test with mocked ITaskService
+   - Compare execution time and complexity
+   - Document which approach you prefer and why
+
+3. **Test Error Handling**:
+   - Mock ITaskService to throw exceptions
+   - Test controller error handling
+   - Verify proper HTTP status codes returned
+
+4. **Verify Service Calls**:
+   - Create a test that calls multiple controller methods
+   - Use `Verify()` to ensure service methods were called correctly
+   - Practice with different `Times` options
+
+5. **Reflect on Trade-offs**:
+   - Run both unit tests (mocked) and integration tests
+   - Compare speed, complexity, and confidence level
+   - Write down when you'd choose each approach
+
+**Bonus**: The project currently doesn't need extensive mocking because in-memory databases are fast enough. But in a real application with slow databases or external APIs, mocking becomes essential!
+
+## Next Lesson
+
+Put it all together with **real-world API integration testing** - complete end-to-end examples!

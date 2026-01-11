@@ -1,0 +1,336 @@
+---
+title: "JSON Basics"
+description: "Learn what JSON is and why it's essential for modern applications"
+order: 1
+difficulty: "beginner"
+tags: ["json", "data", "api"]
+duration: "20 minutes"
+---
+
+# JSON Basics
+
+JSON (JavaScript Object Notation) is the most common format for exchanging data between applications, especially web APIs. Learning JSON is essential for working with modern C# applications.
+
+## What is JSON?
+
+JSON is a text format for representing structured data. It's easy for humans to read and easy for computers to parse.
+
+<CodeEditor
+  initialCode={`using System;
+
+class Program
+{
+    static void Main()
+    {
+        // This is what JSON looks like
+        string jsonExample = @"{
+            ""name"": ""Alice"",
+            ""age"": 30,
+            ""email"": ""alice@example.com"",
+            ""isActive"": true
+        }";
+
+        Console.WriteLine("JSON Example:");
+        Console.WriteLine(jsonExample);
+
+        Console.WriteLine("\nJSON is just text!");
+        Console.WriteLine($"Length: {jsonExample.Length} characters");
+    }
+}`}
+/>
+
+## Why Use JSON?
+
+| Reason | Description |
+|--------|-------------|
+| **Universal** | Works with any programming language |
+| **Human-Readable** | Easy to read and understand |
+| **Lightweight** | Smaller than XML, faster to transmit |
+| **Web Standard** | Default format for REST APIs |
+
+## JSON Data Types
+
+JSON supports these data types:
+
+<CodeEditor
+  initialCode={`using System;
+
+class Program
+{
+    static void Main()
+    {
+        string jsonWithAllTypes = @"{
+            ""stringValue"": ""Hello World"",
+            ""numberValue"": 42,
+            ""decimalValue"": 3.14,
+            ""booleanValue"": true,
+            ""nullValue"": null,
+            ""arrayValue"": [1, 2, 3, 4, 5],
+            ""objectValue"": {
+                ""nested"": ""data"",
+                ""count"": 10
+            }
+        }";
+
+        Console.WriteLine("JSON supports these types:");
+        Console.WriteLine(jsonWithAllTypes);
+
+        Console.WriteLine("\n--- Type Breakdown ---");
+        Console.WriteLine("String: text in double quotes");
+        Console.WriteLine("Number: integers or decimals");
+        Console.WriteLine("Boolean: true or false");
+        Console.WriteLine("Null: represents no value");
+        Console.WriteLine("Array: list of values [1, 2, 3]");
+        Console.WriteLine("Object: nested data {\"key\": \"value\"}");
+    }
+}`}
+/>
+
+## JSON vs C# Classes
+
+JSON objects look similar to C# classes:
+
+<CodeEditor
+  initialCode={`using System;
+
+// C# Class
+class Person
+{
+    public string Name { get; set; }
+    public int Age { get; set; }
+    public string Email { get; set; }
+    public bool IsActive { get; set; }
+}
+
+class Program
+{
+    static void Main()
+    {
+        // C# Object
+        var person = new Person
+        {
+            Name = "Alice",
+            Age = 30,
+            Email = "alice@example.com",
+            IsActive = true
+        };
+
+        Console.WriteLine("=== C# Object ===");
+        Console.WriteLine($"Name: {person.Name}");
+        Console.WriteLine($"Age: {person.Age}");
+        Console.WriteLine($"Email: {person.Email}");
+        Console.WriteLine($"Active: {person.IsActive}");
+
+        // Equivalent JSON (as text)
+        string jsonPerson = @"{
+            ""Name"": ""Alice"",
+            ""Age"": 30,
+            ""Email"": ""alice@example.com"",
+            ""IsActive"": true
+        }";
+
+        Console.WriteLine("\n=== JSON Representation ===");
+        Console.WriteLine(jsonPerson);
+
+        Console.WriteLine("\nThey represent the same data!");
+        Console.WriteLine("C# = Strongly typed objects");
+        Console.WriteLine("JSON = Text representation of objects");
+    }
+}`}
+/>
+
+## Real-World JSON Examples
+
+### Example 1: User Data
+
+<CodeEditor
+  initialCode={`using System;
+
+class Program
+{
+    static void Main()
+    {
+        // JSON you might receive from a user API
+        string userJson = @"{
+            ""id"": 123,
+            ""username"": ""alice_dev"",
+            ""email"": ""alice@example.com"",
+            ""createdAt"": ""2024-01-15T10:30:00Z"",
+            ""roles"": [""user"", ""admin""],
+            ""profile"": {
+                ""firstName"": ""Alice"",
+                ""lastName"": ""Johnson"",
+                ""country"": ""USA""
+            }
+        }";
+
+        Console.WriteLine("User API Response:");
+        Console.WriteLine(userJson);
+
+        Console.WriteLine("\n--- What this contains ---");
+        Console.WriteLine("• User ID and username");
+        Console.WriteLine("• Contact information");
+        Console.WriteLine("• Account creation date");
+        Console.WriteLine("• Array of user roles");
+        Console.WriteLine("• Nested profile object");
+    }
+}`}
+/>
+
+### Example 2: Product Catalog
+
+<CodeEditor
+  initialCode={`using System;
+
+class Program
+{
+    static void Main()
+    {
+        // JSON for an e-commerce product
+        string productJson = @"{
+            ""id"": ""prod_789"",
+            ""name"": ""Wireless Mouse"",
+            ""description"": ""Ergonomic wireless mouse with 6 buttons"",
+            ""price"": 29.99,
+            ""currency"": ""USD"",
+            ""inStock"": true,
+            ""quantity"": 150,
+            ""categories"": [""Electronics"", ""Accessories"", ""Computer""],
+            ""ratings"": {
+                ""average"": 4.5,
+                ""count"": 234
+            },
+            ""images"": [
+                ""https://example.com/mouse1.jpg"",
+                ""https://example.com/mouse2.jpg""
+            ]
+        }";
+
+        Console.WriteLine("Product API Response:");
+        Console.WriteLine(productJson);
+
+        Console.WriteLine("\n--- E-commerce Data ---");
+        Console.WriteLine("• Product details and pricing");
+        Console.WriteLine("• Inventory status");
+        Console.WriteLine("• Categories (array)");
+        Console.WriteLine("• Rating information (nested object)");
+        Console.WriteLine("• Image URLs (array)");
+    }
+}`}
+/>
+
+### Example 3: API Response with Array
+
+<CodeEditor
+  initialCode={`using System;
+
+class Program
+{
+    static void Main()
+    {
+        // JSON array of multiple items
+        string usersArrayJson = @"[
+            {
+                ""id"": 1,
+                ""name"": ""Alice"",
+                ""email"": ""alice@example.com""
+            },
+            {
+                ""id"": 2,
+                ""name"": ""Bob"",
+                ""email"": ""bob@example.com""
+            },
+            {
+                ""id"": 3,
+                ""name"": ""Charlie"",
+                ""email"": ""charlie@example.com""
+            }
+        ]";
+
+        Console.WriteLine("Users List API Response:");
+        Console.WriteLine(usersArrayJson);
+
+        Console.WriteLine("\n--- Array Structure ---");
+        Console.WriteLine("• Top level is an array [...]");
+        Console.WriteLine("• Each item is an object {...}");
+        Console.WriteLine("• Common for 'get all' API endpoints");
+        Console.WriteLine("• Example: GET /api/users");
+    }
+}`}
+/>
+
+## JSON Syntax Rules
+
+⚠️ **Important Rules:**
+
+1. **Double Quotes Only**: Use `"` not `'`
+   - ✅ `{"name": "Alice"}`
+   - ❌ `{'name': 'Alice'}`
+
+2. **No Trailing Commas**: Last item has no comma
+   - ✅ `{"a": 1, "b": 2}`
+   - ❌ `{"a": 1, "b": 2,}`
+
+3. **Keys Must Be Strings**: Property names in quotes
+   - ✅ `{"name": "Alice"}`
+   - ❌ `{name: "Alice"}`
+
+4. **Case Sensitive**: `Name` ≠ `name`
+
+## Common JSON Use Cases
+
+### 1. REST APIs
+```json
+GET /api/users/123
+
+Response:
+{
+  "id": 123,
+  "name": "Alice",
+  "email": "alice@example.com"
+}
+```
+
+### 2. Configuration Files
+```json
+appsettings.json:
+{
+  "ConnectionStrings": {
+    "DefaultConnection": "Server=localhost;Database=myapp"
+  },
+  "Logging": {
+    "LogLevel": "Information"
+  }
+}
+```
+
+### 3. Data Storage
+- NoSQL databases (MongoDB, CosmosDB)
+- Cache systems (Redis)
+- Message queues
+
+### 4. Frontend ↔ Backend Communication
+- Web applications send/receive JSON
+- Mobile apps communicate via JSON APIs
+- Microservices exchange JSON data
+
+## What's Next?
+
+In the next lesson, you'll learn how to:
+- Convert C# objects to JSON (serialization)
+- Convert JSON to C# objects (deserialization)
+- Work with the `System.Text.Json` library
+- Handle real API responses
+
+## Key Takeaways
+
+- JSON is a text format for data exchange
+- Works across all programming languages
+- Standard format for web APIs
+- Similar structure to C# classes
+- Case-sensitive and has strict syntax rules
+- Essential for modern C# development
+
+---
+
+**Ready to write code?** Continue to the next lesson to learn JSON serialization in C#!

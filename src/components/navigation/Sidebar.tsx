@@ -7,27 +7,35 @@ import { ChevronDown, ChevronRight, Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { LessonTree } from "@/types/lesson";
 
-export function Sidebar() {
-  const [tree, setTree] = useState<LessonTree[]>([]);
+interface SidebarProps {
+  initialTree?: LessonTree[];
+}
+
+export function Sidebar({ initialTree = [] }: SidebarProps) {
+  const [tree, setTree] = useState<LessonTree[]>(initialTree);
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const scrollPositionRef = useRef<number>(0);
+  const isManualToggleRef = useRef<boolean>(false);
 
-  // Fetch lesson tree only once on mount
+  // Fetch lesson tree only if not provided as prop
   useEffect(() => {
-    fetch("/api/lessons/tree")
-      .then((res) => res.json())
-      .then((data) => {
-        setTree(data);
-      });
-  }, []);
+    if (initialTree.length === 0) {
+      fetch("/api/lessons/tree")
+        .then((res) => res.json())
+        .then((data) => {
+          setTree(data);
+        });
+    }
+  }, [initialTree]);
 
   // Auto-expand current category when pathname changes
   useEffect(() => {
     const currentCategory = pathname.split("/")[2];
     if (currentCategory) {
+      isManualToggleRef.current = false; // Mark as automatic expansion
       setExpandedCategories((prev) => {
         const newSet = new Set(prev);
         newSet.add(currentCategory);
@@ -49,18 +57,21 @@ export function Sidebar() {
     return () => container.removeEventListener('scroll', handleScroll);
   }, [tree]); // Re-attach when tree loads
 
-  // Restore scroll position ONLY when categories expand/collapse
+  // Restore scroll position ONLY when categories are manually toggled
   useEffect(() => {
     const container = scrollContainerRef.current;
-    if (container && scrollPositionRef.current > 0) {
+    if (container && scrollPositionRef.current > 0 && isManualToggleRef.current) {
       // Use requestAnimationFrame to ensure DOM is ready
       requestAnimationFrame(() => {
         container.scrollTop = scrollPositionRef.current;
       });
     }
-  }, [expandedCategories]); // Only on category expand/collapse, NOT on pathname changes
+    // Reset the flag after handling
+    isManualToggleRef.current = false;
+  }, [expandedCategories]);
 
   const toggleCategory = (categoryId: string) => {
+    isManualToggleRef.current = true; // Mark as manual toggle
     const newExpanded = new Set(expandedCategories);
     if (newExpanded.has(categoryId)) {
       newExpanded.delete(categoryId);

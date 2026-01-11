@@ -1,0 +1,2288 @@
+---
+title: "Real-World API Integration Testing"
+description: "Complete guide to testing real APIs with authentication, CRUD operations, and error handling"
+order: 9
+difficulty: "advanced"
+tags: ["api", "integration", "authentication", "crud", "real-world"]
+duration: "60 minutes"
+---
+
+# Real-World API Integration Testing
+
+Let's put everything together with complete, real-world API testing scenarios. We'll test a real API with authentication, full CRUD operations, and proper error handling.
+
+## Prerequisites
+
+⚠️ **MOST ADVANCED LESSON** - This is the culmination of all previous lessons. Make sure you're comfortable with all prerequisites!
+
+**Required lessons:**
+- ✅ 01-fundamentals (complete section)
+- ✅ 02-oop-basics (all 6 lessons)
+- ✅ 02-oop-basics/06-dependency-injection (DI pattern)
+- ✅ 03-oop-advanced/03-interfaces
+- ✅ 03-oop-advanced/04-abstract-classes
+- ✅ 06-modern-csharp/01-async-await (**CRITICAL**)
+- ✅ 08-error-handling (both lessons - exception handling)
+- ✅ 09-generics/01-generic-classes (generic methods and classes)
+- ✅ 11-working-with-json/01-json-basics (**CRITICAL**)
+- ✅ 11-working-with-json/02-json-serialization (**CRITICAL**)
+- ✅ 10-testing/03-writing-first-tests
+- ✅ 10-testing/07-http-client-testing
+- ✅ 10-testing/08-api-mocking-moq
+
+**What you need to know:**
+- Complete async/await mastery
+- JSON serialization/deserialization with System.Text.Json
+- Generic types and methods
+- Dependency injection and interfaces
+- Error handling with try/catch
+- HTTP concepts (headers, auth, status codes)
+- xUnit testing patterns
+- IDisposable pattern for cleanup
+
+⏱️ **If starting from scratch:** Complete fundamentals + OOP + modern C# + async + JSON + testing = ~15-20 hours total, then return here.
+
+**💡 RECOMMENDATION:** This lesson brings together ALL concepts from the platform. Make sure you're comfortable with:
+1. Async/await (lesson 06-modern-csharp/01)
+2. JSON (lessons 11-working-with-json/01-02)
+3. Dependency injection (lesson 02-oop-basics/06)
+4. HTTP client (lesson 10-testing/07)
+
+## Project Setup
+
+### Create the Project
+
+```bash
+# Create solution
+mkdir RealWorldApiTests
+cd RealWorldApiTests
+dotnet new sln -n RealWorldApiTests
+
+# Create test project
+dotnet new xunit -n ApiIntegrationTests
+dotnet sln add ApiIntegrationTests
+
+# Add packages
+cd ApiIntegrationTests
+dotnet add package Microsoft.NET.Test.Sdk
+dotnet add package xunit
+dotnet add package xunit.runner.visualstudio
+dotnet add package Newtonsoft.Json
+dotnet add package FluentAssertions
+dotnet add package RestSharp
+```
+
+### Project Structure
+
+```
+RealWorldApiTests/
+├── ApiIntegrationTests/
+│   ├── ApiIntegrationTests.csproj
+│   ├── Models/
+│   │   ├── User.cs
+│   │   ├── Post.cs
+│   │   └── ApiResponse.cs
+│   ├── Clients/
+│   │   └── JsonPlaceholderClient.cs
+│   ├── Tests/
+│   │   ├── UserApiTests.cs
+│   │   ├── PostApiTests.cs
+│   │   └── WorkflowTests.cs
+│   └── Fixtures/
+│       └── ApiTestFixture.cs
+```
+
+## Model Classes
+
+<CodeEditor
+  initialCode={`using System;
+using System.Collections.Generic;
+using System.Text.Json.Serialization;
+
+// User model - matches JSONPlaceholder API
+public class User
+{
+    [JsonPropertyName("id")]
+    public int Id { get; set; }
+    
+    [JsonPropertyName("name")]
+    public string Name { get; set; }
+    
+    [JsonPropertyName("username")]
+    public string Username { get; set; }
+    
+    [JsonPropertyName("email")]
+    public string Email { get; set; }
+    
+    [JsonPropertyName("phone")]
+    public string Phone { get; set; }
+    
+    [JsonPropertyName("website")]
+    public string Website { get; set; }
+    
+    [JsonPropertyName("address")]
+    public Address Address { get; set; }
+    
+    [JsonPropertyName("company")]
+    public Company Company { get; set; }
+}
+
+public class Address
+{
+    [JsonPropertyName("street")]
+    public string Street { get; set; }
+    
+    [JsonPropertyName("suite")]
+    public string Suite { get; set; }
+    
+    [JsonPropertyName("city")]
+    public string City { get; set; }
+    
+    [JsonPropertyName("zipcode")]
+    public string Zipcode { get; set; }
+    
+    [JsonPropertyName("geo")]
+    public Geo Geo { get; set; }
+}
+
+public class Geo
+{
+    [JsonPropertyName("lat")]
+    public string Lat { get; set; }
+    
+    [JsonPropertyName("lng")]
+    public string Lng { get; set; }
+}
+
+public class Company
+{
+    [JsonPropertyName("name")]
+    public string Name { get; set; }
+    
+    [JsonPropertyName("catchPhrase")]
+    public string CatchPhrase { get; set; }
+    
+    [JsonPropertyName("bs")]
+    public string Bs { get; set; }
+}
+
+// Post model
+public class Post
+{
+    [JsonPropertyName("id")]
+    public int Id { get; set; }
+    
+    [JsonPropertyName("userId")]
+    public int UserId { get; set; }
+    
+    [JsonPropertyName("title")]
+    public string Title { get; set; }
+    
+    [JsonPropertyName("body")]
+    public string Body { get; set; }
+}
+
+// Comment model
+public class Comment
+{
+    [JsonPropertyName("id")]
+    public int Id { get; set; }
+    
+    [JsonPropertyName("postId")]
+    public int PostId { get; set; }
+    
+    [JsonPropertyName("name")]
+    public string Name { get; set; }
+    
+    [JsonPropertyName("email")]
+    public string Email { get; set; }
+    
+    [JsonPropertyName("body")]
+    public string Body { get; set; }
+}
+
+// Create request models
+public class CreatePostRequest
+{
+    [JsonPropertyName("userId")]
+    public int UserId { get; set; }
+    
+    [JsonPropertyName("title")]
+    public string Title { get; set; }
+    
+    [JsonPropertyName("body")]
+    public string Body { get; set; }
+}
+
+class Program
+{
+    static void Main()
+    {
+        Console.WriteLine("API Models defined for JSONPlaceholder API");
+        Console.WriteLine("- User (with Address, Company)");
+        Console.WriteLine("- Post");
+        Console.WriteLine("- Comment");
+    }
+}`}
+/>
+
+## Reusable API Client
+
+<CodeEditor
+  initialCode={`using System;
+using System.Collections.Generic;
+using System.Net;
+using System.Net.Http;
+using System.Text;
+using System.Text.Json;
+using System.Threading.Tasks;
+
+public class ApiResponse<T>
+{
+    public bool IsSuccess { get; set; }
+    public HttpStatusCode StatusCode { get; set; }
+    public T Data { get; set; }
+    public string RawContent { get; set; }
+    public string ErrorMessage { get; set; }
+    public long ResponseTimeMs { get; set; }
+    public Dictionary<string, string> Headers { get; set; } = new();
+}
+
+public class JsonPlaceholderClient : IDisposable
+{
+    private readonly HttpClient _client;
+    private readonly JsonSerializerOptions _jsonOptions;
+    private const string BaseUrl = "https://jsonplaceholder.typicode.com/";
+    
+    public JsonPlaceholderClient()
+    {
+        _client = new HttpClient
+        {
+            BaseAddress = new Uri(BaseUrl),
+            Timeout = TimeSpan.FromSeconds(30)
+        };
+        
+        _client.DefaultRequestHeaders.Add("Accept", "application/json");
+        _client.DefaultRequestHeaders.Add("User-Agent", "CSharpApiTests/1.0");
+        
+        _jsonOptions = new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true,
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        };
+    }
+    
+    // GET request
+    public async Task<ApiResponse<T>> GetAsync<T>(string endpoint)
+    {
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+        
+        try
+        {
+            var response = await _client.GetAsync(endpoint);
+            stopwatch.Stop();
+            
+            return await ProcessResponse<T>(response, stopwatch.ElapsedMilliseconds);
+        }
+        catch (Exception ex)
+        {
+            stopwatch.Stop();
+            return new ApiResponse<T>
+            {
+                IsSuccess = false,
+                ErrorMessage = ex.Message,
+                ResponseTimeMs = stopwatch.ElapsedMilliseconds
+            };
+        }
+    }
+    
+    // POST request
+    public async Task<ApiResponse<T>> PostAsync<T>(string endpoint, object data)
+    {
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+        
+        try
+        {
+            var json = JsonSerializer.Serialize(data, _jsonOptions);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+            
+            var response = await _client.PostAsync(endpoint, content);
+            stopwatch.Stop();
+            
+            return await ProcessResponse<T>(response, stopwatch.ElapsedMilliseconds);
+        }
+        catch (Exception ex)
+        {
+            stopwatch.Stop();
+            return new ApiResponse<T>
+            {
+                IsSuccess = false,
+                ErrorMessage = ex.Message,
+                ResponseTimeMs = stopwatch.ElapsedMilliseconds
+            };
+        }
+    }
+    
+    // PUT request
+    public async Task<ApiResponse<T>> PutAsync<T>(string endpoint, object data)
+    {
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+        
+        try
+        {
+            var json = JsonSerializer.Serialize(data, _jsonOptions);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+            
+            var response = await _client.PutAsync(endpoint, content);
+            stopwatch.Stop();
+            
+            return await ProcessResponse<T>(response, stopwatch.ElapsedMilliseconds);
+        }
+        catch (Exception ex)
+        {
+            stopwatch.Stop();
+            return new ApiResponse<T>
+            {
+                IsSuccess = false,
+                ErrorMessage = ex.Message,
+                ResponseTimeMs = stopwatch.ElapsedMilliseconds
+            };
+        }
+    }
+    
+    // PATCH request
+    public async Task<ApiResponse<T>> PatchAsync<T>(string endpoint, object data)
+    {
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+        
+        try
+        {
+            var json = JsonSerializer.Serialize(data, _jsonOptions);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+            var request = new HttpRequestMessage(HttpMethod.Patch, endpoint) { Content = content };
+            
+            var response = await _client.SendAsync(request);
+            stopwatch.Stop();
+            
+            return await ProcessResponse<T>(response, stopwatch.ElapsedMilliseconds);
+        }
+        catch (Exception ex)
+        {
+            stopwatch.Stop();
+            return new ApiResponse<T>
+            {
+                IsSuccess = false,
+                ErrorMessage = ex.Message,
+                ResponseTimeMs = stopwatch.ElapsedMilliseconds
+            };
+        }
+    }
+    
+    // DELETE request
+    public async Task<ApiResponse<bool>> DeleteAsync(string endpoint)
+    {
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+        
+        try
+        {
+            var response = await _client.DeleteAsync(endpoint);
+            stopwatch.Stop();
+            
+            return new ApiResponse<bool>
+            {
+                IsSuccess = response.IsSuccessStatusCode,
+                StatusCode = response.StatusCode,
+                Data = response.IsSuccessStatusCode,
+                ResponseTimeMs = stopwatch.ElapsedMilliseconds
+            };
+        }
+        catch (Exception ex)
+        {
+            stopwatch.Stop();
+            return new ApiResponse<bool>
+            {
+                IsSuccess = false,
+                ErrorMessage = ex.Message,
+                ResponseTimeMs = stopwatch.ElapsedMilliseconds
+            };
+        }
+    }
+    
+    private async Task<ApiResponse<T>> ProcessResponse<T>(HttpResponseMessage response, long responseTime)
+    {
+        var result = new ApiResponse<T>
+        {
+            IsSuccess = response.IsSuccessStatusCode,
+            StatusCode = response.StatusCode,
+            ResponseTimeMs = responseTime
+        };
+        
+        result.RawContent = await response.Content.ReadAsStringAsync();
+        
+        // Capture headers
+        foreach (var header in response.Headers)
+        {
+            result.Headers[header.Key] = string.Join(", ", header.Value);
+        }
+        
+        if (response.IsSuccessStatusCode && !string.IsNullOrEmpty(result.RawContent))
+        {
+            try
+            {
+                result.Data = JsonSerializer.Deserialize<T>(result.RawContent, _jsonOptions);
+            }
+            catch (JsonException ex)
+            {
+                result.ErrorMessage = $"JSON Parse Error: {ex.Message}";
+            }
+        }
+        else if (!response.IsSuccessStatusCode)
+        {
+            result.ErrorMessage = result.RawContent;
+        }
+        
+        return result;
+    }
+    
+    public void Dispose()
+    {
+        _client.Dispose();
+    }
+}
+
+class Program
+{
+    static async Task Main()
+    {
+        using var client = new JsonPlaceholderClient();
+        
+        Console.WriteLine("=== Testing API Client ===\\n");
+        
+        // Test GET
+        var response = await client.GetAsync<User>("users/1");
+        Console.WriteLine($"GET /users/1");
+        Console.WriteLine($"  Status: {response.StatusCode}");
+        Console.WriteLine($"  Response Time: {response.ResponseTimeMs}ms");
+        Console.WriteLine($"  User: {response.Data?.Name}\\n");
+        
+        // Test POST
+        var newPost = new { title = "Test", body = "Content", userId = 1 };
+        var postResponse = await client.PostAsync<Post>("posts", newPost);
+        Console.WriteLine($"POST /posts");
+        Console.WriteLine($"  Status: {postResponse.StatusCode}");
+        Console.WriteLine($"  Created ID: {postResponse.Data?.Id}");
+    }
+}`}
+/>
+
+## Comprehensive CRUD Tests
+
+<CodeEditor
+  initialCode={`using System;
+using System.Collections.Generic;
+using System.Net;
+using System.Threading.Tasks;
+using Xunit;
+
+public class Post
+{
+    public int Id { get; set; }
+    public int UserId { get; set; }
+    public string Title { get; set; }
+    public string Body { get; set; }
+}
+
+public class PostApiTests : IDisposable
+{
+    private readonly JsonPlaceholderClient _client;
+    
+    public PostApiTests()
+    {
+        _client = new JsonPlaceholderClient();
+    }
+    
+    public void Dispose()
+    {
+        _client.Dispose();
+    }
+    
+    // ============ GET Tests ============
+    
+    [Fact]
+    public async Task GetAllPosts_ReturnsListOf100Posts()
+    {
+        // Act
+        var response = await _client.GetAsync<List<Post>>("posts");
+        
+        // Assert
+        Assert.True(response.IsSuccess);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.NotNull(response.Data);
+        Assert.Equal(100, response.Data.Count);
+        Assert.True(response.ResponseTimeMs < 5000, "Response too slow");
+    }
+    
+    [Theory]
+    [InlineData(1)]
+    [InlineData(50)]
+    [InlineData(100)]
+    public async Task GetPostById_ValidId_ReturnsCorrectPost(int postId)
+    {
+        // Act
+        var response = await _client.GetAsync<Post>($"posts/{postId}");
+        
+        // Assert
+        Assert.True(response.IsSuccess);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.NotNull(response.Data);
+        Assert.Equal(postId, response.Data.Id);
+        Assert.False(string.IsNullOrEmpty(response.Data.Title));
+        Assert.False(string.IsNullOrEmpty(response.Data.Body));
+        Assert.True(response.Data.UserId > 0);
+    }
+    
+    [Fact]
+    public async Task GetPostById_InvalidId_ReturnsNotFound()
+    {
+        // Act
+        var response = await _client.GetAsync<Post>("posts/999999");
+        
+        // Assert
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+    
+    [Theory]
+    [InlineData(1, 5)]   // User 1 has posts
+    [InlineData(5, 10)]  // User 5 has posts
+    public async Task GetPostsByUserId_ReturnsUserPosts(int userId, int expectedMinCount)
+    {
+        // Act
+        var response = await _client.GetAsync<List<Post>>($"posts?userId={userId}");
+        
+        // Assert
+        Assert.True(response.IsSuccess);
+        Assert.NotNull(response.Data);
+        Assert.True(response.Data.Count >= expectedMinCount);
+        Assert.All(response.Data, p => Assert.Equal(userId, p.UserId));
+    }
+    
+    // ============ POST Tests (Create) ============
+    
+    [Fact]
+    public async Task CreatePost_ValidData_ReturnsCreatedPost()
+    {
+        // Arrange
+        var newPost = new
+        {
+            title = "Integration Test Post",
+            body = "This post was created during automated testing",
+            userId = 1
+        };
+        
+        // Act
+        var response = await _client.PostAsync<Post>("posts", newPost);
+        
+        // Assert
+        Assert.True(response.IsSuccess);
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        Assert.NotNull(response.Data);
+        Assert.True(response.Data.Id > 0);
+        Assert.Equal(newPost.title, response.Data.Title);
+        Assert.Equal(newPost.body, response.Data.Body);
+        Assert.Equal(newPost.userId, response.Data.UserId);
+    }
+    
+    [Theory]
+    [InlineData("Short", "Body")]
+    [InlineData("A Very Long Title That Contains Many Words", "Short body")]
+    [InlineData("Special Characters: @#$%^&*()", "Body with\nnewlines\nand\ttabs")]
+    public async Task CreatePost_VariousTitles_Success(string title, string body)
+    {
+        // Arrange
+        var newPost = new { title, body, userId = 1 };
+        
+        // Act
+        var response = await _client.PostAsync<Post>("posts", newPost);
+        
+        // Assert
+        Assert.True(response.IsSuccess);
+        Assert.Equal(title, response.Data.Title);
+    }
+    
+    // ============ PUT Tests (Full Update) ============
+    
+    [Fact]
+    public async Task UpdatePost_ValidData_ReturnsUpdatedPost()
+    {
+        // Arrange
+        var updatedPost = new
+        {
+            id = 1,
+            title = "Updated Title",
+            body = "Updated body content",
+            userId = 1
+        };
+        
+        // Act
+        var response = await _client.PutAsync<Post>("posts/1", updatedPost);
+        
+        // Assert
+        Assert.True(response.IsSuccess);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal("Updated Title", response.Data.Title);
+        Assert.Equal("Updated body content", response.Data.Body);
+    }
+    
+    // ============ PATCH Tests (Partial Update) ============
+    
+    [Fact]
+    public async Task PatchPost_TitleOnly_UpdatesOnlyTitle()
+    {
+        // Arrange
+        var partialUpdate = new { title = "Patched Title Only" };
+        
+        // Act
+        var response = await _client.PatchAsync<Post>("posts/1", partialUpdate);
+        
+        // Assert
+        Assert.True(response.IsSuccess);
+        Assert.Equal("Patched Title Only", response.Data.Title);
+        // Body should remain unchanged (but JSONPlaceholder might not fully support this)
+    }
+    
+    // ============ DELETE Tests ============
+    
+    [Fact]
+    public async Task DeletePost_ValidId_ReturnsSuccess()
+    {
+        // Act
+        var response = await _client.DeleteAsync("posts/1");
+        
+        // Assert
+        Assert.True(response.IsSuccess);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+    
+    // ============ Performance Tests ============
+    
+    [Fact]
+    public async Task GetPost_ResponseTime_UnderThreshold()
+    {
+        // Act
+        var response = await _client.GetAsync<Post>("posts/1");
+        
+        // Assert
+        Assert.True(response.IsSuccess);
+        Assert.True(response.ResponseTimeMs < 2000, 
+            $"Response took {response.ResponseTimeMs}ms, expected < 2000ms");
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        Console.WriteLine("Run tests with: dotnet test");
+    }
+}`}
+/>
+
+## User API Tests
+
+<CodeEditor
+  initialCode={`using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net;
+using System.Threading.Tasks;
+using Xunit;
+
+public class User
+{
+    public int Id { get; set; }
+    public string Name { get; set; }
+    public string Username { get; set; }
+    public string Email { get; set; }
+    public string Phone { get; set; }
+    public string Website { get; set; }
+    public Address Address { get; set; }
+    public Company Company { get; set; }
+}
+
+public class Address
+{
+    public string Street { get; set; }
+    public string City { get; set; }
+    public string Zipcode { get; set; }
+}
+
+public class Company
+{
+    public string Name { get; set; }
+}
+
+public class UserApiTests : IDisposable
+{
+    private readonly JsonPlaceholderClient _client;
+    
+    public UserApiTests()
+    {
+        _client = new JsonPlaceholderClient();
+    }
+    
+    public void Dispose() => _client.Dispose();
+    
+    [Fact]
+    public async Task GetAllUsers_Returns10Users()
+    {
+        // Act
+        var response = await _client.GetAsync<List<User>>("users");
+        
+        // Assert
+        Assert.True(response.IsSuccess);
+        Assert.Equal(10, response.Data.Count);
+    }
+    
+    [Fact]
+    public async Task GetUser_ValidId_ReturnsCompleteUser()
+    {
+        // Act
+        var response = await _client.GetAsync<User>("users/1");
+        
+        // Assert
+        Assert.True(response.IsSuccess);
+        Assert.NotNull(response.Data);
+        
+        // Verify all required fields
+        Assert.Equal(1, response.Data.Id);
+        Assert.False(string.IsNullOrEmpty(response.Data.Name));
+        Assert.False(string.IsNullOrEmpty(response.Data.Username));
+        Assert.False(string.IsNullOrEmpty(response.Data.Email));
+        Assert.Contains("@", response.Data.Email);  // Valid email format
+        
+        // Verify nested objects
+        Assert.NotNull(response.Data.Address);
+        Assert.False(string.IsNullOrEmpty(response.Data.Address.City));
+        
+        Assert.NotNull(response.Data.Company);
+        Assert.False(string.IsNullOrEmpty(response.Data.Company.Name));
+    }
+    
+    [Theory]
+    [InlineData(1, "Leanne Graham")]
+    [InlineData(2, "Ervin Howell")]
+    [InlineData(3, "Clementine Bauch")]
+    public async Task GetUser_ById_ReturnsCorrectName(int userId, string expectedName)
+    {
+        // Act
+        var response = await _client.GetAsync<User>($"users/{userId}");
+        
+        // Assert
+        Assert.Equal(expectedName, response.Data.Name);
+    }
+    
+    [Fact]
+    public async Task GetUser_InvalidId_ReturnsNotFound()
+    {
+        // Act
+        var response = await _client.GetAsync<User>("users/99999");
+        
+        // Assert
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+    
+    [Fact]
+    public async Task GetUsers_AllHaveValidEmails()
+    {
+        // Act
+        var response = await _client.GetAsync<List<User>>("users");
+        
+        // Assert
+        Assert.All(response.Data, user =>
+        {
+            Assert.NotNull(user.Email);
+            Assert.Contains("@", user.Email);
+            Assert.Contains(".", user.Email);
+        });
+    }
+    
+    [Fact]
+    public async Task GetUsers_AllHaveUniqueIds()
+    {
+        // Act
+        var response = await _client.GetAsync<List<User>>("users");
+        
+        // Assert
+        var ids = response.Data.Select(u => u.Id).ToList();
+        var uniqueIds = ids.Distinct().ToList();
+        Assert.Equal(ids.Count, uniqueIds.Count);
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        Console.WriteLine("User API Tests");
+    }
+}`}
+/>
+
+## Testing Related Resources
+
+<CodeEditor
+  initialCode={`using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Xunit;
+
+public class Comment
+{
+    public int Id { get; set; }
+    public int PostId { get; set; }
+    public string Name { get; set; }
+    public string Email { get; set; }
+    public string Body { get; set; }
+}
+
+public class Todo
+{
+    public int Id { get; set; }
+    public int UserId { get; set; }
+    public string Title { get; set; }
+    public bool Completed { get; set; }
+}
+
+public class RelatedResourceTests : IDisposable
+{
+    private readonly JsonPlaceholderClient _client;
+    
+    public RelatedResourceTests()
+    {
+        _client = new JsonPlaceholderClient();
+    }
+    
+    public void Dispose() => _client.Dispose();
+    
+    // Test nested resources: GET /posts/1/comments
+    [Fact]
+    public async Task GetPostComments_ReturnsCommentsForPost()
+    {
+        // Act
+        var response = await _client.GetAsync<List<Comment>>("posts/1/comments");
+        
+        // Assert
+        Assert.True(response.IsSuccess);
+        Assert.NotNull(response.Data);
+        Assert.True(response.Data.Count > 0);
+        
+        // All comments should belong to post 1
+        Assert.All(response.Data, c => Assert.Equal(1, c.PostId));
+    }
+    
+    // Test query parameter filtering
+    [Fact]
+    public async Task GetCommentsByPostId_QueryParam_Works()
+    {
+        // Act
+        var response = await _client.GetAsync<List<Comment>>("comments?postId=1");
+        
+        // Assert
+        Assert.True(response.IsSuccess);
+        Assert.All(response.Data, c => Assert.Equal(1, c.PostId));
+    }
+    
+    // Test user's posts
+    [Fact]
+    public async Task GetUserPosts_ReturnsUsersPosts()
+    {
+        // Arrange
+        int userId = 1;
+        
+        // Act
+        var response = await _client.GetAsync<List<Post>>("users/1/posts");
+        
+        // Assert - JSONPlaceholder may not support this exact route
+        // Fallback to query param version
+        if (!response.IsSuccess)
+        {
+            response = await _client.GetAsync<List<Post>>($"posts?userId={userId}");
+        }
+        
+        Assert.True(response.IsSuccess);
+        Assert.All(response.Data, p => Assert.Equal(userId, p.UserId));
+    }
+    
+    // Test user's todos
+    [Fact]
+    public async Task GetUserTodos_ReturnsUsersTodos()
+    {
+        // Act
+        var response = await _client.GetAsync<List<Todo>>("todos?userId=1");
+        
+        // Assert
+        Assert.True(response.IsSuccess);
+        Assert.True(response.Data.Count > 0);
+        Assert.All(response.Data, t => Assert.Equal(1, t.UserId));
+    }
+    
+    // Test completed vs incomplete todos
+    [Fact]
+    public async Task GetTodos_ContainsBothCompletedAndIncomplete()
+    {
+        // Act
+        var response = await _client.GetAsync<List<Todo>>("todos");
+        
+        // Assert
+        Assert.True(response.IsSuccess);
+        
+        var completed = response.Data.Where(t => t.Completed).ToList();
+        var incomplete = response.Data.Where(t => !t.Completed).ToList();
+        
+        Assert.True(completed.Count > 0, "Should have some completed todos");
+        Assert.True(incomplete.Count > 0, "Should have some incomplete todos");
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        Console.WriteLine("Related Resources Tests");
+    }
+}`}
+/>
+
+## End-to-End Workflow Tests
+
+<CodeEditor
+  initialCode={`using System;
+using System.Collections.Generic;
+using System.Net;
+using System.Threading.Tasks;
+using Xunit;
+
+public class WorkflowTests : IDisposable
+{
+    private readonly JsonPlaceholderClient _client;
+    
+    public WorkflowTests()
+    {
+        _client = new JsonPlaceholderClient();
+    }
+    
+    public void Dispose() => _client.Dispose();
+    
+    [Fact]
+    public async Task CompletePostWorkflow_CreateReadUpdateDelete()
+    {
+        // ============ CREATE ============
+        Console.WriteLine("Step 1: Create Post");
+        var createData = new
+        {
+            title = "E2E Test Post",
+            body = "Created during end-to-end testing",
+            userId = 1
+        };
+        
+        var createResponse = await _client.PostAsync<Post>("posts", createData);
+        
+        Assert.True(createResponse.IsSuccess, "Create failed");
+        Assert.Equal(HttpStatusCode.Created, createResponse.StatusCode);
+        
+        int newPostId = createResponse.Data.Id;
+        Assert.True(newPostId > 0, "Should have received new ID");
+        Console.WriteLine($"  Created post with ID: {newPostId}");
+        
+        // ============ READ ============
+        Console.WriteLine("\\nStep 2: Read Created Post");
+        // Note: JSONPlaceholder doesn't actually persist, so we read post 1 instead
+        var readResponse = await _client.GetAsync<Post>("posts/1");
+        
+        Assert.True(readResponse.IsSuccess, "Read failed");
+        Assert.NotNull(readResponse.Data);
+        Console.WriteLine($"  Read post: {readResponse.Data.Title}");
+        
+        // ============ UPDATE ============
+        Console.WriteLine("\\nStep 3: Update Post");
+        var updateData = new
+        {
+            id = 1,
+            title = "Updated E2E Test Post",
+            body = "This post was updated during testing",
+            userId = 1
+        };
+        
+        var updateResponse = await _client.PutAsync<Post>("posts/1", updateData);
+        
+        Assert.True(updateResponse.IsSuccess, "Update failed");
+        Assert.Equal("Updated E2E Test Post", updateResponse.Data.Title);
+        Console.WriteLine($"  Updated title to: {updateResponse.Data.Title}");
+        
+        // ============ DELETE ============
+        Console.WriteLine("\\nStep 4: Delete Post");
+        var deleteResponse = await _client.DeleteAsync("posts/1");
+        
+        Assert.True(deleteResponse.IsSuccess, "Delete failed");
+        Console.WriteLine($"  Deleted successfully");
+        
+        Console.WriteLine("\\n✓ Complete CRUD workflow passed!");
+    }
+    
+    [Fact]
+    public async Task UserPostsWorkflow_GetUserAndTheirPosts()
+    {
+        // Step 1: Get a user
+        Console.WriteLine("Step 1: Get User");
+        var userResponse = await _client.GetAsync<User>("users/1");
+        
+        Assert.True(userResponse.IsSuccess);
+        var user = userResponse.Data;
+        Console.WriteLine($"  Found user: {user.Name}");
+        
+        // Step 2: Get user's posts
+        Console.WriteLine("\\nStep 2: Get User's Posts");
+        var postsResponse = await _client.GetAsync<List<Post>>($"posts?userId={user.Id}");
+        
+        Assert.True(postsResponse.IsSuccess);
+        var posts = postsResponse.Data;
+        Console.WriteLine($"  Found {posts.Count} posts");
+        
+        // Step 3: Get comments for first post
+        if (posts.Count > 0)
+        {
+            Console.WriteLine("\\nStep 3: Get Comments for First Post");
+            var commentsResponse = await _client.GetAsync<List<Comment>>(
+                $"comments?postId={posts[0].Id}");
+            
+            Assert.True(commentsResponse.IsSuccess);
+            Console.WriteLine($"  Found {commentsResponse.Data.Count} comments");
+        }
+        
+        Console.WriteLine("\\n✓ User posts workflow passed!");
+    }
+    
+    [Fact]
+    public async Task BatchOperations_MultipleCreates()
+    {
+        Console.WriteLine("Creating multiple posts...");
+        
+        var tasks = new List<Task<ApiResponse<Post>>>();
+        
+        for (int i = 1; i <= 5; i++)
+        {
+            var post = new { title = $"Batch Post {i}", body = $"Body {i}", userId = 1 };
+            tasks.Add(_client.PostAsync<Post>("posts", post));
+        }
+        
+        var responses = await Task.WhenAll(tasks);
+        
+        // Verify all succeeded
+        Assert.All(responses, r =>
+        {
+            Assert.True(r.IsSuccess);
+            Assert.Equal(HttpStatusCode.Created, r.StatusCode);
+        });
+        
+        Console.WriteLine($"✓ Created {responses.Length} posts successfully");
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        Console.WriteLine("Run workflow tests with: dotnet test");
+    }
+}`}
+/>
+
+## Testing with Authentication
+
+<CodeEditor
+  initialCode={`using System;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Text;
+using System.Text.Json;
+using System.Threading.Tasks;
+using Xunit;
+
+// Models for authentication
+public class LoginRequest
+{
+    public string Username { get; set; }
+    public string Password { get; set; }
+}
+
+public class LoginResponse
+{
+    public string Token { get; set; }
+    public DateTime ExpiresAt { get; set; }
+}
+
+public class AuthenticatedApiClient : IDisposable
+{
+    private readonly HttpClient _client;
+    private string _authToken;
+    
+    public AuthenticatedApiClient(string baseUrl)
+    {
+        _client = new HttpClient
+        {
+            BaseAddress = new Uri(baseUrl)
+        };
+    }
+    
+    // Login and store token
+    public async Task<bool> LoginAsync(string username, string password)
+    {
+        var loginData = new { username, password };
+        var json = JsonSerializer.Serialize(loginData);
+        var content = new StringContent(json, Encoding.UTF8, "application/json");
+        
+        var response = await _client.PostAsync("auth/login", content);
+        
+        if (response.IsSuccessStatusCode)
+        {
+            var responseJson = await response.Content.ReadAsStringAsync();
+            var loginResponse = JsonSerializer.Deserialize<LoginResponse>(responseJson);
+            _authToken = loginResponse?.Token;
+            
+            // Set auth header for future requests
+            _client.DefaultRequestHeaders.Authorization = 
+                new AuthenticationHeaderValue("Bearer", _authToken);
+            
+            return true;
+        }
+        
+        return false;
+    }
+    
+    // API Key authentication
+    public void SetApiKey(string apiKey)
+    {
+        _client.DefaultRequestHeaders.Add("X-API-Key", apiKey);
+    }
+    
+    // Basic auth
+    public void SetBasicAuth(string username, string password)
+    {
+        var credentials = Convert.ToBase64String(
+            Encoding.ASCII.GetBytes($"{username}:{password}"));
+        _client.DefaultRequestHeaders.Authorization = 
+            new AuthenticationHeaderValue("Basic", credentials);
+    }
+    
+    public async Task<HttpResponseMessage> GetAsync(string endpoint)
+    {
+        return await _client.GetAsync(endpoint);
+    }
+    
+    public void Dispose() => _client.Dispose();
+}
+
+// Example authentication tests (conceptual - requires real auth API)
+public class AuthenticationTests
+{
+    /*
+    [Fact]
+    public async Task Login_ValidCredentials_ReturnsToken()
+    {
+        using var client = new AuthenticatedApiClient("https://api.example.com/");
+        
+        bool success = await client.LoginAsync("testuser", "testpass");
+        
+        Assert.True(success);
+    }
+    
+    [Fact]
+    public async Task ProtectedEndpoint_WithToken_ReturnsData()
+    {
+        using var client = new AuthenticatedApiClient("https://api.example.com/");
+        await client.LoginAsync("testuser", "testpass");
+        
+        var response = await client.GetAsync("protected/resource");
+        
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+    
+    [Fact]
+    public async Task ProtectedEndpoint_WithoutToken_Returns401()
+    {
+        using var client = new AuthenticatedApiClient("https://api.example.com/");
+        // Don't login
+        
+        var response = await client.GetAsync("protected/resource");
+        
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+    */
+}
+
+class Program
+{
+    static void Main()
+    {
+        Console.WriteLine("=== Authentication Patterns ===\\n");
+        
+        Console.WriteLine("1. Bearer Token:");
+        Console.WriteLine("   Authorization: Bearer eyJhbGc...\\n");
+        
+        Console.WriteLine("2. API Key:");
+        Console.WriteLine("   X-API-Key: your-api-key\\n");
+        
+        Console.WriteLine("3. Basic Auth:");
+        Console.WriteLine("   Authorization: Basic base64(user:pass)\\n");
+        
+        Console.WriteLine("4. OAuth 2.0:");
+        Console.WriteLine("   - Get token from auth server");
+        Console.WriteLine("   - Include in Authorization header");
+    }
+}`}
+/>
+
+## Error Handling Tests
+
+<CodeEditor
+  initialCode={`using System;
+using System.Net;
+using System.Net.Http;
+using System.Threading.Tasks;
+using Xunit;
+
+public class ErrorHandlingTests : IDisposable
+{
+    private readonly JsonPlaceholderClient _client;
+    
+    public ErrorHandlingTests()
+    {
+        _client = new JsonPlaceholderClient();
+    }
+    
+    public void Dispose() => _client.Dispose();
+    
+    // Test 404 Not Found
+    [Theory]
+    [InlineData("posts/999999")]
+    [InlineData("users/999999")]
+    [InlineData("comments/999999")]
+    public async Task GetNonExistent_ReturnsNotFound(string endpoint)
+    {
+        var response = await _client.GetAsync<object>(endpoint);
+        
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+    
+    // Test invalid endpoint
+    [Fact]
+    public async Task GetInvalidEndpoint_Returns404()
+    {
+        var response = await _client.GetAsync<object>("invalid-endpoint");
+        
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+    
+    // Test response time
+    [Fact]
+    public async Task AllEndpoints_RespondWithinTimeout()
+    {
+        string[] endpoints = { "posts", "users", "comments", "todos" };
+        
+        foreach (var endpoint in endpoints)
+        {
+            var response = await _client.GetAsync<object>(endpoint);
+            
+            Assert.True(response.ResponseTimeMs < 5000,
+                $"{endpoint} took {response.ResponseTimeMs}ms");
+        }
+    }
+    
+    // Test malformed requests are handled
+    [Fact]
+    public async Task PostInvalidJson_HandledGracefully()
+    {
+        // The client should handle this without throwing
+        var response = await _client.PostAsync<object>("posts", new { });
+        
+        // JSONPlaceholder accepts empty objects, but tests the flow
+        Assert.True(response.IsSuccess || response.StatusCode == HttpStatusCode.BadRequest);
+    }
+    
+    // Test empty response handling
+    [Fact]
+    public async Task GetResource_EmptyResponse_Handled()
+    {
+        var response = await _client.GetAsync<List<object>>("posts?userId=99999");
+        
+        Assert.True(response.IsSuccess);
+        Assert.NotNull(response.Data);
+        Assert.Empty(response.Data);  // Should be empty, not null
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        Console.WriteLine("Error handling tests ensure robust API testing");
+    }
+}`}
+/>
+
+## Test Configuration and Fixtures
+
+<CodeEditor
+  initialCode={`using System;
+using System.Threading.Tasks;
+using Xunit;
+
+// Shared test context - created once, reused by all tests
+public class ApiTestFixture : IAsyncLifetime
+{
+    public JsonPlaceholderClient Client { get; private set; }
+    public int TestUserId { get; private set; }
+    public int TestPostId { get; private set; }
+    
+    public async Task InitializeAsync()
+    {
+        Console.WriteLine("Setting up test fixture...");
+        
+        Client = new JsonPlaceholderClient();
+        
+        // Create test data
+        TestUserId = 1;  // Using existing user
+        TestPostId = 1;  // Using existing post
+        
+        // Verify API is accessible
+        var response = await Client.GetAsync<object>("posts/1");
+        if (!response.IsSuccess)
+        {
+            throw new Exception("API not accessible - check connection");
+        }
+        
+        Console.WriteLine("Test fixture ready!");
+    }
+    
+    public Task DisposeAsync()
+    {
+        Console.WriteLine("Cleaning up test fixture...");
+        Client?.Dispose();
+        return Task.CompletedTask;
+    }
+}
+
+// Collection that shares the fixture
+[CollectionDefinition("Api Tests")]
+public class ApiTestCollection : ICollectionFixture<ApiTestFixture>
+{
+    // No code needed - just defines the collection
+}
+
+// Tests that use the shared fixture
+[Collection("Api Tests")]
+public class SharedFixtureTests
+{
+    private readonly ApiTestFixture _fixture;
+    
+    public SharedFixtureTests(ApiTestFixture fixture)
+    {
+        _fixture = fixture;
+    }
+    
+    [Fact]
+    public async Task Test1_UsesSharedClient()
+    {
+        var response = await _fixture.Client.GetAsync<Post>($"posts/{_fixture.TestPostId}");
+        Assert.True(response.IsSuccess);
+    }
+    
+    [Fact]
+    public async Task Test2_UsesSharedClient()
+    {
+        var response = await _fixture.Client.GetAsync<User>($"users/{_fixture.TestUserId}");
+        Assert.True(response.IsSuccess);
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        Console.WriteLine("Test fixtures share setup across tests");
+        Console.WriteLine("- IAsyncLifetime for async setup/teardown");
+        Console.WriteLine("- ICollectionFixture for shared resources");
+    }
+}`}
+/>
+
+## Running and Reporting Tests
+
+### Running Tests
+
+```bash
+# Run all tests
+dotnet test
+
+# Run with verbose output
+dotnet test --verbosity detailed
+
+# Run specific test class
+dotnet test --filter "FullyQualifiedName~PostApiTests"
+
+# Run specific test
+dotnet test --filter "DisplayName~GetAllPosts"
+
+# Generate test results
+dotnet test --logger "trx;LogFileName=testresults.trx"
+
+# Generate HTML report (requires tool)
+dotnet test --logger "html;LogFileName=testresults.html"
+```
+
+### Test Organization Best Practices
+
+<CodeEditor
+  initialCode={`using System;
+
+class TestOrganization
+{
+    static void Main()
+    {
+        Console.WriteLine("=== Test Organization Best Practices ===\\n");
+        
+        Console.WriteLine("1. FOLDER STRUCTURE:");
+        Console.WriteLine("   Tests/");
+        Console.WriteLine("   ├── Unit/");
+        Console.WriteLine("   │   ├── Services/");
+        Console.WriteLine("   │   └── Models/");
+        Console.WriteLine("   ├── Integration/");
+        Console.WriteLine("   │   ├── Api/");
+        Console.WriteLine("   │   └── Database/");
+        Console.WriteLine("   └── E2E/");
+        Console.WriteLine("       └── Workflows/\\n");
+        
+        Console.WriteLine("2. NAMING CONVENTIONS:");
+        Console.WriteLine("   Class: {Feature}Tests");
+        Console.WriteLine("   Method: {Method}_{Scenario}_{Expected}\\n");
+        
+        Console.WriteLine("3. TEST ATTRIBUTES:");
+        Console.WriteLine("   [Fact] - Single test case");
+        Console.WriteLine("   [Theory] - Multiple test cases");
+        Console.WriteLine("   [Trait] - Categorization");
+        Console.WriteLine("   [Collection] - Shared fixtures\\n");
+        
+        Console.WriteLine("4. TEST CATEGORIES (using Trait):");
+        Console.WriteLine("   [Trait(\\"Category\\", \\"Integration\\")]");
+        Console.WriteLine("   [Trait(\\"Category\\", \\"Smoke\\")]");
+        Console.WriteLine("   [Trait(\\"Priority\\", \\"High\\")]\\n");
+        
+        Console.WriteLine("5. RUN BY CATEGORY:");
+        Console.WriteLine("   dotnet test --filter \\"Category=Smoke\\"");
+    }
+}`}
+/>
+
+## Key Takeaways
+
+- **Structure your tests** with clear folders and naming conventions
+- **Create reusable API clients** that handle common operations
+- **Use model classes** to deserialize API responses
+- **Test all CRUD operations** (Create, Read, Update, Delete)
+- **Test related resources** (nested routes, query parameters)
+- **Write workflow tests** for end-to-end scenarios
+- **Handle authentication** with tokens, API keys, or basic auth
+- **Test error scenarios** (404, 401, 500, timeouts)
+- **Use fixtures** to share setup across tests
+- **Measure response times** for performance testing
+
+## Complete Test Checklist
+
+When testing an API, ensure you cover:
+
+✅ **Happy Path Tests**
+- All CRUD operations work
+- Valid data returns correct responses
+- Response format matches expected schema
+
+✅ **Error Handling**
+- Invalid IDs return 404
+- Invalid data returns 400/422
+- Unauthorized access returns 401
+- Missing permissions return 403
+
+✅ **Edge Cases**
+- Empty collections
+- Maximum/minimum values
+- Special characters in data
+- Very large payloads
+
+✅ **Integration**
+- Related resources work together
+- Workflows complete successfully
+- Data consistency across operations
+
+✅ **Performance**
+- Response times are acceptable
+- Concurrent requests work
+- Rate limiting is handled
+
+## Applying These Concepts: Task Manager API
+
+Now let's see how ALL these concepts come together in the **Task Manager API** project - the real-world application you've been learning with throughout this testing section!
+
+### Task Manager API: A Complete Testing Story
+
+The Task Manager API demonstrates **professional-grade** API testing with:
+- ✅ 28 comprehensive automated tests
+- ✅ Unit tests for service layer
+- ✅ Integration tests for API endpoints
+- ✅ Workflow tests for complete scenarios
+- ✅ Real business logic validation
+- ✅ In-memory database for fast testing
+
+**Let's explore the actual tests from the project!**
+
+### Architecture Review
+
+```
+TaskManagerAPI/
+├── Controllers/
+│   └── TasksController.cs         (8 endpoints)
+├── Services/
+│   ├── ITaskService.cs            (Interface - mockable!)
+│   └── TaskService.cs             (Business logic)
+└── Data/
+    └── TaskManagerDbContext.cs    (EF Core)
+
+TaskManagerAPI.Tests/
+├── Services/
+│   └── TaskServiceTests.cs        (18 unit tests)
+└── Controllers/
+    └── TasksControllerIntegrationTests.cs  (10 tests)
+```
+
+### Unit Tests: TaskServiceTests.cs
+
+These test the **business logic** in isolation using an in-memory database:
+
+<CodeEditor
+  initialCode={`using System;
+using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
+using Xunit;
+using FluentAssertions;
+using TaskManagerAPI.Services;
+using TaskManagerAPI.Models;
+using TaskManagerAPI.DTOs;
+using TaskManagerAPI.Data;
+
+// Real test from the project!
+public class TaskServiceTests : IDisposable
+{
+    private readonly TaskManagerDbContext _context;
+    private readonly TaskService _taskService;
+
+    public TaskServiceTests()
+    {
+        // Setup: In-memory database
+        var options = new DbContextOptionsBuilder<TaskManagerDbContext>()
+            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+            .Options;
+
+        _context = new TaskManagerDbContext(options);
+
+        // Seed test data
+        SeedTestData();
+
+        _taskService = new TaskService(_context);
+    }
+
+    private void SeedTestData()
+    {
+        _context.Users.Add(new User { Id = 1, Name = "Test User", Email = "test@example.com" });
+        _context.SaveChanges();
+    }
+
+    public void Dispose()
+    {
+        _context.Database.EnsureDeleted();
+        _context.Dispose();
+    }
+
+    // ========== CREATE TESTS ==========
+
+    [Fact]
+    public async Task CreateTaskAsync_WithValidData_ShouldCreateTask()
+    {
+        // Arrange
+        var request = new CreateTaskRequest(
+            Title: "Complete project documentation",
+            Description: "Write comprehensive docs",
+            Priority: TaskPriority.High,
+            DueDate: DateTime.Now.AddDays(7),
+            UserId: 1,
+            CategoryId: null
+        );
+
+        // Act
+        var result = await _taskService.CreateTaskAsync(request);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Id.Should().BeGreaterThan(0);
+        result.Title.Should().Be("Complete project documentation");
+        result.Status.Should().Be(TaskStatus.Todo);
+        result.Priority.Should().Be(TaskPriority.High);
+        result.CreatedAt.Should().BeCloseTo(DateTime.Now, TimeSpan.FromSeconds(5));
+        result.CompletedAt.Should().BeNull();
+
+        Console.WriteLine($"✓ Created task ID {result.Id}: {result.Title}");
+    }
+
+    [Fact]
+    public async Task CreateTaskAsync_WithEmptyTitle_ShouldThrowException()
+    {
+        // Arrange
+        var request = new CreateTaskRequest(
+            Title: "",  // Invalid!
+            Description: "Description",
+            Priority: TaskPriority.Medium,
+            DueDate: null,
+            UserId: 1,
+            CategoryId: null
+        );
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentException>(
+            async () => await _taskService.CreateTaskAsync(request)
+        );
+
+        Console.WriteLine("✓ Empty title correctly rejected");
+    }
+
+    [Fact]
+    public async Task CreateTaskAsync_WithInvalidUserId_ShouldThrowException()
+    {
+        // Arrange
+        var request = new CreateTaskRequest(
+            Title: "Test Task",
+            Description: "Description",
+            Priority: TaskPriority.Medium,
+            DueDate: null,
+            UserId: 999,  // Invalid user!
+            CategoryId: null
+        );
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentException>(
+            async () => await _taskService.CreateTaskAsync(request)
+        );
+
+        Console.WriteLine("✓ Invalid user ID correctly rejected");
+    }
+
+    // ========== STATUS TRANSITION TESTS ==========
+
+    [Fact]
+    public async Task UpdateTaskStatusAsync_TodoToInProgress_ShouldSucceed()
+    {
+        // Arrange - Create a task
+        var createRequest = new CreateTaskRequest(
+            "Test Task", null, TaskPriority.Medium, null, 1, null
+        );
+        var task = await _taskService.CreateTaskAsync(createRequest);
+
+        // Act - Update status
+        var result = await _taskService.UpdateTaskStatusAsync(task.Id, TaskStatus.InProgress);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Status.Should().Be(TaskStatus.InProgress);
+        result.CompletedAt.Should().BeNull();
+
+        Console.WriteLine($"✓ Status updated: Todo → InProgress");
+    }
+
+    [Fact]
+    public async Task UpdateTaskStatusAsync_InProgressToDone_ShouldSetCompletedAt()
+    {
+        // Arrange - Create and move to InProgress
+        var createRequest = new CreateTaskRequest(
+            "Test Task", null, TaskPriority.Medium, null, 1, null
+        );
+        var task = await _taskService.CreateTaskAsync(createRequest);
+        await _taskService.UpdateTaskStatusAsync(task.Id, TaskStatus.InProgress);
+
+        // Act - Complete the task
+        var result = await _taskService.UpdateTaskStatusAsync(task.Id, TaskStatus.Done);
+
+        // Assert
+        result.Status.Should().Be(TaskStatus.Done);
+        result.CompletedAt.Should().NotBeNull();
+        result.CompletedAt.Value.Should().BeCloseTo(DateTime.Now, TimeSpan.FromSeconds(5));
+
+        Console.WriteLine($"✓ Task completed! CompletedAt set to {result.CompletedAt}");
+    }
+
+    [Fact]
+    public async Task UpdateTaskStatusAsync_TodoToDone_ShouldThrowException()
+    {
+        // Arrange
+        var createRequest = new CreateTaskRequest(
+            "Test Task", null, TaskPriority.Medium, null, 1, null
+        );
+        var task = await _taskService.CreateTaskAsync(createRequest);
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+            async () => await _taskService.UpdateTaskStatusAsync(task.Id, TaskStatus.Done)
+        );
+
+        exception.Message.Should().Contain("Cannot transition");
+
+        Console.WriteLine("✓ Invalid status transition rejected (Todo → Done)");
+    }
+
+    // ========== READ TESTS ==========
+
+    [Fact]
+    public async Task GetTaskByIdAsync_ExistingTask_ShouldReturnTask()
+    {
+        // Arrange
+        var createRequest = new CreateTaskRequest(
+            "Find Me", "Description", TaskPriority.Low, null, 1, null
+        );
+        var created = await _taskService.CreateTaskAsync(createRequest);
+
+        // Act
+        var result = await _taskService.GetTaskByIdAsync(created.Id);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Id.Should().Be(created.Id);
+        result.Title.Should().Be("Find Me");
+
+        Console.WriteLine($"✓ Retrieved task: {result.Title}");
+    }
+
+    [Fact]
+    public async Task GetTaskByIdAsync_NonExistentTask_ShouldReturnNull()
+    {
+        // Act
+        var result = await _taskService.GetTaskByIdAsync(99999);
+
+        // Assert
+        result.Should().BeNull();
+
+        Console.WriteLine("✓ Non-existent task returns null");
+    }
+
+    // ========== STATISTICS TEST ==========
+
+    [Fact]
+    public async Task GetStatisticsAsync_WithVariousStatuses_ShouldReturnCorrectCounts()
+    {
+        // Arrange - Create tasks with different statuses
+        var task1 = await _taskService.CreateTaskAsync(
+            new CreateTaskRequest("Task 1", null, TaskPriority.Low, null, 1, null)
+        );
+
+        var task2 = await _taskService.CreateTaskAsync(
+            new CreateTaskRequest("Task 2", null, TaskPriority.Medium, null, 1, null)
+        );
+        await _taskService.UpdateTaskStatusAsync(task2.Id, TaskStatus.InProgress);
+
+        var task3 = await _taskService.CreateTaskAsync(
+            new CreateTaskRequest("Task 3", null, TaskPriority.High, null, 1, null)
+        );
+        await _taskService.UpdateTaskStatusAsync(task3.Id, TaskStatus.InProgress);
+        await _taskService.UpdateTaskStatusAsync(task3.Id, TaskStatus.Done);
+
+        // Act
+        var stats = await _taskService.GetStatisticsAsync();
+
+        // Assert
+        stats.TotalTasks.Should().Be(3);
+        stats.TodoCount.Should().Be(1);
+        stats.InProgressCount.Should().Be(1);
+        stats.DoneCount.Should().Be(1);
+
+        Console.WriteLine($"✓ Statistics: {stats.TotalTasks} total, {stats.DoneCount} done");
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        Console.WriteLine("These are REAL tests from TaskManagerAPI.Tests!");
+        Console.WriteLine("18 unit tests total covering:");
+        Console.WriteLine("  - Task creation & validation");
+        Console.WriteLine("  - Status transitions (state machine)");
+        Console.WriteLine("  - Business rules enforcement");
+        Console.WriteLine("  - Statistics calculation");
+    }
+}`}
+/>
+
+### Integration Tests: TasksControllerIntegrationTests.cs
+
+These test the **complete HTTP flow** using WebApplicationFactory:
+
+<CodeEditor
+  initialCode={`using System;
+using System.Net;
+using System.Net.Http;
+using System.Net.Http.Json;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc.Testing;
+using Xunit;
+using FluentAssertions;
+using TaskManagerAPI.DTOs;
+using TaskManagerAPI.Models;
+
+// Real integration test from the project!
+public class TasksControllerIntegrationTests : IClassFixture<WebApplicationFactory<Program>>
+{
+    private readonly HttpClient _client;
+
+    public TasksControllerIntegrationTests(WebApplicationFactory<Program> factory)
+    {
+        // WebApplicationFactory creates an in-memory test server
+        _client = factory.CreateClient();
+    }
+
+    // ========== GET TESTS ==========
+
+    [Fact]
+    public async Task GetAllTasks_ReturnsOkWithEmptyList()
+    {
+        // Act
+        var response = await _client.GetAsync("/api/tasks");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var tasks = await response.Content.ReadFromJsonAsync<List<TaskResponse>>();
+        tasks.Should().NotBeNull();
+
+        Console.WriteLine($"✓ GET /api/tasks returned {tasks.Count} tasks");
+    }
+
+    [Fact]
+    public async Task GetTaskById_NonExistent_ReturnsNotFound()
+    {
+        // Act
+        var response = await _client.GetAsync("/api/tasks/99999");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+
+        Console.WriteLine("✓ Non-existent task returns 404");
+    }
+
+    // ========== POST TESTS (CREATE) ==========
+
+    [Fact]
+    public async Task CreateTask_ValidData_ReturnsCreated()
+    {
+        // Arrange
+        var request = new CreateTaskRequest(
+            Title: "Integration Test Task",
+            Description: "Testing the complete API flow",
+            Priority: TaskPriority.High,
+            DueDate: DateTime.Now.AddDays(5),
+            UserId: 1,
+            CategoryId: null
+        );
+
+        // Act
+        var response = await _client.PostAsJsonAsync("/api/tasks", request);
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+
+        var createdTask = await response.Content.ReadFromJsonAsync<TaskResponse>();
+        createdTask.Should().NotBeNull();
+        createdTask.Id.Should().BeGreaterThan(0);
+        createdTask.Title.Should().Be("Integration Test Task");
+        createdTask.Status.Should().Be(TaskStatus.Todo);
+        createdTask.Priority.Should().Be(TaskPriority.High);
+
+        // Verify Location header
+        response.Headers.Location.Should().NotBeNull();
+        response.Headers.Location.ToString().Should().Contain($"/api/tasks/{createdTask.Id}");
+
+        Console.WriteLine($"✓ Created task {createdTask.Id} via HTTP POST");
+    }
+
+    [Fact]
+    public async Task CreateTask_EmptyTitle_ReturnsBadRequest()
+    {
+        // Arrange
+        var invalidRequest = new CreateTaskRequest(
+            Title: "",  // Invalid!
+            Description: "Description",
+            Priority: TaskPriority.Medium,
+            DueDate: null,
+            UserId: 1,
+            CategoryId: null
+        );
+
+        // Act
+        var response = await _client.PostAsJsonAsync("/api/tasks", invalidRequest);
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        Console.WriteLine("✓ Empty title rejected with 400 Bad Request");
+    }
+
+    // ========== PATCH TESTS (STATUS UPDATE) ==========
+
+    [Fact]
+    public async Task UpdateTaskStatus_ValidTransition_ReturnsOk()
+    {
+        // Arrange - First create a task
+        var createRequest = new CreateTaskRequest(
+            "Status Test Task", null, TaskPriority.Medium, null, 1, null
+        );
+        var createResponse = await _client.PostAsJsonAsync("/api/tasks", createRequest);
+        var createdTask = await createResponse.Content.ReadFromJsonAsync<TaskResponse>();
+
+        // Act - Update status to InProgress
+        var updateRequest = new UpdateTaskStatusRequest(TaskStatus.InProgress);
+        var response = await _client.PatchAsJsonAsync(
+            $"/api/tasks/{createdTask.Id}/status",
+            updateRequest
+        );
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var updatedTask = await response.Content.ReadFromJsonAsync<TaskResponse>();
+        updatedTask.Status.Should().Be(TaskStatus.InProgress);
+
+        Console.WriteLine($"✓ Status updated: Todo → InProgress");
+    }
+
+    [Fact]
+    public async Task UpdateTaskStatus_InvalidTransition_ReturnsBadRequest()
+    {
+        // Arrange - Create a task (starts as Todo)
+        var createRequest = new CreateTaskRequest(
+            "Invalid Transition Task", null, TaskPriority.Low, null, 1, null
+        );
+        var createResponse = await _client.PostAsJsonAsync("/api/tasks", createRequest);
+        var createdTask = await createResponse.Content.ReadFromJsonAsync<TaskResponse>();
+
+        // Act - Try invalid transition: Todo → Done (should go through InProgress first)
+        var updateRequest = new UpdateTaskStatusRequest(TaskStatus.Done);
+        var response = await _client.PatchAsJsonAsync(
+            $"/api/tasks/{createdTask.Id}/status",
+            updateRequest
+        );
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        var errorContent = await response.Content.ReadAsStringAsync();
+        errorContent.Should().Contain("Cannot transition");
+
+        Console.WriteLine("✓ Invalid transition rejected with error message");
+    }
+
+    // ========== WORKFLOW TEST (Complete CRUD) ==========
+
+    [Fact]
+    public async Task CompleteTaskWorkflow_CreateUpdateComplete()
+    {
+        Console.WriteLine("Starting complete task workflow...");
+
+        // Step 1: Create task
+        var createRequest = new CreateTaskRequest(
+            "Workflow Test Task",
+            "Complete end-to-end workflow",
+            TaskPriority.Critical,
+            DateTime.Now.AddDays(2),
+            UserId: 1,
+            CategoryId: null
+        );
+
+        var createResponse = await _client.PostAsJsonAsync("/api/tasks", createRequest);
+        createResponse.StatusCode.Should().Be(HttpStatusCode.Created);
+        var task = await createResponse.Content.ReadFromJsonAsync<TaskResponse>();
+        Console.WriteLine($"  ✓ Step 1: Created task {task.Id}");
+
+        // Step 2: Get task by ID
+        var getResponse = await _client.GetAsync($"/api/tasks/{task.Id}");
+        getResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        Console.WriteLine($"  ✓ Step 2: Retrieved task");
+
+        // Step 3: Start work (Todo → InProgress)
+        var startWorkRequest = new UpdateTaskStatusRequest(TaskStatus.InProgress);
+        var startWorkResponse = await _client.PatchAsJsonAsync(
+            $"/api/tasks/{task.Id}/status",
+            startWorkRequest
+        );
+        startWorkResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        var inProgressTask = await startWorkResponse.Content.ReadFromJsonAsync<TaskResponse>();
+        inProgressTask.Status.Should().Be(TaskStatus.InProgress);
+        Console.WriteLine($"  ✓ Step 3: Started work (Todo → InProgress)");
+
+        // Step 4: Complete task (InProgress → Done)
+        var completeRequest = new UpdateTaskStatusRequest(TaskStatus.Done);
+        var completeResponse = await _client.PatchAsJsonAsync(
+            $"/api/tasks/{task.Id}/status",
+            completeRequest
+        );
+        completeResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        var completedTask = await completeResponse.Content.ReadFromJsonAsync<TaskResponse>();
+        completedTask.Status.Should().Be(TaskStatus.Done);
+        completedTask.CompletedAt.Should().NotBeNull();
+        Console.WriteLine($"  ✓ Step 4: Completed task! CompletedAt: {completedTask.CompletedAt}");
+
+        // Step 5: Verify it appears in statistics
+        var statsResponse = await _client.GetAsync("/api/tasks/statistics");
+        statsResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        var stats = await statsResponse.Content.ReadFromJsonAsync<TaskStatistics>();
+        stats.DoneCount.Should().BeGreaterThan(0);
+        Console.WriteLine($"  ✓ Step 5: Statistics updated ({stats.DoneCount} completed tasks)");
+
+        Console.WriteLine("\\n✓ Complete workflow PASSED!");
+    }
+
+    // ========== STATISTICS TEST ==========
+
+    [Fact]
+    public async Task GetStatistics_ReturnsCorrectCounts()
+    {
+        // Arrange - Create tasks in different states
+        await CreateAndTransitionTask("Todo Task", TaskStatus.Todo);
+        await CreateAndTransitionTask("InProgress Task", TaskStatus.InProgress);
+        await CreateAndTransitionTask("Done Task", TaskStatus.Done);
+
+        // Act
+        var response = await _client.GetAsync("/api/tasks/statistics");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var stats = await response.Content.ReadFromJsonAsync<TaskStatistics>();
+        stats.Should().NotBeNull();
+        stats.TotalTasks.Should().BeGreaterThan(0);
+        stats.TodoCount.Should().BeGreaterThan(0);
+        stats.InProgressCount.Should().BeGreaterThan(0);
+        stats.DoneCount.Should().BeGreaterThan(0);
+
+        Console.WriteLine($"✓ Statistics: {stats.TotalTasks} total tasks");
+    }
+
+    private async Task<TaskResponse> CreateAndTransitionTask(string title, TaskStatus targetStatus)
+    {
+        var request = new CreateTaskRequest(title, null, TaskPriority.Medium, null, 1, null);
+        var response = await _client.PostAsJsonAsync("/api/tasks", request);
+        var task = await response.Content.ReadFromJsonAsync<TaskResponse>();
+
+        if (targetStatus == TaskStatus.InProgress || targetStatus == TaskStatus.Done)
+        {
+            await _client.PatchAsJsonAsync($"/api/tasks/{task.Id}/status",
+                new UpdateTaskStatusRequest(TaskStatus.InProgress));
+        }
+
+        if (targetStatus == TaskStatus.Done)
+        {
+            await _client.PatchAsJsonAsync($"/api/tasks/{task.Id}/status",
+                new UpdateTaskStatusRequest(TaskStatus.Done));
+        }
+
+        return task;
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        Console.WriteLine("These are REAL integration tests from the project!");
+        Console.WriteLine("10 integration tests covering:");
+        Console.WriteLine("  - HTTP endpoints (GET, POST, PATCH)");
+        Console.WriteLine("  - Request/response validation");
+        Console.WriteLine("  - Complete workflows");
+        Console.WriteLine("  - Error responses (400, 404)");
+    }
+}`}
+/>
+
+### What Makes These Tests Professional?
+
+1. **Comprehensive Coverage**:
+   - ✅ Happy path (valid data)
+   - ✅ Error cases (validation failures)
+   - ✅ Edge cases (status transitions)
+   - ✅ Workflows (complete scenarios)
+
+2. **Fast Execution**:
+   - ✅ In-memory database (no disk I/O)
+   - ✅ No network calls
+   - ✅ All 28 tests run in < 2 seconds
+
+3. **Isolation**:
+   - ✅ Each test has its own database
+   - ✅ No test affects another
+   - ✅ Can run in parallel
+
+4. **Readable**:
+   - ✅ Fluent Assertions (`Should().Be()`)
+   - ✅ Clear naming (`CreateTask_EmptyTitle_ReturnsBadRequest`)
+   - ✅ Console output for debugging
+
+5. **Maintainable**:
+   - ✅ Reusable fixtures
+   - ✅ Helper methods
+   - ✅ No hardcoded values
+
+### Comparing Testing Approaches in Task Manager API
+
+| Approach | Used In Project? | Speed | Realism | When to Use |
+|----------|------------------|-------|---------|-------------|
+| **Unit Tests (In-Memory DB)** | ✅ Yes - TaskServiceTests | ⚡⚡⚡ Very Fast | 😐 Medium | Testing business logic |
+| **Integration Tests (WebApplicationFactory)** | ✅ Yes - Controller tests | ⚡⚡ Fast | 😊 High | Testing API endpoints |
+| **Mocking (Moq)** | ❌ Not used | ⚡⚡⚡ Very Fast | 😐 Medium | Could test controllers in isolation |
+| **HttpClient Tests** | ❌ Not used | ⚡ Slow | 😊 Very High | Testing deployed APIs |
+
+**Why the project chose in-memory DB + WebApplicationFactory**:
+- Fast enough (< 2 seconds for all tests)
+- Close to production behavior
+- Tests actual database operations
+- No need for complex mocking
+- Simpler to maintain
+
+### Practice Exercises: Extend the Task Manager Tests
+
+Ready to apply everything you've learned? Try these exercises:
+
+1. **Add Category Tests**:
+   - The API has a Categories feature (see the code)
+   - Write tests for creating categories
+   - Test assigning tasks to categories
+   - Test getting tasks by category
+
+2. **Test Update Endpoint**:
+   - Write tests for `PUT /api/tasks/{id}` (full update)
+   - Test updating title, description, priority
+   - Test validation (empty title should fail)
+   - Test updating non-existent task (should 404)
+
+3. **Test Delete Endpoint**:
+   - Write tests for `DELETE /api/tasks/{id}`
+   - Verify task is deleted
+   - Verify GET returns 404 after delete
+   - Test deleting non-existent task
+
+4. **Add Performance Tests**:
+   - Create 100 tasks in a loop
+   - Measure how long it takes
+   - Assert it completes within a threshold
+   - Use `Stopwatch` to measure time
+
+5. **Test Concurrent Requests**:
+   - Create 10 tasks simultaneously
+   - Use `Task.WhenAll()` to run in parallel
+   - Verify all succeed
+   - Check statistics count is correct
+
+6. **Add Due Date Tests**:
+   - Test creating task with due date in the past (should fail)
+   - Test creating task with valid future date
+   - Test filtering tasks by due date
+   - Test overdue task detection
+
+### Running the Actual Tests
+
+Want to see the real tests in action?
+
+```bash
+# Navigate to the project
+cd sample-projects/TaskManagerAPI
+
+# Run all tests
+dotnet test
+
+# Run only unit tests
+dotnet test --filter "FullyQualifiedName~TaskServiceTests"
+
+# Run only integration tests
+dotnet test --filter "FullyQualifiedName~TasksControllerIntegrationTests"
+
+# Run with detailed output
+dotnet test --verbosity detailed
+
+# Generate coverage report (requires additional tool)
+dotnet test /p:CollectCoverage=true
+```
+
+**Expected output**:
+```
+Starting test execution, please wait...
+A total of 1 test files matched the specified pattern.
+
+Passed!  - Failed:     0, Passed:    28, Skipped:     0, Total:    28, Duration: 1.8s
+```
+
+### What You've Learned
+
+Throughout this testing section, you've mastered:
+
+1. **Lesson 01**: Testing fundamentals and why testing matters
+2. **Lesson 02**: Setting up test projects and xUnit
+3. **Lesson 03**: Writing your first tests (AAA pattern)
+4. **Lesson 04**: Advanced patterns (Theory, Fluent Assertions)
+5. **Lesson 05**: Integration testing with WebApplicationFactory
+6. **Lesson 06**: Manual API testing with Postman/Swagger
+7. **Lesson 07**: HttpClient for automated HTTP testing
+8. **Lesson 08**: Mocking with Moq for isolation
+9. **Lesson 09** (This Lesson): Real-world API integration testing
+
+**And you applied ALL of it to the Task Manager API project!**
+
+### The Big Picture
+
+```
+Manual Testing (Lesson 06)
+    ↓
+    Used for: Initial exploration, debugging
+
+Automated Testing (Lessons 03-09)
+    ↓
+    ├── Unit Tests (In-Memory DB)
+    │   └── Fast, isolated business logic tests
+    │
+    ├── Integration Tests (WebApplicationFactory)
+    │   └── Complete API endpoint testing
+    │
+    ├── Mocking (Optional)
+    │   └── Ultra-isolated controller tests
+    │
+    └── E2E Tests (HttpClient)
+        └── Testing deployed APIs
+
+Task Manager API uses: Manual + Unit + Integration = Complete Coverage!
+```
+
+## Congratulations! 🎉
+
+You've completed the comprehensive API Testing course! You now have the skills to:
+
+- ✅ Understand REST APIs and HTTP fundamentals
+- ✅ Manually test APIs with Postman and cURL
+- ✅ Write automated tests with C# and HttpClient
+- ✅ Mock APIs with Moq for isolated testing
+- ✅ Test real-world scenarios with authentication
+- ✅ Organize and maintain professional test suites
+- ✅ **Apply all concepts to real projects like Task Manager API**
+
+**You're ready to tackle any API testing challenge!** 🚀

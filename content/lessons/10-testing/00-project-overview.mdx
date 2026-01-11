@@ -1,0 +1,396 @@
+---
+title: "Testing Project Overview: Task Manager API"
+description: "Introduction to the Task Manager API project that we'll use throughout the testing lessons"
+keywords: ["testing", "project", "task manager", "api", "real-world"]
+difficulty: "beginner"
+order: 0
+estimatedTime: "15 minutes"
+---
+
+# Testing Project Overview: Task Manager API
+
+Throughout this testing section, we'll work with a real-world C# project: **Task Manager API**. This comprehensive RESTful API will serve as our testing playground, allowing you to learn both manual and automated testing techniques on actual code.
+
+## Why a Real Project?
+
+Testing theory is important, but nothing beats hands-on experience with real code. By using the Task Manager API, you'll:
+
+- **Learn by doing** with actual business logic
+- **See realistic scenarios** that you'll encounter in production
+- **Understand the value** of different testing approaches
+- **Build practical skills** you can apply immediately
+
+## 📥 Getting the Project
+
+The Task Manager API is included in your course materials. Here's how to access it:
+
+### Option 1: Course Materials (Recommended)
+
+If you're viewing this lesson, the project is already available:
+
+```bash
+# The project is located in your course directory
+cd sample-projects/TaskManagerAPI
+
+# Verify it's there
+ls
+```
+
+You should see:
+- `TaskManagerAPI.csproj` - Main project file
+- `Controllers/` - API endpoints
+- `Services/` - Business logic
+- `Models/` - Data models
+- And more...
+
+### Option 2: Download from GitHub
+
+The project is also available on GitHub:
+
+**Repository**: `https://github.com/vtpqui3009/e-learning`
+
+```bash
+# Clone the entire course repository
+git clone https://github.com/vtpqui3009/e-learning.git
+
+# Navigate to the Task Manager API
+cd e-learning/sample-projects/TaskManagerAPI
+```
+
+### Option 3: Download ZIP
+
+1. Go to the course repository on GitHub
+2. Click the green "Code" button
+3. Select "Download ZIP"
+4. Extract to your preferred location
+5. Navigate to `sample-projects/TaskManagerAPI/`
+
+### Verify Your Download
+
+Check that you have all the files:
+
+```bash
+cd sample-projects/TaskManagerAPI
+ls -la
+```
+
+You should see:
+```
+TaskManagerAPI/
+├── Controllers/
+├── Services/
+├── Models/
+├── DTOs/
+├── Data/
+├── TaskManagerAPI.csproj
+├── Program.cs
+├── appsettings.json
+└── README.md
+
+TaskManagerAPI.Tests/
+├── Services/
+├── Controllers/
+└── TaskManagerAPI.Tests.csproj
+```
+
+### Quick Test
+
+Make sure .NET 8.0 is installed:
+
+```bash
+dotnet --version
+# Should show 8.0 or higher
+```
+
+Then run the project:
+
+```bash
+cd TaskManagerAPI
+dotnet restore
+dotnet run
+```
+
+If you see:
+```
+Now listening on: https://localhost:5001
+Application started.
+```
+
+**You're all set!** 🎉
+
+Open `https://localhost:5001` in your browser to see the Swagger UI.
+
+## Project Overview
+
+The Task Manager API is a complete RESTful API for managing tasks, users, and categories. It includes:
+
+### Core Features
+
+```csharp
+public class TaskItem
+{
+    public int Id { get; set; }
+    public string Title { get; set; }
+    public string? Description { get; set; }
+    public TaskStatus Status { get; set; }
+    public TaskPriority Priority { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime? DueDate { get; set; }
+    public DateTime? CompletedAt { get; set; }
+    public int UserId { get; set; }
+    public int? CategoryId { get; set; }
+}
+```
+
+### Status Workflow
+
+Tasks follow a defined workflow with validation:
+
+```
+Todo ──────────┐
+  │            │
+  ├─> InProgress ──> Done
+  │            │
+  └──> Cancelled
+```
+
+Valid transitions are enforced:
+- **Todo** → InProgress, Cancelled
+- **InProgress** → Done, Todo, Cancelled
+- **Done** → InProgress
+- **Cancelled** → Todo
+
+### Priority Levels
+
+```csharp
+public enum TaskPriority
+{
+    Low,
+    Medium,
+    High,
+    Critical
+}
+```
+
+## What Makes This Project Ideal for Testing?
+
+### 1. Business Logic to Test
+
+The project includes realistic business rules:
+
+```csharp
+// Validation: Due date cannot be in the past
+if (request.DueDate.HasValue && request.DueDate.Value < DateTime.UtcNow.Date)
+    throw new ArgumentException("Due date cannot be in the past");
+
+// Validation: Title is required and has length limits
+if (string.IsNullOrWhiteSpace(request.Title))
+    throw new ArgumentException("Task title is required");
+
+if (request.Title.Length > 200)
+    throw new ArgumentException("Task title cannot exceed 200 characters");
+```
+
+### 2. Multiple Testing Levels
+
+You can test at different levels:
+- **Unit Tests**: Test individual methods in isolation
+- **Integration Tests**: Test API endpoints end-to-end
+- **Manual Tests**: Use Postman/Swagger to verify behavior
+
+### 3. Real-World Scenarios
+
+The project demonstrates common patterns:
+- **CRUD operations** (Create, Read, Update, Delete)
+- **Data validation** (required fields, data types)
+- **Business rules** (status transitions, date validations)
+- **Relationships** (tasks belong to users and categories)
+- **Error handling** (appropriate HTTP status codes)
+
+## Project Structure
+
+```
+TaskManagerAPI/
+├── Models/              # Domain entities
+│   ├── TaskItem.cs
+│   ├── User.cs
+│   └── Category.cs
+├── Controllers/         # API endpoints
+│   └── TasksController.cs
+├── Services/           # Business logic
+│   ├── ITaskService.cs
+│   └── TaskService.cs
+├── DTOs/               # Request/Response objects
+│   └── TaskDTOs.cs
+├── Data/               # Database context
+│   └── TaskManagerContext.cs
+└── Program.cs          # App configuration
+
+TaskManagerAPI.Tests/
+├── Services/           # Unit tests
+│   └── TaskServiceTests.cs
+└── Controllers/        # Integration tests
+    └── TasksControllerIntegrationTests.cs
+```
+
+## API Endpoints
+
+The API provides these endpoints for testing:
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/tasks` | Get all tasks (with filters) |
+| GET | `/api/tasks/{id}` | Get specific task |
+| POST | `/api/tasks` | Create new task |
+| PUT | `/api/tasks/{id}` | Update task |
+| DELETE | `/api/tasks/{id}` | Delete task |
+| PATCH | `/api/tasks/{id}/status` | Update status |
+| GET | `/api/tasks/statistics/{userId}` | Get statistics |
+| GET | `/api/tasks/overdue` | Get overdue tasks |
+
+## Getting Started with the Project
+
+### Prerequisites
+
+You'll need:
+- **.NET 8.0 SDK** or later
+- A code editor (**Visual Studio**, **VS Code**, or **Rider**)
+- Optional: **Postman** or similar tool for manual testing
+
+### Running the Project
+
+1. Navigate to the project directory:
+```bash
+cd sample-projects/TaskManagerAPI
+```
+
+2. Restore dependencies:
+```bash
+dotnet restore
+```
+
+3. Run the API:
+```bash
+dotnet run
+```
+
+4. Access Swagger UI:
+```
+Open: https://localhost:5001
+```
+
+### Running the Tests
+
+```bash
+cd sample-projects/TaskManagerAPI.Tests
+dotnet test
+```
+
+## Sample Data
+
+The project comes with seeded data for testing:
+
+**Users:**
+- John Doe (ID: 1)
+- Jane Smith (ID: 2)
+
+**Categories:**
+- Work (ID: 1)
+- Personal (ID: 2)
+- Shopping (ID: 3)
+
+**Tasks:**
+- "Complete project documentation" (InProgress, High priority)
+- "Buy groceries" (Todo, Medium priority)
+- "Review pull requests" (Done, High priority)
+
+## What You'll Learn
+
+Throughout the testing lessons, you'll use this project to learn:
+
+### Manual Testing
+- Testing API endpoints with Postman and Swagger
+- Verifying status codes and responses
+- Testing validation rules
+- Exploring edge cases
+- Documenting test cases
+
+### Automated Testing
+- Writing unit tests with xUnit
+- Testing business logic in isolation
+- Using Moq for mocking dependencies
+- Writing integration tests
+- Test-driven development (TDD)
+- Code coverage analysis
+
+## Business Rules to Test
+
+The project implements several business rules that need testing:
+
+1. **Task Creation**
+   - Title is required
+   - Title cannot exceed 200 characters
+   - User must exist
+   - Category must exist (if provided)
+   - Due date cannot be in the past
+
+2. **Task Updates**
+   - Status transitions must be valid
+   - Due date cannot be changed to past
+   - Category must exist (if changing)
+
+3. **Status Management**
+   - Completing a task sets `CompletedAt`
+   - Invalid transitions are rejected
+   - Status workflow is enforced
+
+4. **Statistics**
+   - Counts are accurate
+   - Overdue tasks are correctly identified
+   - Per-user filtering works
+
+## Next Steps
+
+In the following lessons, you'll:
+
+1. **Explore** the project and understand its structure
+2. **Test manually** using Swagger and Postman
+3. **Write unit tests** for business logic
+4. **Create integration tests** for API endpoints
+5. **Learn testing patterns** and best practices
+6. **Measure code coverage** and improve it
+7. **Apply TDD** to add new features
+
+## Resources
+
+- **README**: `sample-projects/TaskManagerAPI/README.md`
+- **Manual Testing Guide**: `sample-projects/TaskManagerAPI/MANUAL_TESTING_GUIDE.md`
+- **Source Code**: `sample-projects/TaskManagerAPI/`
+- **Test Code**: `sample-projects/TaskManagerAPI.Tests/`
+
+## Try It Now!
+
+Before moving to the next lesson, try running the API:
+
+```bash
+cd sample-projects/TaskManagerAPI
+dotnet run
+```
+
+Then open your browser to `https://localhost:5001` and explore the Swagger UI. Try creating a task, updating its status, and deleting it. Get familiar with the API—you'll be testing it extensively in the upcoming lessons!
+
+## Summary
+
+The Task Manager API provides a realistic, feature-rich project for learning testing:
+
+- ✅ Real business logic and validations
+- ✅ Multiple testing levels (unit, integration, manual)
+- ✅ Realistic scenarios and edge cases
+- ✅ Complete test suite to learn from
+- ✅ Hands-on practice with actual code
+
+In the next lesson, we'll dive into **Introduction to Testing** where you'll learn the fundamental concepts and why testing is crucial for software quality.
+
+---
+
+**Ready to start testing?** Let's move on to understanding what testing is and why it matters!

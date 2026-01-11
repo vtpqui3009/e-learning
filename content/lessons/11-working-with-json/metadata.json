@@ -1,0 +1,9 @@
+{
+  "category": "11-working-with-json",
+  "title": "Working with JSON",
+  "description": "Learn how to work with JSON data in C# for APIs and data exchange",
+  "order": 11,
+  "icon": "📄",
+  "color": "#f59e0b",
+  "lessonCount": 2
+}

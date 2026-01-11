@@ -1,0 +1,49 @@
+### Boolean Assertions
+
+<CodeEditor
+  initialCode={`using System;
+
+// Demonstrating boolean assertions
+// In xUnit: Assert.True() and Assert.False()
+
+class Program
+{
+    static void Main()
+    {
+        Console.WriteLine("=== Boolean Assertions ===");
+        Console.WriteLine();
+
+        // True - checks if condition is true
+        // In xUnit: Assert.True(5 > 3);
+        if (5 > 3)
+            Console.WriteLine("✓ PASS: 5 > 3 is true");
+        else
+            Console.WriteLine("✗ FAIL: 5 > 3 should be true");
+
+        // In xUnit: Assert.True("hello".Contains("ell"));
+        if ("hello".Contains("ell"))
+            Console.WriteLine("✓ PASS: \"hello\" contains \"ell\"");
+        else
+            Console.WriteLine("✗ FAIL: \"hello\" should contain \"ell\"");
+
+        Console.WriteLine();
+
+        // False - checks if condition is false
+        // In xUnit: Assert.False(3 > 5);
+        if (!(3 > 5))
+            Console.WriteLine("✓ PASS: 3 > 5 is false");
+        else
+            Console.WriteLine("✗ FAIL: 3 > 5 should be false");
+
+        // In xUnit: Assert.False("hello".Contains("xyz"));
+        if (!("hello".Contains("xyz")))
+            Console.WriteLine("✓ PASS: \"hello\" does not contain \"xyz\"");
+        else
+            Console.WriteLine("✗ FAIL: \"hello\" should not contain \"xyz\"");
+
+        Console.WriteLine();
+        Console.WriteLine("All boolean assertions passed!");
+    }
+}`}
+/>
+

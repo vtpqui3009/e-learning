@@ -1,9 +1,9 @@
 {
   "category": "10-testing",
   "title": "Testing & Test Automation",
-  "description": "Learn how to write automated tests with C# and xUnit",
+  "description": "Master automated testing with C#, xUnit, API testing, and mocking frameworks",
   "order": 10,
   "icon": "🧪",
   "color": "#14b8a6",
-  "lessonCount": 5
+  "lessonCount": 9
 }

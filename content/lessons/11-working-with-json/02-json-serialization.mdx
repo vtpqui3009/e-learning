@@ -1,0 +1,617 @@
+---
+title: "JSON Serialization in C#"
+description: "Learn how to convert between C# objects and JSON using System.Text.Json"
+order: 2
+difficulty: "intermediate"
+tags: ["json", "serialization", "api", "system.text.json"]
+duration: "35 minutes"
+---
+
+# JSON Serialization in C#
+
+Serialization is converting C# objects to JSON text. Deserialization is converting JSON text back to C# objects. This is essential for working with APIs and data storage.
+
+## System.Text.Json
+
+C# includes `System.Text.Json` for working with JSON. It's fast, modern, and built into .NET.
+
+<CodeEditor
+  initialCode={`using System;
+using System.Text.Json;
+
+class Person
+{
+    public string Name { get; set; }
+    public int Age { get; set; }
+    public string Email { get; set; }
+}
+
+class Program
+{
+    static void Main()
+    {
+        // Create a C# object
+        var person = new Person
+        {
+            Name = "Alice",
+            Age = 30,
+            Email = "alice@example.com"
+        };
+
+        // Serialize: C# object → JSON text
+        string json = JsonSerializer.Serialize(person);
+
+        Console.WriteLine("Serialized JSON:");
+        Console.WriteLine(json);
+        Console.WriteLine($"\nType: {json.GetType().Name}");
+    }
+}`}
+/>
+
+## Deserialization: JSON → C# Object
+
+Converting JSON text back to C# objects:
+
+<CodeEditor
+  initialCode={`using System;
+using System.Text.Json;
+
+class Person
+{
+    public string Name { get; set; }
+    public int Age { get; set; }
+    public string Email { get; set; }
+}
+
+class Program
+{
+    static void Main()
+    {
+        // JSON text (like from an API)
+        string json = @"{
+            ""Name"": ""Bob"",
+            ""Age"": 25,
+            ""Email"": ""bob@example.com""
+        }";
+
+        Console.WriteLine("Original JSON:");
+        Console.WriteLine(json);
+
+        // Deserialize: JSON text → C# object
+        Person person = JsonSerializer.Deserialize<Person>(json);
+
+        Console.WriteLine("\nDeserialized Object:");
+        Console.WriteLine($"Name: {person.Name}");
+        Console.WriteLine($"Age: {person.Age}");
+        Console.WriteLine($"Email: {person.Email}");
+    }
+}`}
+/>
+
+## Pretty Printing JSON
+
+Make JSON human-readable with indentation:
+
+<CodeEditor
+  initialCode={`using System;
+using System.Text.Json;
+
+class Product
+{
+    public int Id { get; set; }
+    public string Name { get; set; }
+    public decimal Price { get; set; }
+    public bool InStock { get; set; }
+}
+
+class Program
+{
+    static void Main()
+    {
+        var product = new Product
+        {
+            Id = 123,
+            Name = "Laptop",
+            Price = 999.99m,
+            InStock = true
+        };
+
+        // Default: compact (one line)
+        string compactJson = JsonSerializer.Serialize(product);
+        Console.WriteLine("Compact JSON:");
+        Console.WriteLine(compactJson);
+
+        // Pretty print: indented and readable
+        var options = new JsonSerializerOptions
+        {
+            WriteIndented = true
+        };
+
+        string prettyJson = JsonSerializer.Serialize(product, options);
+        Console.WriteLine("\nPretty JSON:");
+        Console.WriteLine(prettyJson);
+    }
+}`}
+/>
+
+## Working with Collections
+
+Serializing lists and arrays:
+
+<CodeEditor
+  initialCode={`using System;
+using System.Collections.Generic;
+using System.Text.Json;
+
+class User
+{
+    public int Id { get; set; }
+    public string Name { get; set; }
+    public string Email { get; set; }
+}
+
+class Program
+{
+    static void Main()
+    {
+        // Create a list of users
+        var users = new List<User>
+        {
+            new User { Id = 1, Name = "Alice", Email = "alice@example.com" },
+            new User { Id = 2, Name = "Bob", Email = "bob@example.com" },
+            new User { Id = 3, Name = "Charlie", Email = "charlie@example.com" }
+        };
+
+        // Serialize list to JSON array
+        var options = new JsonSerializerOptions { WriteIndented = true };
+        string json = JsonSerializer.Serialize(users, options);
+
+        Console.WriteLine("JSON Array:");
+        Console.WriteLine(json);
+
+        // Deserialize back to list
+        List<User> deserializedUsers = JsonSerializer.Deserialize<List<User>>(json);
+
+        Console.WriteLine($"\nDeserialized {deserializedUsers.Count} users:");
+        foreach (var user in deserializedUsers)
+        {
+            Console.WriteLine($"- {user.Name} ({user.Email})");
+        }
+    }
+}`}
+/>
+
+## Nested Objects
+
+Working with complex, nested structures:
+
+<CodeEditor
+  initialCode={`using System;
+using System.Collections.Generic;
+using System.Text.Json;
+
+class Address
+{
+    public string Street { get; set; }
+    public string City { get; set; }
+    public string Country { get; set; }
+}
+
+class Company
+{
+    public string Name { get; set; }
+    public Address Location { get; set; }
+    public List<string> Departments { get; set; }
+}
+
+class Program
+{
+    static void Main()
+    {
+        var company = new Company
+        {
+            Name = "Tech Corp",
+            Location = new Address
+            {
+                Street = "123 Main St",
+                City = "San Francisco",
+                Country = "USA"
+            },
+            Departments = new List<string> { "Engineering", "Marketing", "Sales" }
+        };
+
+        // Serialize nested structure
+        var options = new JsonSerializerOptions { WriteIndented = true };
+        string json = JsonSerializer.Serialize(company, options);
+
+        Console.WriteLine("Nested JSON:");
+        Console.WriteLine(json);
+
+        // Deserialize back
+        Company deserializedCompany = JsonSerializer.Deserialize<Company>(json);
+
+        Console.WriteLine("\nDeserialized Company:");
+        Console.WriteLine($"Name: {deserializedCompany.Name}");
+        Console.WriteLine($"Location: {deserializedCompany.Location.City}, {deserializedCompany.Location.Country}");
+        Console.WriteLine($"Departments: {string.Join(", ", deserializedCompany.Departments)}");
+    }
+}`}
+/>
+
+## Handling Different Property Names
+
+APIs often use different naming conventions (camelCase vs PascalCase):
+
+<CodeEditor
+  initialCode={`using System;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+
+class User
+{
+    // C# uses PascalCase
+    public int Id { get; set; }
+
+    // But API uses camelCase
+    [JsonPropertyName("firstName")]
+    public string FirstName { get; set; }
+
+    [JsonPropertyName("lastName")]
+    public string LastName { get; set; }
+
+    [JsonPropertyName("emailAddress")]
+    public string Email { get; set; }
+}
+
+class Program
+{
+    static void Main()
+    {
+        // JSON from API (camelCase)
+        string apiJson = @"{
+            ""Id"": 1,
+            ""firstName"": ""Alice"",
+            ""lastName"": ""Johnson"",
+            ""emailAddress"": ""alice@example.com""
+        }";
+
+        Console.WriteLine("API JSON (camelCase):");
+        Console.WriteLine(apiJson);
+
+        // Deserialize - property names are mapped correctly
+        User user = JsonSerializer.Deserialize<User>(apiJson);
+
+        Console.WriteLine("\nC# Object (PascalCase properties):");
+        Console.WriteLine($"Id: {user.Id}");
+        Console.WriteLine($"FirstName: {user.FirstName}");
+        Console.WriteLine($"LastName: {user.LastName}");
+        Console.WriteLine($"Email: {user.Email}");
+
+        // Serialize back - uses camelCase names
+        var options = new JsonSerializerOptions { WriteIndented = true };
+        string outputJson = JsonSerializer.Serialize(user, options);
+
+        Console.WriteLine("\nSerialized Back (camelCase):");
+        Console.WriteLine(outputJson);
+    }
+}`}
+/>
+
+## Ignoring Properties
+
+Skip properties you don't want in JSON:
+
+<CodeEditor
+  initialCode={`using System;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+
+class User
+{
+    public int Id { get; set; }
+    public string Username { get; set; }
+
+    // Don't include password in JSON!
+    [JsonIgnore]
+    public string Password { get; set; }
+
+    // Don't serialize if null
+    public string Phone { get; set; }
+}
+
+class Program
+{
+    static void Main()
+    {
+        var user = new User
+        {
+            Id = 1,
+            Username = "alice",
+            Password = "secret123",  // This won't be in JSON
+            Phone = null  // This might be excluded
+        };
+
+        var options = new JsonSerializerOptions
+        {
+            WriteIndented = true,
+            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+        };
+
+        string json = JsonSerializer.Serialize(user, options);
+
+        Console.WriteLine("Serialized JSON:");
+        Console.WriteLine(json);
+        Console.WriteLine("\nNotice:");
+        Console.WriteLine("✓ Password is not included (JsonIgnore)");
+        Console.WriteLine("✓ Phone is not included (was null)");
+    }
+}`}
+/>
+
+## Real-World API Example
+
+Simulating a complete API workflow:
+
+<CodeEditor
+  initialCode={`using System;
+using System.Collections.Generic;
+using System.Text.Json;
+
+// Models
+class TodoItem
+{
+    public int Id { get; set; }
+    public string Title { get; set; }
+    public bool Completed { get; set; }
+    public string Priority { get; set; }
+}
+
+class ApiResponse
+{
+    public bool Success { get; set; }
+    public string Message { get; set; }
+    public List<TodoItem> Data { get; set; }
+}
+
+class Program
+{
+    static void Main()
+    {
+        Console.WriteLine("=== Simulating API Response ===\n");
+
+        // Create response data
+        var response = new ApiResponse
+        {
+            Success = true,
+            Message = "Retrieved todos successfully",
+            Data = new List<TodoItem>
+            {
+                new TodoItem { Id = 1, Title = "Learn C#", Completed = true, Priority = "High" },
+                new TodoItem { Id = 2, Title = "Build API", Completed = false, Priority = "Medium" },
+                new TodoItem { Id = 3, Title = "Write tests", Completed = false, Priority = "High" }
+            }
+        };
+
+        // Serialize (like API sending data)
+        var options = new JsonSerializerOptions { WriteIndented = true };
+        string json = JsonSerializer.Serialize(response, options);
+
+        Console.WriteLine("API Response JSON:");
+        Console.WriteLine(json);
+
+        // Deserialize (like receiving API data)
+        ApiResponse receivedData = JsonSerializer.Deserialize<ApiResponse>(json);
+
+        Console.WriteLine("\n=== Processing Response ===");
+        Console.WriteLine($"Success: {receivedData.Success}");
+        Console.WriteLine($"Message: {receivedData.Message}");
+        Console.WriteLine($"\nTodo Items ({receivedData.Data.Count}):");
+
+        foreach (var todo in receivedData.Data)
+        {
+            string status = todo.Completed ? "✓" : "○";
+            Console.WriteLine($"{status} [{todo.Priority}] {todo.Title}");
+        }
+
+        // Count completed items
+        int completed = 0;
+        foreach (var todo in receivedData.Data)
+        {
+            if (todo.Completed) completed++;
+        }
+
+        Console.WriteLine($"\nProgress: {completed}/{receivedData.Data.Count} completed");
+    }
+}`}
+/>
+
+## Error Handling
+
+Handle invalid JSON gracefully:
+
+<CodeEditor
+  initialCode={`using System;
+using System.Text.Json;
+
+class User
+{
+    public int Id { get; set; }
+    public string Name { get; set; }
+}
+
+class Program
+{
+    static void Main()
+    {
+        // Valid JSON
+        string validJson = @"{""Id"": 1, ""Name"": ""Alice""}";
+        Console.WriteLine("=== Valid JSON ===");
+        Console.WriteLine(validJson);
+
+        try
+        {
+            User user = JsonSerializer.Deserialize<User>(validJson);
+            Console.WriteLine($"Success! Name: {user.Name}\n");
+        }
+        catch (JsonException ex)
+        {
+            Console.WriteLine($"Error: {ex.Message}\n");
+        }
+
+        // Invalid JSON (missing quote)
+        string invalidJson = @"{""Id"": 1, ""Name"": Alice}";
+        Console.WriteLine("=== Invalid JSON ===");
+        Console.WriteLine(invalidJson);
+
+        try
+        {
+            User user = JsonSerializer.Deserialize<User>(invalidJson);
+            Console.WriteLine($"Success! Name: {user.Name}");
+        }
+        catch (JsonException ex)
+        {
+            Console.WriteLine($"Error parsing JSON: {ex.Message}");
+            Console.WriteLine("Make sure your JSON is valid!");
+        }
+    }
+}`}
+/>
+
+## Common Serialization Options
+
+<CodeEditor
+  initialCode={`using System;
+using System.Text.Json;
+
+class Product
+{
+    public int Id { get; set; }
+    public string Name { get; set; }
+    public decimal Price { get; set; }
+}
+
+class Program
+{
+    static void Main()
+    {
+        var product = new Product { Id = 1, Name = "Laptop", Price = 999.99m };
+
+        // Option 1: Indented (human-readable)
+        var prettyOptions = new JsonSerializerOptions
+        {
+            WriteIndented = true
+        };
+
+        Console.WriteLine("Pretty (Indented):");
+        Console.WriteLine(JsonSerializer.Serialize(product, prettyOptions));
+
+        // Option 2: Camel case properties
+        var camelCaseOptions = new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            WriteIndented = true
+        };
+
+        Console.WriteLine("\nCamel Case:");
+        Console.WriteLine(JsonSerializer.Serialize(product, camelCaseOptions));
+
+        // Option 3: Ignore nulls
+        product.Name = null;
+        var ignoreNullOptions = new JsonSerializerOptions
+        {
+            DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
+            WriteIndented = true
+        };
+
+        Console.WriteLine("\nIgnore Nulls:");
+        Console.WriteLine(JsonSerializer.Serialize(product, ignoreNullOptions));
+    }
+}`}
+/>
+
+## When to Use JSON in C#
+
+| Use Case | Description |
+|----------|-------------|
+| **REST APIs** | Send/receive data from web services |
+| **Configuration** | Store app settings (appsettings.json) |
+| **Data Storage** | Save complex objects to files |
+| **Microservices** | Communication between services |
+| **Caching** | Store serialized objects in Redis/Memory |
+| **Logging** | Structured log output |
+
+## Best Practices
+
+✅ **DO:**
+- Use `System.Text.Json` for modern .NET applications
+- Use `JsonSerializerOptions` for consistent formatting
+- Handle `JsonException` when deserializing external data
+- Use `[JsonPropertyName]` for API compatibility
+- Ignore sensitive data with `[JsonIgnore]`
+
+❌ **DON'T:**
+- Serialize sensitive data (passwords, tokens) without encryption
+- Ignore error handling when working with external JSON
+- Mix naming conventions without `JsonPropertyName`
+- Forget to make properties public (JSON can't access private fields)
+
+## Quick Reference
+
+### Serialize Object → JSON
+```csharp
+string json = JsonSerializer.Serialize(myObject);
+```
+
+### Deserialize JSON → Object
+```csharp
+MyClass obj = JsonSerializer.Deserialize<MyClass>(json);
+```
+
+### Pretty Print
+```csharp
+var options = new JsonSerializerOptions { WriteIndented = true };
+string json = JsonSerializer.Serialize(obj, options);
+```
+
+### Custom Property Name
+```csharp
+[JsonPropertyName("firstName")]
+public string FirstName { get; set; }
+```
+
+### Ignore Property
+```csharp
+[JsonIgnore]
+public string Password { get; set; }
+```
+
+## Practice Exercise
+
+Create a simple movie management system:
+
+1. Create a `Movie` class with: Id, Title, Year, Rating, Genres (list)
+2. Create a list of 3 movies
+3. Serialize to JSON (pretty printed)
+4. Deserialize back and display movie information
+5. Add `[JsonPropertyName]` to use camelCase in JSON
+
+## What's Next
+
+Now that you understand JSON serialization, you're ready for:
+- **Testing Section** - API testing uses JSON extensively
+- **HttpClient** - Making real API calls that return JSON
+- **REST APIs** - Building and consuming web services
+
+## Key Takeaways
+
+- `JsonSerializer.Serialize()` converts objects to JSON
+- `JsonSerializer.Deserialize<T>()` converts JSON to objects
+- Use `JsonSerializerOptions` for formatting and behavior
+- `[JsonPropertyName]` maps properties to different JSON names
+- `[JsonIgnore]` excludes properties from serialization
+- Always handle `JsonException` when parsing external JSON
+- Essential skill for modern C# development
+
+---
+
+**Ready for APIs?** Head to the Testing section to learn API testing with JSON!

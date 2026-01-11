@@ -1,0 +1,598 @@
+---
+title: "Writing Your First Tests"
+description: "Master the Arrange-Act-Assert pattern and write comprehensive tests"
+order: 3
+difficulty: "beginner"
+tags: ["testing", "unit-tests", "xunit", "arrange-act-assert"]
+duration: "30 minutes"
+---
+
+# Writing Your First Tests
+
+Now that your environment is set up, let's learn how to write great tests!
+
+## Prerequisites
+
+To write tests, you need basic C# programming knowledge.
+
+**Required lessons:**
+- ✅ 01-fundamentals/01-variables-data-types (variables and basic syntax)
+- ✅ 01-fundamentals/04-methods (understanding methods)
+- ✅ 02-oop-basics/01-classes-objects (creating and using classes)
+
+**Recommended completion:**
+- ✅ 10-testing/01-introduction-to-testing
+- ✅ 10-testing/02-setup-environment
+
+**What you need to know:**
+- How to create a class
+- How to write methods
+- Basic if/else statements
+- Variables and data types
+
+⏱️ **If starting from scratch:** Complete fundamentals (6 lessons) + basic OOP (1 lesson) = ~3-4 hours, then return here.
+
+## The Arrange-Act-Assert Pattern
+
+Every good test follows this pattern:
+
+**Arrange** → **Act** → **Assert** (AAA Pattern)
+
+```csharp
+[Fact]
+public void MethodName_Scenario_ExpectedResult()
+{
+    // Arrange - Set up everything you need
+    var objectUnderTest = new MyClass();
+    var inputData = "test data";
+
+    // Act - Do the action you're testing
+    var result = objectUnderTest.DoSomething(inputData);
+
+    // Assert - Check the result is correct
+    Assert.Equal("expected", result);
+}
+```
+
+### Real Example: Testing a Calculator
+
+<CodeEditor
+  initialCode={`using System;
+
+// This example demonstrates the Arrange-Act-Assert pattern
+// In real projects, you'd use xUnit with [Fact] and Assert.Equal()
+// Here we simulate testing to show the concept
+
+public class Calculator
+{
+    public int Add(int a, int b)
+    {
+        return a + b;
+    }
+
+    public bool IsEven(int number)
+    {
+        return number % 2 == 0;
+    }
+}
+
+public class CalculatorTests
+{
+    // Simulated test method: Add_TwoPositiveNumbers_ReturnsSum
+    // In xUnit: [Fact] public void Add_TwoPositiveNumbers_ReturnsSum()
+    public void Add_TwoPositiveNumbers_ReturnsSum()
+    {
+        // Arrange - Set up the calculator and test data
+        var calculator = new Calculator();
+        int firstNumber = 5;
+        int secondNumber = 3;
+
+        // Act - Perform the addition
+        int result = calculator.Add(firstNumber, secondNumber);
+
+        // Assert - Verify the result is correct
+        // In xUnit: Assert.Equal(8, result);
+        if (result == 8)
+            Console.WriteLine("✓ PASS: Add(5,3) returned 8");
+        else
+            Console.WriteLine($"✗ FAIL: Expected 8 but got {result}");
+    }
+
+    // Simulated test: IsEven_EvenNumber_ReturnsTrue
+    // In xUnit: [Fact] public void IsEven_EvenNumber_ReturnsTrue()
+    public void IsEven_EvenNumber_ReturnsTrue()
+    {
+        // Arrange
+        var calculator = new Calculator();
+        int evenNumber = 4;
+
+        // Act
+        bool result = calculator.IsEven(evenNumber);
+
+        // Assert
+        // In xUnit: Assert.True(result);
+        if (result == true)
+            Console.WriteLine("✓ PASS: IsEven(4) returned true");
+        else
+            Console.WriteLine("✗ FAIL: Expected true but got false");
+    }
+
+    // Simulated test: IsEven_OddNumber_ReturnsFalse
+    // In xUnit: [Fact] public void IsEven_OddNumber_ReturnsFalse()
+    public void IsEven_OddNumber_ReturnsFalse()
+    {
+        // Arrange
+        var calculator = new Calculator();
+        int oddNumber = 5;
+
+        // Act
+        bool result = calculator.IsEven(oddNumber);
+
+        // Assert
+        // In xUnit: Assert.False(result);
+        if (result == false)
+            Console.WriteLine("✓ PASS: IsEven(5) returned false");
+        else
+            Console.WriteLine("✗ FAIL: Expected false but got true");
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        var tests = new CalculatorTests();
+
+        Console.WriteLine("=== Running Calculator Tests ===");
+        Console.WriteLine();
+
+        // Run each test method
+        tests.Add_TwoPositiveNumbers_ReturnsSum();
+        tests.IsEven_EvenNumber_ReturnsTrue();
+        tests.IsEven_OddNumber_ReturnsFalse();
+
+        Console.WriteLine();
+        Console.WriteLine("All tests passed! ✓");
+        Console.WriteLine();
+        Console.WriteLine("Note: In real xUnit tests, you'd use:");
+        Console.WriteLine("  [Fact] attribute for test methods");
+        Console.WriteLine("  Assert.Equal(), Assert.True(), Assert.False()");
+    }
+}`}
+/>
+
+## Test Naming Conventions
+
+Format: **MethodName_Scenario_ExpectedBehavior**
+
+### Good Names ✅
+```csharp
+Add_TwoPositiveNumbers_ReturnsSum()
+Add_NegativeAndPositive_ReturnsCorrectResult()
+Add_ZeroToNumber_ReturnsSameNumber()
+Divide_ByZero_ThrowsException()
+GetUser_ValidId_ReturnsUser()
+GetUser_InvalidId_ReturnsNull()
+```
+
+### Bad Names ❌
+```csharp
+Test1()
+TestAdd()
+AddTest()
+TestMethod()
+```
+
+## Common Assertions
+
+### Equality Assertions
+
+<CodeEditor
+  initialCode={`using System;
+
+// Demonstrating equality assertions
+// In xUnit: Assert.Equal() and Assert.NotEqual()
+
+class Program
+{
+    static void Main()
+    {
+        Console.WriteLine("=== Equality Assertions ===");
+        Console.WriteLine();
+
+        // Equal - checks if two values are equal
+        // In xUnit: Assert.Equal(5, 2 + 3);
+        if (5 == (2 + 3))
+            Console.WriteLine("✓ PASS: 2 + 3 equals 5");
+        else
+            Console.WriteLine("✗ FAIL: 2 + 3 does not equal 5");
+
+        // In xUnit: Assert.Equal("hello", "hello");
+        if ("hello" == "hello")
+            Console.WriteLine("✓ PASS: \"hello\" equals \"hello\"");
+        else
+            Console.WriteLine("✗ FAIL: strings not equal");
+
+        Console.WriteLine();
+
+        // NotEqual - checks if two values are different
+        // In xUnit: Assert.NotEqual(5, 3);
+        if (5 != 3)
+            Console.WriteLine("✓ PASS: 5 is not equal to 3");
+        else
+            Console.WriteLine("✗ FAIL: 5 should not equal 3");
+
+        // In xUnit: Assert.NotEqual("hello", "world");
+        if ("hello" != "world")
+            Console.WriteLine("✓ PASS: \"hello\" is not equal to \"world\"");
+        else
+            Console.WriteLine("✗ FAIL: strings should not be equal");
+
+        Console.WriteLine();
+        Console.WriteLine("All equality assertions passed!");
+    }
+}`}
+/>
+
+### Boolean Assertions
+
+<CodeEditor
+  initialCode={`using System;
+using Xunit;
+
+public class BooleanTests
+{
+    [Fact]
+    public void TestBooleans()
+    {
+        // True - checks if condition is true
+        Assert.True(5 > 3);
+        Assert.True("hello".Contains("ell"));
+
+        // False - checks if condition is false
+        Assert.False(3 > 5);
+        Assert.False("hello".Contains("xyz"));
+
+        Console.WriteLine("All boolean assertions passed!");
+    }
+}`}
+/>
+
+### Null Assertions
+
+<CodeEditor
+  initialCode={`using System;
+using Xunit;
+
+public class NullTests
+{
+    [Fact]
+    public void TestNull()
+    {
+        string nullString = null;
+        string notNullString = "hello";
+
+        // Null - checks if value is null
+        Assert.Null(nullString);
+
+        // NotNull - checks if value is not null
+        Assert.NotNull(notNullString);
+
+        Console.WriteLine("All null assertions passed!");
+    }
+}`}
+/>
+
+### String Assertions
+
+<CodeEditor
+  initialCode={`using System;
+using Xunit;
+
+public class StringTests
+{
+    [Fact]
+    public void TestStrings()
+    {
+        string greeting = "Hello, World!";
+
+        // Contains - checks if string contains substring
+        Assert.Contains("World", greeting);
+
+        // DoesNotContain - checks if string doesn't contain substring
+        Assert.DoesNotContain("xyz", greeting);
+
+        // StartsWith - checks if string starts with prefix
+        Assert.StartsWith("Hello", greeting);
+
+        // EndsWith - checks if string ends with suffix
+        Assert.EndsWith("World!", greeting);
+
+        Console.WriteLine("All string assertions passed!");
+    }
+}`}
+/>
+
+### Collection Assertions
+
+<CodeEditor
+  initialCode={`using System;
+using System.Collections.Generic;
+using Xunit;
+
+public class CollectionTests
+{
+    [Fact]
+    public void TestCollections()
+    {
+        List<int> numbers = new List<int> { 1, 2, 3, 4, 5 };
+        List<int> emptyList = new List<int>();
+
+        // Empty - checks if collection is empty
+        Assert.Empty(emptyList);
+
+        // NotEmpty - checks if collection has items
+        Assert.NotEmpty(numbers);
+
+        // Contains - checks if collection contains item
+        Assert.Contains(3, numbers);
+
+        // DoesNotContain - checks if collection doesn't contain item
+        Assert.DoesNotContain(10, numbers);
+
+        // Single - checks if collection has exactly one item
+        List<int> single = new List<int> { 42 };
+        Assert.Single(single);
+
+        // All - checks if all items meet condition
+        Assert.All(numbers, n => Assert.True(n > 0));
+
+        Console.WriteLine("All collection assertions passed!");
+    }
+}`}
+/>
+
+## Testing Exceptions
+
+When you expect code to throw an exception, test for it!
+
+<CodeEditor
+  initialCode={`using System;
+using Xunit;
+
+public class Calculator
+{
+    public double Divide(double a, double b)
+    {
+        if (b == 0)
+        {
+            throw new DivideByZeroException("Cannot divide by zero");
+        }
+        return a / b;
+    }
+
+    public void ProcessAge(int age)
+    {
+        if (age < 0)
+        {
+            throw new ArgumentException("Age cannot be negative");
+        }
+        Console.WriteLine($"Processing age: {age}");
+    }
+}
+
+public class ExceptionTests
+{
+    [Fact]
+    public void Divide_ByZero_ThrowsException()
+    {
+        // Arrange
+        var calculator = new Calculator();
+
+        // Act & Assert - check that exception is thrown
+        Assert.Throws<DivideByZeroException>(() =>
+            calculator.Divide(10, 0)
+        );
+    }
+
+    [Fact]
+    public void ProcessAge_NegativeAge_ThrowsArgumentException()
+    {
+        // Arrange
+        var calculator = new Calculator();
+
+        // Act & Assert
+        var exception = Assert.Throws<ArgumentException>(() =>
+            calculator.ProcessAge(-5)
+        );
+
+        // You can also check the exception message
+        Assert.Contains("negative", exception.Message.ToLower());
+    }
+
+    [Fact]
+    public void Divide_NormalNumbers_DoesNotThrow()
+    {
+        // Arrange
+        var calculator = new Calculator();
+
+        // Act & Assert - verify NO exception is thrown
+        var exception = Record.Exception(() =>
+            calculator.Divide(10, 2)
+        );
+
+        Assert.Null(exception);
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        Console.WriteLine("Exception tests demonstrate proper error handling!");
+    }
+}`}
+/>
+
+## Complete Example: String Validator
+
+Let's build and test a complete string validator:
+
+<CodeEditor
+  initialCode={`using System;
+using System.Text.RegularExpressions;
+using Xunit;
+
+namespace StringValidation
+{
+    public class StringValidator
+    {
+        public bool IsValidEmail(string email)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+                return false;
+
+            return email.Contains("@") &&
+                   email.Contains(".") &&
+                   email.IndexOf("@") < email.LastIndexOf(".");
+        }
+
+        public bool HasMinimumLength(string text, int minLength)
+        {
+            if (text == null)
+                return false;
+
+            return text.Length >= minLength;
+        }
+
+        public bool ContainsOnlyLetters(string text)
+        {
+            if (string.IsNullOrEmpty(text))
+                return false;
+
+            return Regex.IsMatch(text, "^[a-zA-Z]+$");
+        }
+    }
+
+    public class StringValidatorTests
+    {
+        // Email validation tests
+        [Fact]
+        public void IsValidEmail_ValidEmail_ReturnsTrue()
+        {
+            var validator = new StringValidator();
+            Assert.True(validator.IsValidEmail("user@example.com"));
+        }
+
+        [Fact]
+        public void IsValidEmail_NoAtSymbol_ReturnsFalse()
+        {
+            var validator = new StringValidator();
+            Assert.False(validator.IsValidEmail("userexample.com"));
+        }
+
+        [Fact]
+        public void IsValidEmail_NoDot_ReturnsFalse()
+        {
+            var validator = new StringValidator();
+            Assert.False(validator.IsValidEmail("user@examplecom"));
+        }
+
+        [Fact]
+        public void IsValidEmail_EmptyString_ReturnsFalse()
+        {
+            var validator = new StringValidator();
+            Assert.False(validator.IsValidEmail(""));
+        }
+
+        [Fact]
+        public void IsValidEmail_Null_ReturnsFalse()
+        {
+            var validator = new StringValidator();
+            Assert.False(validator.IsValidEmail(null));
+        }
+
+        // Minimum length tests
+        [Fact]
+        public void HasMinimumLength_MeetsRequirement_ReturnsTrue()
+        {
+            var validator = new StringValidator();
+            Assert.True(validator.HasMinimumLength("hello", 5));
+        }
+
+        [Fact]
+        public void HasMinimumLength_TooShort_ReturnsFalse()
+        {
+            var validator = new StringValidator();
+            Assert.False(validator.HasMinimumLength("hi", 5));
+        }
+
+        [Fact]
+        public void HasMinimumLength_NullString_ReturnsFalse()
+        {
+            var validator = new StringValidator();
+            Assert.False(validator.HasMinimumLength(null, 5));
+        }
+
+        // Letters only tests
+        [Fact]
+        public void ContainsOnlyLetters_OnlyLetters_ReturnsTrue()
+        {
+            var validator = new StringValidator();
+            Assert.True(validator.ContainsOnlyLetters("Hello"));
+        }
+
+        [Fact]
+        public void ContainsOnlyLetters_HasNumbers_ReturnsFalse()
+        {
+            var validator = new StringValidator();
+            Assert.False(validator.ContainsOnlyLetters("Hello123"));
+        }
+
+        [Fact]
+        public void ContainsOnlyLetters_HasSpaces_ReturnsFalse()
+        {
+            var validator = new StringValidator();
+            Assert.False(validator.ContainsOnlyLetters("Hello World"));
+        }
+    }
+
+    class Program
+    {
+        static void Main()
+        {
+            Console.WriteLine("String Validator with comprehensive tests!");
+            Console.WriteLine("Run: dotnet test");
+        }
+    }
+}`}
+/>
+
+## Key Takeaways
+
+- ✅ Use Arrange-Act-Assert pattern for clear tests
+- ✅ Name tests: `MethodName_Scenario_ExpectedResult`
+- ✅ Test one thing per test method
+- ✅ Use appropriate assertions (Equal, True, Contains, etc.)
+- ✅ Always test exception scenarios
+- ✅ Test edge cases (null, empty, zero, negative)
+
+## Practice Exercise
+
+Create a `PasswordValidator` class that checks:
+1. Password has minimum 8 characters
+2. Password contains at least one uppercase letter
+3. Password contains at least one number
+4. Password is not null or empty
+
+Write at least 6 tests for it!
+
+## Next Steps
+
+In the next lesson, you'll learn:
+- Testing multiple scenarios with `[Theory]`
+- Data-driven testing
+- Testing complex scenarios
+- Advanced testing patterns
+
+Continue to **Advanced Testing Patterns** →

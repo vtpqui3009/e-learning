@@ -11,6 +11,20 @@ duration: "25 minutes"
 
 Let's set up everything you need to start writing automated tests with C#!
 
+## Prerequisites
+
+This lesson requires basic computer skills but no programming knowledge.
+
+**What you need:**
+- ✅ A computer (Windows, macOS, or Linux)
+- ✅ Administrator/sudo access to install software
+- ✅ Internet connection for downloads
+
+**Recommended completion:**
+- ✅ 10-testing/01-introduction-to-testing
+
+⏱️ **If starting from scratch:** Complete lesson 01 first (~20 minutes), then this lesson.
+
 ## What You'll Install
 
 1. **.NET SDK** - Runs C# code
@@ -498,6 +512,180 @@ Did it pass? ✅
 - ✅ Test projects reference the code they test
 - ✅ `dotnet test` runs all your tests
 - ✅ Tests should run in milliseconds
+
+## Setting Up the Task Manager API Project
+
+Now that you have your environment ready, let's set up the **Task Manager API** project that we'll use throughout the testing lessons!
+
+### Step 1: Get the Project
+
+First, make sure you have the Task Manager API project files.
+
+#### Option A: Course Materials (Already Downloaded)
+
+If you downloaded the course materials, the project is already there:
+
+```bash
+# Navigate to the project
+cd sample-projects/TaskManagerAPI
+
+# Verify files are present
+ls
+```
+
+You should see folders like `Controllers/`, `Services/`, `Models/`, etc.
+
+#### Option B: Clone from GitHub
+
+If you need to download the project:
+
+```bash
+# Clone the course repository
+git clone https://github.com/vtpqui3009/e-learning.git
+
+# Navigate to the project
+cd e-learning/sample-projects/TaskManagerAPI
+```
+
+#### Option C: Download ZIP
+
+1. Visit: `https://github.com/vtpqui3009/e-learning`
+2. Click "Code" → "Download ZIP"
+3. Extract the ZIP file
+4. Navigate to `sample-projects/TaskManagerAPI/`
+
+### Step 2: Verify Prerequisites
+
+Make sure you have .NET 8.0 SDK installed:
+
+```bash
+dotnet --version
+```
+
+Should show `8.0.x` or higher. If not, install from: https://dotnet.microsoft.com/download
+
+### Step 3: Restore Dependencies
+
+```bash
+# Make sure you're in the TaskManagerAPI directory
+cd sample-projects/TaskManagerAPI
+
+# Restore NuGet packages
+dotnet restore
+```
+
+This downloads all required packages (Entity Framework, Swagger, etc.)
+
+You should see:
+```
+Restore completed in X ms
+```
+
+### Step 4: Run the API
+
+```bash
+dotnet run
+```
+
+You should see:
+```
+info: Microsoft.Hosting.Lifetime[14]
+      Now listening on: https://localhost:5001
+info: Microsoft.Hosting.Lifetime[0]
+      Application started. Press Ctrl+C to shut down.
+```
+
+### Step 5: Open Swagger UI
+
+Open your browser and go to:
+```
+https://localhost:5001
+```
+
+You'll see the Swagger UI with all available API endpoints!
+
+### Step 6: Test the API
+
+In Swagger UI:
+1. Click on **GET /api/tasks**
+2. Click "Try it out"
+3. Click "Execute"
+4. You should see a JSON response with sample tasks!
+
+### Step 7: Run the Tests
+
+Open a new terminal (keep the API running) and run:
+
+```bash
+cd sample-projects/TaskManagerAPI.Tests
+dotnet test
+```
+
+You should see:
+```
+Passed!  - Failed:     0, Passed:    28, Skipped:     0, Total:    28
+```
+
+🎉 **Success!** You now have:
+- ✅ A running API with real endpoints
+- ✅ A test suite with 28 passing tests
+- ✅ Everything you need for the testing lessons
+
+### Exploring the Project
+
+Take a moment to explore the project structure:
+
+```
+TaskManagerAPI/
+├── Controllers/      # API endpoints
+├── Services/        # Business logic
+├── Models/          # Data models
+├── Tests/           # Automated tests
+└── README.md        # Full documentation
+```
+
+For a detailed guide, see:
+- `sample-projects/TaskManagerAPI/README.md`
+- `sample-projects/TaskManagerAPI/MANUAL_TESTING_GUIDE.md`
+- `sample-projects/QUICK_START.md`
+
+### Quick Test
+
+Try creating a task using Swagger:
+1. Click **POST /api/tasks**
+2. Click "Try it out"
+3. Modify the JSON:
+   ```json
+   {
+     "title": "Learn Testing",
+     "description": "Complete all testing lessons",
+     "priority": "High",
+     "userId": 1,
+     "categoryId": 1
+   }
+   ```
+4. Click "Execute"
+5. You should get a 201 Created response!
+
+Now retrieve all tasks with **GET /api/tasks** to see your new task.
+
+### Troubleshooting the API
+
+**Port already in use?**
+- Stop any other applications using port 5001
+- Or change the port in `appsettings.json`
+
+**Certificate warnings?**
+- Trust the development certificate:
+  ```bash
+  dotnet dev-certs https --trust
+  ```
+
+**Build errors?**
+- Make sure you're using .NET 8.0 or later:
+  ```bash
+  dotnet --version
+  ```
 
 ## What's Next?
 

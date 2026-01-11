@@ -1,0 +1,236 @@
+---
+title: "Writing Your First Tests"
+description: "Master the Arrange-Act-Assert pattern and write comprehensive tests"
+order: 3
+difficulty: "beginner"
+tags: ["testing", "unit-tests", "xunit", "arrange-act-assert"]
+duration: "30 minutes"
+---
+
+# Writing Your First Tests
+
+Now that your environment is set up, let's learn how to write great tests!
+
+## Prerequisites
+
+To write tests, you need basic C# programming knowledge.
+
+**Required lessons:**
+- ✅ 01-fundamentals/01-variables-data-types (variables and basic syntax)
+- ✅ 01-fundamentals/04-methods (understanding methods)
+- ✅ 02-oop-basics/01-classes-objects (creating and using classes)
+
+**Recommended completion:**
+- ✅ 10-testing/01-introduction-to-testing
+- ✅ 10-testing/02-setup-environment
+
+**What you need to know:**
+- How to create a class
+- How to write methods
+- Basic if/else statements
+- Variables and data types
+
+⏱️ **If starting from scratch:** Complete fundamentals (6 lessons) + basic OOP (1 lesson) = ~3-4 hours, then return here.
+
+## The Arrange-Act-Assert Pattern
+
+Every good test follows this pattern:
+
+**Arrange** → **Act** → **Assert** (AAA Pattern)
+
+```csharp
+[Fact]
+public void MethodName_Scenario_ExpectedResult()
+{
+    // Arrange - Set up everything you need
+    var objectUnderTest = new MyClass();
+    var inputData = "test data";
+
+    // Act - Do the action you're testing
+    var result = objectUnderTest.DoSomething(inputData);
+
+    // Assert - Check the result is correct
+    Assert.Equal("expected", result);
+}
+```
+
+### Real Example: Testing a Calculator
+
+<CodeEditor
+  initialCode={`using System;
+
+// This example demonstrates the Arrange-Act-Assert pattern
+// In real projects, you'd use xUnit with [Fact] and Assert.Equal()
+// Here we simulate testing to show the concept
+
+public class Calculator
+{
+    public int Add(int a, int b)
+    {
+        return a + b;
+    }
+
+    public bool IsEven(int number)
+    {
+        return number % 2 == 0;
+    }
+}
+
+public class CalculatorTests
+{
+    // Simulated test method: Add_TwoPositiveNumbers_ReturnsSum
+    // In xUnit: [Fact] public void Add_TwoPositiveNumbers_ReturnsSum()
+    public void Add_TwoPositiveNumbers_ReturnsSum()
+    {
+        // Arrange - Set up the calculator and test data
+        var calculator = new Calculator();
+        int firstNumber = 5;
+        int secondNumber = 3;
+
+        // Act - Perform the addition
+        int result = calculator.Add(firstNumber, secondNumber);
+
+        // Assert - Verify the result is correct
+        // In xUnit: Assert.Equal(8, result);
+        if (result == 8)
+            Console.WriteLine("✓ PASS: Add(5,3) returned 8");
+        else
+            Console.WriteLine($"✗ FAIL: Expected 8 but got {result}");
+    }
+
+    // Simulated test: IsEven_EvenNumber_ReturnsTrue
+    // In xUnit: [Fact] public void IsEven_EvenNumber_ReturnsTrue()
+    public void IsEven_EvenNumber_ReturnsTrue()
+    {
+        // Arrange
+        var calculator = new Calculator();
+        int evenNumber = 4;
+
+        // Act
+        bool result = calculator.IsEven(evenNumber);
+
+        // Assert
+        // In xUnit: Assert.True(result);
+        if (result == true)
+            Console.WriteLine("✓ PASS: IsEven(4) returned true");
+        else
+            Console.WriteLine("✗ FAIL: Expected true but got false");
+    }
+
+    // Simulated test: IsEven_OddNumber_ReturnsFalse
+    // In xUnit: [Fact] public void IsEven_OddNumber_ReturnsFalse()
+    public void IsEven_OddNumber_ReturnsFalse()
+    {
+        // Arrange
+        var calculator = new Calculator();
+        int oddNumber = 5;
+
+        // Act
+        bool result = calculator.IsEven(oddNumber);
+
+        // Assert
+        // In xUnit: Assert.False(result);
+        if (result == false)
+            Console.WriteLine("✓ PASS: IsEven(5) returned false");
+        else
+            Console.WriteLine("✗ FAIL: Expected false but got true");
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        var tests = new CalculatorTests();
+
+        Console.WriteLine("=== Running Calculator Tests ===");
+        Console.WriteLine();
+
+        // Run each test method
+        tests.Add_TwoPositiveNumbers_ReturnsSum();
+        tests.IsEven_EvenNumber_ReturnsTrue();
+        tests.IsEven_OddNumber_ReturnsFalse();
+
+        Console.WriteLine();
+        Console.WriteLine("All tests passed! ✓");
+        Console.WriteLine();
+        Console.WriteLine("Note: In real xUnit tests, you'd use:");
+        Console.WriteLine("  [Fact] attribute for test methods");
+        Console.WriteLine("  Assert.Equal(), Assert.True(), Assert.False()");
+    }
+}`}
+/>
+
+## Test Naming Conventions
+
+Format: **MethodName_Scenario_ExpectedBehavior**
+
+### Good Names ✅
+```csharp
+Add_TwoPositiveNumbers_ReturnsSum()
+Add_NegativeAndPositive_ReturnsCorrectResult()
+Add_ZeroToNumber_ReturnsSameNumber()
+Divide_ByZero_ThrowsException()
+GetUser_ValidId_ReturnsUser()
+GetUser_InvalidId_ReturnsNull()
+```
+
+### Bad Names ❌
+```csharp
+Test1()
+TestAdd()
+AddTest()
+TestMethod()
+```
+
+## Common Assertions
+
+### Equality Assertions
+
+<CodeEditor
+  initialCode={`using System;
+
+// Demonstrating equality assertions
+// In xUnit: Assert.Equal() and Assert.NotEqual()
+
+class Program
+{
+    static void Main()
+    {
+        Console.WriteLine("=== Equality Assertions ===");
+        Console.WriteLine();
+
+        // Equal - checks if two values are equal
+        // In xUnit: Assert.Equal(5, 2 + 3);
+        if (5 == (2 + 3))
+            Console.WriteLine("✓ PASS: 2 + 3 equals 5");
+        else
+            Console.WriteLine("✗ FAIL: 2 + 3 does not equal 5");
+
+        // In xUnit: Assert.Equal("hello", "hello");
+        if ("hello" == "hello")
+            Console.WriteLine("✓ PASS: \"hello\" equals \"hello\"");
+        else
+            Console.WriteLine("✗ FAIL: strings not equal");
+
+        Console.WriteLine();
+
+        // NotEqual - checks if two values are different
+        // In xUnit: Assert.NotEqual(5, 3);
+        if (5 != 3)
+            Console.WriteLine("✓ PASS: 5 is not equal to 3");
+        else
+            Console.WriteLine("✗ FAIL: 5 should not equal 3");
+
+        // In xUnit: Assert.NotEqual("hello", "world");
+        if ("hello" != "world")
+            Console.WriteLine("✓ PASS: \"hello\" is not equal to \"world\"");
+        else
+            Console.WriteLine("✗ FAIL: strings should not be equal");
+
+        Console.WriteLine();
+        Console.WriteLine("All equality assertions passed!");
+    }
+}`}
+/>
+

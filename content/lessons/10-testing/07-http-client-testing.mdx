@@ -1,0 +1,1727 @@
+---
+title: "HTTP Client & REST API Testing"
+description: "Learn to make HTTP requests and test APIs programmatically with C#"
+order: 7
+difficulty: "intermediate"
+tags: ["api", "httpclient", "rest", "automation", "json"]
+duration: "45 minutes"
+---
+
+# HTTP Client & REST API Testing
+
+Now let's automate API testing using C#! We'll use HttpClient to make real HTTP requests and validate responses.
+
+## Prerequisites
+
+This lesson introduces async programming and HTTP concepts - intermediate level required.
+
+**Required lessons:**
+- ✅ 01-fundamentals (complete section)
+- ✅ 02-oop-basics/01-classes-objects
+- ✅ 06-modern-csharp/01-async-await (**CRITICAL** - this lesson uses async/await extensively)
+- ✅ 11-working-with-json/01-json-basics (understanding JSON)
+- ✅ 11-working-with-json/02-json-serialization (working with System.Text.Json)
+- ✅ 10-testing/03-writing-first-tests
+
+**Recommended:**
+- ✅ 10-testing/06-manual-api-testing (API concepts)
+- ✅ 08-error-handling/01-exceptions (error handling)
+
+**What you need to know:**
+- async/await syntax
+- `Task<T>` return types
+- JSON serialization/deserialization
+- Basic xUnit testing
+- HTTP concepts (GET, POST, status codes)
+
+⏱️ **If starting from scratch:** Complete fundamentals + async/await + JSON + testing basics = ~6-8 hours, then return here.
+
+## Setting Up Your API Test Project
+
+### Create a New Test Project
+
+```bash
+# Create solution
+mkdir ApiTesting
+cd ApiTesting
+dotnet new sln -n ApiTesting
+
+# Create test project
+dotnet new xunit -n ApiTests
+dotnet sln add ApiTests
+
+# Add required packages
+cd ApiTests
+dotnet add package Microsoft.NET.Test.Sdk
+dotnet add package xunit
+dotnet add package xunit.runner.visualstudio
+dotnet add package Newtonsoft.Json
+dotnet add package FluentAssertions
+```
+
+### Project Structure
+
+```
+ApiTesting/
+├── ApiTesting.sln
+└── ApiTests/
+    ├── ApiTests.csproj
+    ├── Models/
+    │   ├── User.cs
+    │   └── Post.cs
+    ├── Tests/
+    │   ├── UserApiTests.cs
+    │   └── PostApiTests.cs
+    └── Helpers/
+        └── ApiClient.cs
+```
+
+## Introduction to HttpClient
+
+HttpClient is the built-in .NET class for making HTTP requests.
+
+<CodeEditor
+  initialCode={`using System;
+using System.Net.Http;
+using System.Threading.Tasks;
+
+class Program
+{
+    // HttpClient should be reused (not created per request)
+    private static readonly HttpClient client = new HttpClient();
+    
+    static async Task Main()
+    {
+        Console.WriteLine("=== HttpClient Basics ===\\n");
+        
+        // Set base address
+        client.BaseAddress = new Uri("https://jsonplaceholder.typicode.com/");
+        
+        // Make a GET request
+        Console.WriteLine("Making GET request to /users/1...");
+        
+        HttpResponseMessage response = await client.GetAsync("users/1");
+        
+        // Check status code
+        Console.WriteLine($"Status Code: {(int)response.StatusCode} {response.StatusCode}");
+        
+        // Read response body
+        string content = await response.Content.ReadAsStringAsync();
+        Console.WriteLine($"\\nResponse Body:\\n{content}");
+        
+        // Check if successful
+        if (response.IsSuccessStatusCode)
+        {
+            Console.WriteLine("\\n✓ Request was successful!");
+        }
+    }
+}`}
+/>
+
+## Making Different HTTP Requests
+
+### GET Requests
+
+<CodeEditor
+  initialCode={`using System;
+using System.Net.Http;
+using System.Threading.Tasks;
+using System.Text.Json;
+
+class Program
+{
+    private static readonly HttpClient client = new HttpClient()
+    {
+        BaseAddress = new Uri("https://jsonplaceholder.typicode.com/")
+    };
+    
+    static async Task Main()
+    {
+        Console.WriteLine("=== GET Request Examples ===\\n");
+        
+        // GET all users
+        Console.WriteLine("1. GET all users:");
+        var allUsersResponse = await client.GetAsync("users");
+        Console.WriteLine($"   Status: {(int)allUsersResponse.StatusCode}");
+        
+        // GET single user
+        Console.WriteLine("\\n2. GET single user (id=1):");
+        var userResponse = await client.GetAsync("users/1");
+        string userJson = await userResponse.Content.ReadAsStringAsync();
+        Console.WriteLine($"   Status: {(int)userResponse.StatusCode}");
+        
+        // Parse JSON response
+        using JsonDocument doc = JsonDocument.Parse(userJson);
+        string name = doc.RootElement.GetProperty("name").GetString();
+        string email = doc.RootElement.GetProperty("email").GetString();
+        Console.WriteLine($"   Name: {name}");
+        Console.WriteLine($"   Email: {email}");
+        
+        // GET with query parameters
+        Console.WriteLine("\\n3. GET with query parameters:");
+        var filteredResponse = await client.GetAsync("posts?userId=1");
+        Console.WriteLine($"   Status: {(int)filteredResponse.StatusCode}");
+        
+        // GET non-existent resource
+        Console.WriteLine("\\n4. GET non-existent user (id=999):");
+        var notFoundResponse = await client.GetAsync("users/999");
+        Console.WriteLine($"   Status: {(int)notFoundResponse.StatusCode}");
+    }
+}`}
+/>
+
+### POST Requests
+
+<CodeEditor
+  initialCode={`using System;
+using System.Net.Http;
+using System.Text;
+using System.Text.Json;
+using System.Threading.Tasks;
+
+class Program
+{
+    private static readonly HttpClient client = new HttpClient()
+    {
+        BaseAddress = new Uri("https://jsonplaceholder.typicode.com/")
+    };
+    
+    static async Task Main()
+    {
+        Console.WriteLine("=== POST Request Example ===\\n");
+        
+        // Create JSON payload
+        var newPost = new
+        {
+            title = "My Test Post",
+            body = "This is the content of my test post",
+            userId = 1
+        };
+        
+        string jsonPayload = JsonSerializer.Serialize(newPost);
+        Console.WriteLine("Request Body:");
+        Console.WriteLine(jsonPayload);
+        
+        // Create StringContent with JSON
+        var content = new StringContent(
+            jsonPayload,
+            Encoding.UTF8,
+            "application/json"  // Content-Type header
+        );
+        
+        // Make POST request
+        Console.WriteLine("\\nSending POST request...");
+        HttpResponseMessage response = await client.PostAsync("posts", content);
+        
+        // Check response
+        Console.WriteLine($"\\nStatus Code: {(int)response.StatusCode} {response.StatusCode}");
+        
+        // Read and display response
+        string responseBody = await response.Content.ReadAsStringAsync();
+        Console.WriteLine($"\\nResponse Body:");
+        Console.WriteLine(responseBody);
+        
+        // Verify the response contains an ID (resource was created)
+        using JsonDocument doc = JsonDocument.Parse(responseBody);
+        if (doc.RootElement.TryGetProperty("id", out JsonElement idElement))
+        {
+            Console.WriteLine($"\\n✓ New post created with ID: {idElement.GetInt32()}");
+        }
+    }
+}`}
+/>
+
+### PUT Requests
+
+<CodeEditor
+  initialCode={`using System;
+using System.Net.Http;
+using System.Text;
+using System.Text.Json;
+using System.Threading.Tasks;
+
+class Program
+{
+    private static readonly HttpClient client = new HttpClient()
+    {
+        BaseAddress = new Uri("https://jsonplaceholder.typicode.com/")
+    };
+    
+    static async Task Main()
+    {
+        Console.WriteLine("=== PUT Request Example ===\\n");
+        
+        // Update entire resource
+        var updatedPost = new
+        {
+            id = 1,
+            title = "Updated Title",
+            body = "Completely updated body content",
+            userId = 1
+        };
+        
+        string jsonPayload = JsonSerializer.Serialize(updatedPost);
+        var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
+        
+        Console.WriteLine("Updating post with ID 1...");
+        Console.WriteLine($"New data: {jsonPayload}\\n");
+        
+        HttpResponseMessage response = await client.PutAsync("posts/1", content);
+        
+        Console.WriteLine($"Status Code: {(int)response.StatusCode}");
+        
+        string responseBody = await response.Content.ReadAsStringAsync();
+        Console.WriteLine($"\\nResponse:\\n{responseBody}");
+        
+        if (response.IsSuccessStatusCode)
+        {
+            Console.WriteLine("\\n✓ Post updated successfully!");
+        }
+    }
+}`}
+/>
+
+### PATCH Requests
+
+<CodeEditor
+  initialCode={`using System;
+using System.Net.Http;
+using System.Text;
+using System.Text.Json;
+using System.Threading.Tasks;
+
+class Program
+{
+    private static readonly HttpClient client = new HttpClient()
+    {
+        BaseAddress = new Uri("https://jsonplaceholder.typicode.com/")
+    };
+    
+    static async Task Main()
+    {
+        Console.WriteLine("=== PATCH Request Example ===\\n");
+        
+        // Partial update - only update title
+        var partialUpdate = new
+        {
+            title = "Only Title Changed"
+        };
+        
+        string jsonPayload = JsonSerializer.Serialize(partialUpdate);
+        var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
+        
+        Console.WriteLine("Partially updating post 1 (title only)...");
+        Console.WriteLine($"Patch data: {jsonPayload}\\n");
+        
+        // Use PatchAsync or SendAsync with PATCH method
+        var request = new HttpRequestMessage(HttpMethod.Patch, "posts/1")
+        {
+            Content = content
+        };
+        
+        HttpResponseMessage response = await client.SendAsync(request);
+        
+        Console.WriteLine($"Status Code: {(int)response.StatusCode}");
+        
+        string responseBody = await response.Content.ReadAsStringAsync();
+        Console.WriteLine($"\\nResponse:\\n{responseBody}");
+    }
+}`}
+/>
+
+### DELETE Requests
+
+<CodeEditor
+  initialCode={`using System;
+using System.Net.Http;
+using System.Threading.Tasks;
+
+class Program
+{
+    private static readonly HttpClient client = new HttpClient()
+    {
+        BaseAddress = new Uri("https://jsonplaceholder.typicode.com/")
+    };
+    
+    static async Task Main()
+    {
+        Console.WriteLine("=== DELETE Request Example ===\\n");
+        
+        Console.WriteLine("Deleting post with ID 1...");
+        
+        HttpResponseMessage response = await client.DeleteAsync("posts/1");
+        
+        Console.WriteLine($"Status Code: {(int)response.StatusCode} {response.StatusCode}");
+        
+        if (response.IsSuccessStatusCode)
+        {
+            Console.WriteLine("\\n✓ Post deleted successfully!");
+        }
+        
+        // Try to delete non-existent resource
+        Console.WriteLine("\\n---\\n");
+        Console.WriteLine("Attempting to delete non-existent post (id=99999)...");
+        
+        HttpResponseMessage notFoundResponse = await client.DeleteAsync("posts/99999");
+        Console.WriteLine($"Status Code: {(int)notFoundResponse.StatusCode}");
+    }
+}`}
+/>
+
+## Deserializing JSON Responses
+
+### Using Model Classes
+
+<CodeEditor
+  initialCode={`using System;
+using System.Net.Http;
+using System.Text.Json;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+
+// Model classes matching API response
+public class User
+{
+    public int Id { get; set; }
+    public string Name { get; set; }
+    public string Username { get; set; }
+    public string Email { get; set; }
+    public string Phone { get; set; }
+    public string Website { get; set; }
+    public Address Address { get; set; }
+    public Company Company { get; set; }
+}
+
+public class Address
+{
+    public string Street { get; set; }
+    public string Suite { get; set; }
+    public string City { get; set; }
+    public string Zipcode { get; set; }
+}
+
+public class Company
+{
+    public string Name { get; set; }
+    public string CatchPhrase { get; set; }
+    public string Bs { get; set; }
+}
+
+class Program
+{
+    private static readonly HttpClient client = new HttpClient()
+    {
+        BaseAddress = new Uri("https://jsonplaceholder.typicode.com/")
+    };
+    
+    // Configure JSON options for case-insensitive matching
+    private static readonly JsonSerializerOptions jsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true
+    };
+    
+    static async Task Main()
+    {
+        Console.WriteLine("=== Deserializing to Model Classes ===\\n");
+        
+        // Get single user
+        Console.WriteLine("Fetching user 1...");
+        HttpResponseMessage response = await client.GetAsync("users/1");
+        string json = await response.Content.ReadAsStringAsync();
+        
+        User user = JsonSerializer.Deserialize<User>(json, jsonOptions);
+        
+        Console.WriteLine($"\\nUser Details:");
+        Console.WriteLine($"  ID: {user.Id}");
+        Console.WriteLine($"  Name: {user.Name}");
+        Console.WriteLine($"  Email: {user.Email}");
+        Console.WriteLine($"  City: {user.Address?.City}");
+        Console.WriteLine($"  Company: {user.Company?.Name}");
+        
+        // Get all users
+        Console.WriteLine("\\n---\\n");
+        Console.WriteLine("Fetching all users...");
+        
+        response = await client.GetAsync("users");
+        json = await response.Content.ReadAsStringAsync();
+        
+        List<User> users = JsonSerializer.Deserialize<List<User>>(json, jsonOptions);
+        
+        Console.WriteLine($"\\nTotal users: {users.Count}\\n");
+        foreach (User u in users)
+        {
+            Console.WriteLine($"  {u.Id}. {u.Name} ({u.Email})");
+        }
+    }
+}`}
+/>
+
+## Writing API Tests with xUnit
+
+Now let's write proper automated tests!
+
+### Basic API Test Structure
+
+<CodeEditor
+  initialCode={`using System;
+using System.Net;
+using System.Net.Http;
+using System.Text.Json;
+using System.Threading.Tasks;
+using Xunit;
+
+// Model
+public class Post
+{
+    public int Id { get; set; }
+    public string Title { get; set; }
+    public string Body { get; set; }
+    public int UserId { get; set; }
+}
+
+// Test class
+public class PostApiTests : IDisposable
+{
+    private readonly HttpClient _client;
+    private readonly JsonSerializerOptions _jsonOptions;
+    
+    // Setup - runs before each test
+    public PostApiTests()
+    {
+        _client = new HttpClient
+        {
+            BaseAddress = new Uri("https://jsonplaceholder.typicode.com/")
+        };
+        
+        _jsonOptions = new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true
+        };
+    }
+    
+    // Cleanup - runs after each test
+    public void Dispose()
+    {
+        _client.Dispose();
+    }
+    
+    [Fact]
+    public async Task GetPost_ValidId_ReturnsPost()
+    {
+        // Arrange
+        int postId = 1;
+        
+        // Act
+        HttpResponseMessage response = await _client.GetAsync($"posts/{postId}");
+        string json = await response.Content.ReadAsStringAsync();
+        Post post = JsonSerializer.Deserialize<Post>(json, _jsonOptions);
+        
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.NotNull(post);
+        Assert.Equal(postId, post.Id);
+        Assert.False(string.IsNullOrEmpty(post.Title));
+    }
+    
+    [Fact]
+    public async Task GetPost_InvalidId_ReturnsNotFound()
+    {
+        // Arrange
+        int invalidId = 99999;
+        
+        // Act
+        HttpResponseMessage response = await _client.GetAsync($"posts/{invalidId}");
+        
+        // Assert
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        Console.WriteLine("API Tests structure - run with 'dotnet test'");
+    }
+}`}
+/>
+
+### Complete CRUD Test Suite
+
+<CodeEditor
+  initialCode={`using System;
+using System.Net;
+using System.Net.Http;
+using System.Text;
+using System.Text.Json;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using Xunit;
+
+public class Post
+{
+    public int Id { get; set; }
+    public string Title { get; set; }
+    public string Body { get; set; }
+    public int UserId { get; set; }
+}
+
+public class PostCrudTests : IDisposable
+{
+    private readonly HttpClient _client;
+    private readonly JsonSerializerOptions _jsonOptions;
+    
+    public PostCrudTests()
+    {
+        _client = new HttpClient
+        {
+            BaseAddress = new Uri("https://jsonplaceholder.typicode.com/")
+        };
+        _jsonOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+    }
+    
+    public void Dispose() => _client.Dispose();
+    
+    // ===== GET Tests =====
+    
+    [Fact]
+    public async Task GetAllPosts_ReturnsListOfPosts()
+    {
+        // Act
+        var response = await _client.GetAsync("posts");
+        var json = await response.Content.ReadAsStringAsync();
+        var posts = JsonSerializer.Deserialize<List<Post>>(json, _jsonOptions);
+        
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.NotNull(posts);
+        Assert.Equal(100, posts.Count);  // JSONPlaceholder has 100 posts
+    }
+    
+    [Theory]
+    [InlineData(1)]
+    [InlineData(50)]
+    [InlineData(100)]
+    public async Task GetPost_ValidIds_ReturnsCorrectPost(int postId)
+    {
+        // Act
+        var response = await _client.GetAsync($"posts/{postId}");
+        var json = await response.Content.ReadAsStringAsync();
+        var post = JsonSerializer.Deserialize<Post>(json, _jsonOptions);
+        
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(postId, post.Id);
+    }
+    
+    // ===== POST Tests =====
+    
+    [Fact]
+    public async Task CreatePost_ValidData_ReturnsCreatedPost()
+    {
+        // Arrange
+        var newPost = new { title = "Test Post", body = "Test Body", userId = 1 };
+        var content = new StringContent(
+            JsonSerializer.Serialize(newPost),
+            Encoding.UTF8,
+            "application/json"
+        );
+        
+        // Act
+        var response = await _client.PostAsync("posts", content);
+        var json = await response.Content.ReadAsStringAsync();
+        var createdPost = JsonSerializer.Deserialize<Post>(json, _jsonOptions);
+        
+        // Assert
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        Assert.Equal("Test Post", createdPost.Title);
+        Assert.True(createdPost.Id > 0);
+    }
+    
+    // ===== PUT Tests =====
+    
+    [Fact]
+    public async Task UpdatePost_ValidData_ReturnsUpdatedPost()
+    {
+        // Arrange
+        var updatedPost = new { id = 1, title = "Updated", body = "Updated body", userId = 1 };
+        var content = new StringContent(
+            JsonSerializer.Serialize(updatedPost),
+            Encoding.UTF8,
+            "application/json"
+        );
+        
+        // Act
+        var response = await _client.PutAsync("posts/1", content);
+        var json = await response.Content.ReadAsStringAsync();
+        var post = JsonSerializer.Deserialize<Post>(json, _jsonOptions);
+        
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal("Updated", post.Title);
+    }
+    
+    // ===== DELETE Tests =====
+    
+    [Fact]
+    public async Task DeletePost_ValidId_ReturnsSuccess()
+    {
+        // Act
+        var response = await _client.DeleteAsync("posts/1");
+        
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        Console.WriteLine("Run tests with: dotnet test");
+    }
+}`}
+/>
+
+## Adding Request Headers
+
+<CodeEditor
+  initialCode={`using System;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Threading.Tasks;
+
+class Program
+{
+    static async Task Main()
+    {
+        Console.WriteLine("=== Working with Headers ===\\n");
+        
+        using var client = new HttpClient();
+        client.BaseAddress = new Uri("https://jsonplaceholder.typicode.com/");
+        
+        // Add default headers (applied to all requests)
+        client.DefaultRequestHeaders.Accept.Clear();
+        client.DefaultRequestHeaders.Accept.Add(
+            new MediaTypeWithQualityHeaderValue("application/json"));
+        client.DefaultRequestHeaders.Add("User-Agent", "MyApiTestApp/1.0");
+        
+        Console.WriteLine("Default headers set:");
+        Console.WriteLine("  Accept: application/json");
+        Console.WriteLine("  User-Agent: MyApiTestApp/1.0\\n");
+        
+        // Make request with default headers
+        var response = await client.GetAsync("posts/1");
+        Console.WriteLine($"Request successful: {response.IsSuccessStatusCode}\\n");
+        
+        // Add Authorization header
+        Console.WriteLine("Adding Authorization header...");
+        client.DefaultRequestHeaders.Authorization = 
+            new AuthenticationHeaderValue("Bearer", "your-token-here");
+        
+        // Or add custom header
+        client.DefaultRequestHeaders.Add("X-API-Key", "your-api-key");
+        
+        Console.WriteLine("  Authorization: Bearer your-token-here");
+        Console.WriteLine("  X-API-Key: your-api-key\\n");
+        
+        // For single request with custom headers
+        Console.WriteLine("Creating request with custom headers...");
+        var request = new HttpRequestMessage(HttpMethod.Get, "posts/1");
+        request.Headers.Add("X-Custom-Header", "CustomValue");
+        request.Headers.Add("X-Request-ID", Guid.NewGuid().ToString());
+        
+        var customResponse = await client.SendAsync(request);
+        Console.WriteLine($"Custom request successful: {customResponse.IsSuccessStatusCode}");
+    }
+}`}
+/>
+
+## Error Handling in API Tests
+
+<CodeEditor
+  initialCode={`using System;
+using System.Net;
+using System.Net.Http;
+using System.Text.Json;
+using System.Threading.Tasks;
+using Xunit;
+
+public class ApiErrorHandlingTests : IDisposable
+{
+    private readonly HttpClient _client;
+    
+    public ApiErrorHandlingTests()
+    {
+        _client = new HttpClient
+        {
+            BaseAddress = new Uri("https://jsonplaceholder.typicode.com/"),
+            Timeout = TimeSpan.FromSeconds(30)
+        };
+    }
+    
+    public void Dispose() => _client.Dispose();
+    
+    [Fact]
+    public async Task GetPost_NotFound_Returns404()
+    {
+        // Act
+        var response = await _client.GetAsync("posts/999999");
+        
+        // Assert
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+    
+    [Fact]
+    public async Task GetInvalidEndpoint_Returns404()
+    {
+        // Act
+        var response = await _client.GetAsync("invalid-endpoint");
+        
+        // Assert
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+    
+    [Fact]
+    public async Task Request_VerifyResponseHeaders()
+    {
+        // Act
+        var response = await _client.GetAsync("posts/1");
+        
+        // Assert
+        Assert.True(response.Headers.Contains("Date"));
+        Assert.Equal("application/json; charset=utf-8", 
+            response.Content.Headers.ContentType?.ToString());
+    }
+    
+    [Fact]
+    public async Task Request_MeasureResponseTime()
+    {
+        // Arrange
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+        
+        // Act
+        var response = await _client.GetAsync("posts/1");
+        stopwatch.Stop();
+        
+        // Assert
+        Assert.True(response.IsSuccessStatusCode);
+        Assert.True(stopwatch.ElapsedMilliseconds < 5000, 
+            $"Response took too long: {stopwatch.ElapsedMilliseconds}ms");
+        
+        Console.WriteLine($"Response time: {stopwatch.ElapsedMilliseconds}ms");
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        Console.WriteLine("Error handling tests - run with 'dotnet test'");
+    }
+}`}
+/>
+
+## Creating a Reusable API Client
+
+<CodeEditor
+  initialCode={`using System;
+using System.Net.Http;
+using System.Text;
+using System.Text.Json;
+using System.Threading.Tasks;
+
+// Reusable API Client
+public class ApiClient : IDisposable
+{
+    private readonly HttpClient _client;
+    private readonly JsonSerializerOptions _jsonOptions;
+    
+    public ApiClient(string baseUrl)
+    {
+        _client = new HttpClient
+        {
+            BaseAddress = new Uri(baseUrl)
+        };
+        
+        _jsonOptions = new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true,
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        };
+    }
+    
+    public void SetAuthToken(string token)
+    {
+        _client.DefaultRequestHeaders.Authorization = 
+            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+    }
+    
+    public async Task<ApiResponse<T>> GetAsync<T>(string endpoint)
+    {
+        var response = await _client.GetAsync(endpoint);
+        return await ProcessResponse<T>(response);
+    }
+    
+    public async Task<ApiResponse<T>> PostAsync<T>(string endpoint, object data)
+    {
+        var content = new StringContent(
+            JsonSerializer.Serialize(data, _jsonOptions),
+            Encoding.UTF8,
+            "application/json"
+        );
+        var response = await _client.PostAsync(endpoint, content);
+        return await ProcessResponse<T>(response);
+    }
+    
+    public async Task<ApiResponse<T>> PutAsync<T>(string endpoint, object data)
+    {
+        var content = new StringContent(
+            JsonSerializer.Serialize(data, _jsonOptions),
+            Encoding.UTF8,
+            "application/json"
+        );
+        var response = await _client.PutAsync(endpoint, content);
+        return await ProcessResponse<T>(response);
+    }
+    
+    public async Task<ApiResponse<bool>> DeleteAsync(string endpoint)
+    {
+        var response = await _client.DeleteAsync(endpoint);
+        return new ApiResponse<bool>
+        {
+            IsSuccess = response.IsSuccessStatusCode,
+            StatusCode = (int)response.StatusCode,
+            Data = response.IsSuccessStatusCode
+        };
+    }
+    
+    private async Task<ApiResponse<T>> ProcessResponse<T>(HttpResponseMessage response)
+    {
+        var result = new ApiResponse<T>
+        {
+            IsSuccess = response.IsSuccessStatusCode,
+            StatusCode = (int)response.StatusCode
+        };
+        
+        var json = await response.Content.ReadAsStringAsync();
+        
+        if (response.IsSuccessStatusCode && !string.IsNullOrEmpty(json))
+        {
+            result.Data = JsonSerializer.Deserialize<T>(json, _jsonOptions);
+        }
+        else
+        {
+            result.Error = json;
+        }
+        
+        return result;
+    }
+    
+    public void Dispose() => _client.Dispose();
+}
+
+// Response wrapper
+public class ApiResponse<T>
+{
+    public bool IsSuccess { get; set; }
+    public int StatusCode { get; set; }
+    public T Data { get; set; }
+    public string Error { get; set; }
+}
+
+// Model
+public class Post
+{
+    public int Id { get; set; }
+    public string Title { get; set; }
+    public string Body { get; set; }
+    public int UserId { get; set; }
+}
+
+// Usage example
+class Program
+{
+    static async Task Main()
+    {
+        Console.WriteLine("=== Reusable API Client Demo ===\\n");
+        
+        using var api = new ApiClient("https://jsonplaceholder.typicode.com/");
+        
+        // GET
+        Console.WriteLine("GET /posts/1");
+        var getResult = await api.GetAsync<Post>("posts/1");
+        Console.WriteLine($"  Success: {getResult.IsSuccess}");
+        Console.WriteLine($"  Status: {getResult.StatusCode}");
+        Console.WriteLine($"  Title: {getResult.Data?.Title}\\n");
+        
+        // POST
+        Console.WriteLine("POST /posts");
+        var newPost = new { title = "New Post", body = "Content", userId = 1 };
+        var postResult = await api.PostAsync<Post>("posts", newPost);
+        Console.WriteLine($"  Success: {postResult.IsSuccess}");
+        Console.WriteLine($"  Status: {postResult.StatusCode}");
+        Console.WriteLine($"  Created ID: {postResult.Data?.Id}\\n");
+        
+        // DELETE
+        Console.WriteLine("DELETE /posts/1");
+        var deleteResult = await api.DeleteAsync("posts/1");
+        Console.WriteLine($"  Success: {deleteResult.IsSuccess}");
+        Console.WriteLine($"  Status: {deleteResult.StatusCode}");
+    }
+}`}
+/>
+
+## Fluent Assertions for Better Tests
+
+Install FluentAssertions: `dotnet add package FluentAssertions`
+
+<CodeEditor
+  initialCode={`using System;
+using System.Net;
+using System.Net.Http;
+using System.Text.Json;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using Xunit;
+// using FluentAssertions;  // Add this in real project
+
+public class Post
+{
+    public int Id { get; set; }
+    public string Title { get; set; }
+    public string Body { get; set; }
+    public int UserId { get; set; }
+}
+
+public class FluentAssertionTests : IDisposable
+{
+    private readonly HttpClient _client;
+    private readonly JsonSerializerOptions _options;
+    
+    public FluentAssertionTests()
+    {
+        _client = new HttpClient
+        {
+            BaseAddress = new Uri("https://jsonplaceholder.typicode.com/")
+        };
+        _options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+    }
+    
+    public void Dispose() => _client.Dispose();
+    
+    [Fact]
+    public async Task GetPosts_WithFluentAssertions()
+    {
+        // Act
+        var response = await _client.GetAsync("posts");
+        var json = await response.Content.ReadAsStringAsync();
+        var posts = JsonSerializer.Deserialize<List<Post>>(json, _options);
+        
+        // Assert with FluentAssertions style
+        // In real code with FluentAssertions:
+        // response.StatusCode.Should().Be(HttpStatusCode.OK);
+        // posts.Should().NotBeNull();
+        // posts.Should().HaveCount(100);
+        // posts.Should().OnlyContain(p => p.Id > 0);
+        // posts.First().Title.Should().NotBeNullOrEmpty();
+        
+        // Standard xUnit equivalent:
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.NotNull(posts);
+        Assert.Equal(100, posts.Count);
+        Assert.All(posts, p => Assert.True(p.Id > 0));
+        Assert.False(string.IsNullOrEmpty(posts[0].Title));
+        
+        Console.WriteLine("✓ All assertions passed!");
+    }
+    
+    [Fact]
+    public async Task GetPost_ValidatesAllFields()
+    {
+        // Act
+        var response = await _client.GetAsync("posts/1");
+        var json = await response.Content.ReadAsStringAsync();
+        var post = JsonSerializer.Deserialize<Post>(json, _options);
+        
+        // Comprehensive assertions
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.NotNull(post);
+        Assert.Equal(1, post.Id);
+        Assert.Equal(1, post.UserId);
+        Assert.False(string.IsNullOrWhiteSpace(post.Title));
+        Assert.False(string.IsNullOrWhiteSpace(post.Body));
+        Assert.True(post.Title.Length > 0);
+        Assert.True(post.Body.Length > 0);
+        
+        Console.WriteLine($"✓ Post validated: {post.Title.Substring(0, 20)}...");
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        Console.WriteLine("Fluent Assertions make tests more readable!");
+        Console.WriteLine("Install: dotnet add package FluentAssertions");
+    }
+}`}
+/>
+
+## Testing the Task Manager API
+
+Now let's apply everything you've learned to test the **Task Manager API** project using HttpClient!
+
+### Why HttpClient Testing vs Integration Testing?
+
+The Task Manager project already has integration tests using `WebApplicationFactory`. So why learn HttpClient testing?
+
+**Integration Tests (WebApplicationFactory)**:
+- Test the entire application in-memory
+- No real HTTP requests (faster)
+- Perfect for testing your own API
+- What you'll use most for the Task Manager API
+
+**HttpClient Tests (What we're learning now)**:
+- Make real HTTP requests over the network
+- Test external APIs (APIs you don't control)
+- Verify API behavior from a client perspective
+- Useful for testing deployed APIs or third-party services
+
+**Both are valuable skills!** Let's see the difference.
+
+### Task Manager API Endpoints Recap
+
+Before we start testing, here are the key endpoints:
+
+```
+GET    /api/tasks              - Get all tasks
+GET    /api/tasks/{id}         - Get specific task
+POST   /api/tasks              - Create new task
+PUT    /api/tasks/{id}         - Update task
+PATCH  /api/tasks/{id}/status  - Update task status
+DELETE /api/tasks/{id}         - Delete task
+GET    /api/tasks/user/{userId} - Get user's tasks
+GET    /api/tasks/statistics    - Get statistics
+```
+
+### Setting Up HttpClient Tests
+
+First, make sure your Task Manager API is running:
+
+```bash
+cd sample-projects/TaskManagerAPI
+dotnet run
+# API runs at: http://localhost:5000
+```
+
+### Creating Model Classes
+
+Create models matching the API responses:
+
+<CodeEditor
+  initialCode={`using System;
+using System.Collections.Generic;
+
+// Enums
+public enum TaskStatus
+{
+    Todo = 0,
+    InProgress = 1,
+    Done = 2
+}
+
+public enum TaskPriority
+{
+    Low = 0,
+    Medium = 1,
+    High = 2,
+    Critical = 3
+}
+
+// Response models
+public class TaskResponse
+{
+    public int Id { get; set; }
+    public string Title { get; set; }
+    public string Description { get; set; }
+    public TaskStatus Status { get; set; }
+    public TaskPriority Priority { get; set; }
+    public DateTime? DueDate { get; set; }
+    public int UserId { get; set; }
+    public int? CategoryId { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime? CompletedAt { get; set; }
+}
+
+// Request models
+public class CreateTaskRequest
+{
+    public string Title { get; set; }
+    public string Description { get; set; }
+    public TaskPriority Priority { get; set; }
+    public DateTime? DueDate { get; set; }
+    public int UserId { get; set; }
+    public int? CategoryId { get; set; }
+}
+
+public class UpdateStatusRequest
+{
+    public TaskStatus NewStatus { get; set; }
+}
+
+class Program
+{
+    static void Main()
+    {
+        Console.WriteLine("Task Manager API Models ready!");
+        Console.WriteLine("These match the API's response structure.");
+    }
+}`}
+/>
+
+### Example 1: Testing GET Endpoints
+
+<CodeEditor
+  initialCode={`using System;
+using System.Net;
+using System.Net.Http;
+using System.Text.Json;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using Xunit;
+
+public class TaskManagerGetTests : IDisposable
+{
+    private readonly HttpClient _client;
+    private readonly JsonSerializerOptions _jsonOptions;
+
+    public TaskManagerGetTests()
+    {
+        // Point to your running Task Manager API
+        _client = new HttpClient
+        {
+            BaseAddress = new Uri("http://localhost:5000/")
+        };
+
+        _jsonOptions = new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true,
+            Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() }
+        };
+    }
+
+    public void Dispose() => _client.Dispose();
+
+    [Fact]
+    public async Task GetAllTasks_ReturnsListOfTasks()
+    {
+        // Act
+        var response = await _client.GetAsync("api/tasks");
+        var json = await response.Content.ReadAsStringAsync();
+        var tasks = JsonSerializer.Deserialize<List<TaskResponse>>(json, _jsonOptions);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.NotNull(tasks);
+        Assert.True(tasks.Count >= 0);  // May be empty initially
+
+        Console.WriteLine($"✓ Retrieved {tasks.Count} tasks");
+    }
+
+    [Fact]
+    public async Task GetTaskById_ValidId_ReturnsTask()
+    {
+        // Arrange - First create a task to ensure we have one
+        var createRequest = new CreateTaskRequest
+        {
+            Title = "Test Task for HttpClient",
+            Description = "Testing GET endpoint",
+            Priority = TaskPriority.Medium,
+            UserId = 1
+        };
+
+        var createContent = new StringContent(
+            JsonSerializer.Serialize(createRequest, _jsonOptions),
+            System.Text.Encoding.UTF8,
+            "application/json"
+        );
+
+        var createResponse = await _client.PostAsync("api/tasks", createContent);
+        var createdJson = await createResponse.Content.ReadAsStringAsync();
+        var createdTask = JsonSerializer.Deserialize<TaskResponse>(createdJson, _jsonOptions);
+
+        // Act - Get the task we just created
+        var response = await _client.GetAsync($"api/tasks/{createdTask.Id}");
+        var json = await response.Content.ReadAsStringAsync();
+        var task = JsonSerializer.Deserialize<TaskResponse>(json, _jsonOptions);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.NotNull(task);
+        Assert.Equal(createdTask.Id, task.Id);
+        Assert.Equal("Test Task for HttpClient", task.Title);
+        Assert.Equal(TaskStatus.Todo, task.Status);
+
+        Console.WriteLine($"✓ Successfully retrieved task: {task.Title}");
+    }
+
+    [Fact]
+    public async Task GetTaskById_InvalidId_Returns404()
+    {
+        // Act
+        var response = await _client.GetAsync("api/tasks/99999");
+
+        // Assert
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+
+        Console.WriteLine("✓ Non-existent task correctly returns 404");
+    }
+
+    [Fact]
+    public async Task GetUserTasks_ValidUserId_ReturnsUserTasks()
+    {
+        // Act
+        var response = await _client.GetAsync("api/tasks/user/1");
+        var json = await response.Content.ReadAsStringAsync();
+        var tasks = JsonSerializer.Deserialize<List<TaskResponse>>(json, _jsonOptions);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.NotNull(tasks);
+        Assert.All(tasks, task => Assert.Equal(1, task.UserId));
+
+        Console.WriteLine($"✓ User 1 has {tasks.Count} tasks");
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        Console.WriteLine("Run tests with: dotnet test");
+        Console.WriteLine("Make sure Task Manager API is running on http://localhost:5000");
+    }
+}`}
+/>
+
+### Example 2: Testing POST (Create Task)
+
+<CodeEditor
+  initialCode={`using System;
+using System.Net;
+using System.Net.Http;
+using System.Text;
+using System.Text.Json;
+using System.Threading.Tasks;
+using Xunit;
+
+public class TaskManagerPostTests : IDisposable
+{
+    private readonly HttpClient _client;
+    private readonly JsonSerializerOptions _jsonOptions;
+
+    public TaskManagerPostTests()
+    {
+        _client = new HttpClient
+        {
+            BaseAddress = new Uri("http://localhost:5000/")
+        };
+
+        _jsonOptions = new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true,
+            Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() }
+        };
+    }
+
+    public void Dispose() => _client.Dispose();
+
+    [Fact]
+    public async Task CreateTask_ValidData_ReturnsCreatedTask()
+    {
+        // Arrange
+        var newTask = new CreateTaskRequest
+        {
+            Title = "Complete HttpClient Testing",
+            Description = "Learn to test APIs with HttpClient",
+            Priority = TaskPriority.High,
+            DueDate = DateTime.Now.AddDays(7),
+            UserId = 1
+        };
+
+        var content = new StringContent(
+            JsonSerializer.Serialize(newTask, _jsonOptions),
+            Encoding.UTF8,
+            "application/json"
+        );
+
+        // Act
+        var response = await _client.PostAsync("api/tasks", content);
+        var json = await response.Content.ReadAsStringAsync();
+        var createdTask = JsonSerializer.Deserialize<TaskResponse>(json, _jsonOptions);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        Assert.NotNull(createdTask);
+        Assert.True(createdTask.Id > 0);
+        Assert.Equal("Complete HttpClient Testing", createdTask.Title);
+        Assert.Equal(TaskStatus.Todo, createdTask.Status);
+        Assert.Equal(TaskPriority.High, createdTask.Priority);
+        Assert.NotNull(createdTask.CreatedAt);
+
+        Console.WriteLine($"✓ Task created with ID: {createdTask.Id}");
+        Console.WriteLine($"  Title: {createdTask.Title}");
+        Console.WriteLine($"  Status: {createdTask.Status}");
+        Console.WriteLine($"  Priority: {createdTask.Priority}");
+    }
+
+    [Fact]
+    public async Task CreateTask_EmptyTitle_ReturnsBadRequest()
+    {
+        // Arrange
+        var invalidTask = new CreateTaskRequest
+        {
+            Title = "",  // Invalid - empty title
+            Priority = TaskPriority.Medium,
+            UserId = 1
+        };
+
+        var content = new StringContent(
+            JsonSerializer.Serialize(invalidTask, _jsonOptions),
+            Encoding.UTF8,
+            "application/json"
+        );
+
+        // Act
+        var response = await _client.PostAsync("api/tasks", content);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+        Console.WriteLine("✓ Empty title correctly rejected with 400 Bad Request");
+    }
+
+    [Fact]
+    public async Task CreateTask_InvalidUserId_ReturnsBadRequest()
+    {
+        // Arrange
+        var invalidTask = new CreateTaskRequest
+        {
+            Title = "Test Task",
+            Priority = TaskPriority.Medium,
+            UserId = 999  // Invalid user ID
+        };
+
+        var content = new StringContent(
+            JsonSerializer.Serialize(invalidTask, _jsonOptions),
+            Encoding.UTF8,
+            "application/json"
+        );
+
+        // Act
+        var response = await _client.PostAsync("api/tasks", content);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+        Console.WriteLine("✓ Invalid user ID correctly rejected");
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        Console.WriteLine("Testing Task Creation with HttpClient");
+    }
+}`}
+/>
+
+### Example 3: Testing PATCH (Status Updates)
+
+<CodeEditor
+  initialCode={`using System;
+using System.Net;
+using System.Net.Http;
+using System.Text;
+using System.Text.Json;
+using System.Threading.Tasks;
+using Xunit;
+
+public class TaskManagerStatusTests : IDisposable
+{
+    private readonly HttpClient _client;
+    private readonly JsonSerializerOptions _jsonOptions;
+
+    public TaskManagerStatusTests()
+    {
+        _client = new HttpClient
+        {
+            BaseAddress = new Uri("http://localhost:5000/")
+        };
+
+        _jsonOptions = new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true,
+            Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() }
+        };
+    }
+
+    public void Dispose() => _client.Dispose();
+
+    private async Task<TaskResponse> CreateTestTask(string title)
+    {
+        var request = new CreateTaskRequest
+        {
+            Title = title,
+            Priority = TaskPriority.Medium,
+            UserId = 1
+        };
+
+        var content = new StringContent(
+            JsonSerializer.Serialize(request, _jsonOptions),
+            Encoding.UTF8,
+            "application/json"
+        );
+
+        var response = await _client.PostAsync("api/tasks", content);
+        var json = await response.Content.ReadAsStringAsync();
+        return JsonSerializer.Deserialize<TaskResponse>(json, _jsonOptions);
+    }
+
+    [Fact]
+    public async Task UpdateStatus_TodoToInProgress_Success()
+    {
+        // Arrange - Create a task in Todo status
+        var task = await CreateTestTask("Test Status Transition");
+        Assert.Equal(TaskStatus.Todo, task.Status);
+
+        var updateRequest = new UpdateStatusRequest
+        {
+            NewStatus = TaskStatus.InProgress
+        };
+
+        var content = new StringContent(
+            JsonSerializer.Serialize(updateRequest, _jsonOptions),
+            Encoding.UTF8,
+            "application/json"
+        );
+
+        // Act - Update to InProgress
+        var response = await _client.PatchAsync(
+            $"api/tasks/{task.Id}/status",
+            content
+        );
+
+        var json = await response.Content.ReadAsStringAsync();
+        var updatedTask = JsonSerializer.Deserialize<TaskResponse>(json, _jsonOptions);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(TaskStatus.InProgress, updatedTask.Status);
+
+        Console.WriteLine($"✓ Status updated: Todo → InProgress");
+    }
+
+    [Fact]
+    public async Task UpdateStatus_InvalidTransition_ReturnsBadRequest()
+    {
+        // Arrange - Create a task in Todo status
+        var task = await CreateTestTask("Test Invalid Transition");
+
+        var updateRequest = new UpdateStatusRequest
+        {
+            NewStatus = TaskStatus.Done  // Invalid: Can't go Todo → Done directly
+        };
+
+        var content = new StringContent(
+            JsonSerializer.Serialize(updateRequest, _jsonOptions),
+            Encoding.UTF8,
+            "application/json"
+        );
+
+        // Act - Try invalid transition
+        var response = await _client.PatchAsync(
+            $"api/tasks/{task.Id}/status",
+            content
+        );
+
+        // Assert
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+        Console.WriteLine("✓ Invalid status transition correctly rejected");
+        Console.WriteLine("  (Todo → Done is not allowed, must go Todo → InProgress → Done)");
+    }
+
+    [Fact]
+    public async Task UpdateStatus_CompleteWorkflow_Success()
+    {
+        // Arrange
+        var task = await CreateTestTask("Complete Workflow Test");
+        Console.WriteLine($"Created task {task.Id}: {task.Title}");
+        Console.WriteLine($"Initial status: {task.Status}");
+
+        // Act & Assert - Complete workflow: Todo → InProgress → Done
+
+        // Step 1: Todo → InProgress
+        var step1Request = new UpdateStatusRequest { NewStatus = TaskStatus.InProgress };
+        var step1Content = new StringContent(
+            JsonSerializer.Serialize(step1Request, _jsonOptions),
+            Encoding.UTF8, "application/json"
+        );
+        var step1Response = await _client.PatchAsync($"api/tasks/{task.Id}/status", step1Content);
+        var step1Task = JsonSerializer.Deserialize<TaskResponse>(
+            await step1Response.Content.ReadAsStringAsync(), _jsonOptions
+        );
+
+        Assert.Equal(HttpStatusCode.OK, step1Response.StatusCode);
+        Assert.Equal(TaskStatus.InProgress, step1Task.Status);
+        Console.WriteLine($"✓ Step 1: Todo → InProgress");
+
+        // Step 2: InProgress → Done
+        var step2Request = new UpdateStatusRequest { NewStatus = TaskStatus.Done };
+        var step2Content = new StringContent(
+            JsonSerializer.Serialize(step2Request, _jsonOptions),
+            Encoding.UTF8, "application/json"
+        );
+        var step2Response = await _client.PatchAsync($"api/tasks/{task.Id}/status", step2Content);
+        var step2Task = JsonSerializer.Deserialize<TaskResponse>(
+            await step2Response.Content.ReadAsStringAsync(), _jsonOptions
+        );
+
+        Assert.Equal(HttpStatusCode.OK, step2Response.StatusCode);
+        Assert.Equal(TaskStatus.Done, step2Task.Status);
+        Assert.NotNull(step2Task.CompletedAt);
+        Console.WriteLine($"✓ Step 2: InProgress → Done");
+        Console.WriteLine($"✓ Complete workflow successful! CompletedAt: {step2Task.CompletedAt}");
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        Console.WriteLine("Testing Task Manager Status Transitions with HttpClient");
+    }
+}`}
+/>
+
+### HttpClient vs Integration Tests: Side by Side
+
+Here's how the same test looks with both approaches:
+
+**HttpClient Test (This Lesson)**:
+```csharp
+[Fact]
+public async Task CreateTask_HttpClient()
+{
+    var client = new HttpClient { BaseAddress = new Uri("http://localhost:5000/") };
+
+    var request = new CreateTaskRequest { Title = "Test", UserId = 1, Priority = TaskPriority.Medium };
+    var content = new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, "application/json");
+
+    var response = await client.PostAsync("api/tasks", content);
+    var json = await response.Content.ReadAsStringAsync();
+    var task = JsonSerializer.Deserialize<TaskResponse>(json);
+
+    Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+}
+```
+
+**Integration Test (Task Manager Project)**:
+```csharp
+[Fact]
+public async Task CreateTask_Integration()
+{
+    // Uses WebApplicationFactory - no real HTTP!
+    var request = new CreateTaskRequest { Title = "Test", UserId = 1, Priority = TaskPriority.Medium };
+
+    var response = await _client.PostAsJsonAsync("/api/tasks", request);
+    var task = await response.Content.ReadFromJsonAsync<TaskResponse>();
+
+    response.StatusCode.Should().Be(HttpStatusCode.Created);
+}
+```
+
+**Key Differences**:
+1. HttpClient makes real network requests
+2. Integration tests are faster (in-memory)
+3. HttpClient tests require the API to be running
+4. Integration tests are better for testing your own APIs
+5. HttpClient tests are better for external/deployed APIs
+
+### When to Use Each Approach
+
+**Use Integration Tests (WebApplicationFactory)** for:
+- ✅ Testing the Task Manager API (your own code)
+- ✅ Fast test execution (no network delay)
+- ✅ Testing internal behavior
+- ✅ CI/CD pipelines
+- ✅ Most of your API testing needs
+
+**Use HttpClient Tests** for:
+- ✅ Testing external APIs (JSONPlaceholder, weather APIs, etc.)
+- ✅ End-to-end testing of deployed applications
+- ✅ Client libraries or SDKs
+- ✅ Learning HTTP and REST concepts
+- ✅ Testing authentication flows with real tokens
+
+**For the Task Manager API**: The existing integration tests are the right approach! This lesson is about learning the HttpClient technique for when you need it.
+
+## Key Takeaways
+
+- **HttpClient** is the standard .NET class for HTTP requests
+- **Reuse HttpClient** instances (don't create per request)
+- **Serialize/Deserialize** JSON using System.Text.Json
+- **Create model classes** to map API responses
+- **Use xUnit** for organizing and running API tests
+- **Test all HTTP methods**: GET, POST, PUT, PATCH, DELETE
+- **Verify status codes**, response headers, and body content
+- **Handle errors** gracefully and test error scenarios
+- **Create reusable API clients** for cleaner test code
+- **Integration tests (WebApplicationFactory)** are better for testing your own APIs
+- **HttpClient tests** are better for external APIs and deployed services
+
+## Practice Exercises
+
+### Generic Practice (JSONPlaceholder)
+
+1. Create tests for the `/users` endpoint
+2. Test query parameters: `GET /posts?userId=1`
+3. Test related resources: `GET /posts/1/comments`
+4. Create a reusable test base class with common setup
+5. Add response time assertions to all tests
+
+### Task Manager API Practice
+
+**Note**: The Task Manager project already has excellent integration tests! These exercises are for learning HttpClient as an alternative approach.
+
+1. **Test Task Filtering**:
+   - Create 5 tasks with different statuses
+   - Test `GET /api/tasks/user/1` returns all user 1 tasks
+   - Verify each task has the correct UserId
+
+2. **Test Statistics Endpoint**:
+   - Create tasks with various statuses (Todo, InProgress, Done)
+   - Call `GET /api/tasks/statistics`
+   - Verify the counts match what you created
+
+3. **Test DELETE Operation**:
+   - Create a task
+   - Delete it with `DELETE /api/tasks/{id}`
+   - Verify GET returns 404 for deleted task
+
+4. **Test Validation Rules**:
+   - Try creating task with title > 200 characters
+   - Try creating task with past due date
+   - Verify both return 400 Bad Request
+
+5. **Compare Approaches**:
+   - Look at `TasksControllerIntegrationTests.cs` in the project
+   - Compare with your HttpClient tests
+   - Note the differences in setup and execution
+
+## Next Lesson
+
+Learn how to **mock HTTP responses** to test your code in isolation without hitting real APIs!

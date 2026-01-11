@@ -11,6 +11,27 @@ duration: "30 minutes"
 
 Now that your environment is set up, let's learn how to write great tests!
 
+## Prerequisites
+
+To write tests, you need basic C# programming knowledge.
+
+**Required lessons:**
+- ✅ 01-fundamentals/01-variables-data-types (variables and basic syntax)
+- ✅ 01-fundamentals/04-methods (understanding methods)
+- ✅ 02-oop-basics/01-classes-objects (creating and using classes)
+
+**Recommended completion:**
+- ✅ 10-testing/01-introduction-to-testing
+- ✅ 10-testing/02-setup-environment
+
+**What you need to know:**
+- How to create a class
+- How to write methods
+- Basic if/else statements
+- Variables and data types
+
+⏱️ **If starting from scratch:** Complete fundamentals (6 lessons) + basic OOP (1 lesson) = ~3-4 hours, then return here.
+
 ## The Arrange-Act-Assert Pattern
 
 Every good test follows this pattern:
@@ -33,81 +54,154 @@ public void MethodName_Scenario_ExpectedResult()
 }
 ```
 
-### Real Example: Testing a Calculator
+### Real Example: Testing Task Manager API
+
+Let's use the **Task Manager API** project to learn the AAA pattern with real business logic!
 
 <CodeEditor
   initialCode={`using System;
-using Xunit;
 
-namespace Calculator
+// This example demonstrates the Arrange-Act-Assert pattern
+// using real code from the Task Manager API project
+// In real xUnit tests, you'd use [Fact] and Assert methods
+
+public enum TaskStatus { Todo, InProgress, Done }
+public enum TaskPriority { Low, Medium, High, Critical }
+
+public class TaskItem
 {
-    public class Calculator
-    {
-        public int Add(int a, int b)
-        {
-            return a + b;
-        }
+    public int Id { get; set; }
+    public string Title { get; set; } = string.Empty;
+    public TaskStatus Status { get; set; } = TaskStatus.Todo;
+    public TaskPriority Priority { get; set; } = TaskPriority.Medium;
+    public DateTime? DueDate { get; set; }
+}
 
-        public bool IsEven(int number)
-        {
-            return number % 2 == 0;
-        }
+public class TaskValidator
+{
+    public bool IsValidTitle(string title)
+    {
+        return !string.IsNullOrWhiteSpace(title) && title.Length <= 200;
     }
 
-    public class CalculatorTests
+    public bool IsValidDueDate(DateTime? dueDate)
     {
-        [Fact]
-        public void Add_TwoPositiveNumbers_ReturnsSum()
-        {
-            // Arrange - Set up the calculator and test data
-            var calculator = new Calculator();
-            int firstNumber = 5;
-            int secondNumber = 3;
+        if (!dueDate.HasValue)
+            return true; // Due date is optional
 
-            // Act - Perform the addition
-            int result = calculator.Add(firstNumber, secondNumber);
+        return dueDate.Value.Date >= DateTime.UtcNow.Date;
+    }
 
-            // Assert - Verify the result is correct
-            Assert.Equal(8, result);
-        }
-
-        [Fact]
-        public void IsEven_EvenNumber_ReturnsTrue()
-        {
-            // Arrange
-            var calculator = new Calculator();
-            int evenNumber = 4;
-
-            // Act
-            bool result = calculator.IsEven(evenNumber);
-
-            // Assert
-            Assert.True(result);
-        }
-
-        [Fact]
-        public void IsEven_OddNumber_ReturnsFalse()
-        {
-            // Arrange
-            var calculator = new Calculator();
-            int oddNumber = 5;
-
-            // Act
-            bool result = calculator.IsEven(oddNumber);
-
-            // Assert
-            Assert.False(result);
-        }
+    public bool IsHighPriority(TaskPriority priority)
+    {
+        return priority == TaskPriority.High || priority == TaskPriority.Critical;
     }
 }
 
-// Run the tests
+public class TaskValidatorTests
+{
+    // Test 1: Testing valid task title
+    // In xUnit: [Fact] public void IsValidTitle_ValidTitle_ReturnsTrue()
+    public void IsValidTitle_ValidTitle_ReturnsTrue()
+    {
+        // Arrange - Set up the validator and test data
+        var validator = new TaskValidator();
+        string validTitle = "Complete project documentation";
+
+        // Act - Check if the title is valid
+        bool result = validator.IsValidTitle(validTitle);
+
+        // Assert - Verify the result is correct
+        // In xUnit: Assert.True(result);
+        if (result == true)
+            Console.WriteLine("✓ PASS: Valid title was accepted");
+        else
+            Console.WriteLine("✗ FAIL: Valid title should be accepted");
+    }
+
+    // Test 2: Testing empty title (should be invalid)
+    // In xUnit: [Fact] public void IsValidTitle_EmptyTitle_ReturnsFalse()
+    public void IsValidTitle_EmptyTitle_ReturnsFalse()
+    {
+        // Arrange
+        var validator = new TaskValidator();
+        string emptyTitle = "";
+
+        // Act
+        bool result = validator.IsValidTitle(emptyTitle);
+
+        // Assert
+        // In xUnit: Assert.False(result);
+        if (result == false)
+            Console.WriteLine("✓ PASS: Empty title was rejected");
+        else
+            Console.WriteLine("✗ FAIL: Empty title should be rejected");
+    }
+
+    // Test 3: Testing future due date (should be valid)
+    // In xUnit: [Fact] public void IsValidDueDate_FutureDate_ReturnsTrue()
+    public void IsValidDueDate_FutureDate_ReturnsTrue()
+    {
+        // Arrange
+        var validator = new TaskValidator();
+        DateTime futureDate = DateTime.UtcNow.AddDays(7);
+
+        // Act
+        bool result = validator.IsValidDueDate(futureDate);
+
+        // Assert
+        // In xUnit: Assert.True(result);
+        if (result == true)
+            Console.WriteLine("✓ PASS: Future due date was accepted");
+        else
+            Console.WriteLine("✗ FAIL: Future due date should be accepted");
+    }
+
+    // Test 4: Testing high priority detection
+    // In xUnit: [Fact] public void IsHighPriority_HighPriority_ReturnsTrue()
+    public void IsHighPriority_HighPriority_ReturnsTrue()
+    {
+        // Arrange
+        var validator = new TaskValidator();
+        TaskPriority priority = TaskPriority.High;
+
+        // Act
+        bool result = validator.IsHighPriority(priority);
+
+        // Assert
+        // In xUnit: Assert.True(result);
+        if (result == true)
+            Console.WriteLine("✓ PASS: High priority detected correctly");
+        else
+            Console.WriteLine("✗ FAIL: High priority should be detected");
+    }
+}
+
 class Program
 {
     static void Main()
     {
-        Console.WriteLine("Tests would run with: dotnet test");
-        Console.WriteLine("This is just a demonstration!");
+        var tests = new TaskValidatorTests();
+
+        Console.WriteLine("=== Running Task Validator Tests ===");
+        Console.WriteLine("(Using Task Manager API business logic)");
+        Console.WriteLine();
+
+        // Run each test method
+        tests.IsValidTitle_ValidTitle_ReturnsTrue();
+        tests.IsValidTitle_EmptyTitle_ReturnsFalse();
+        tests.IsValidDueDate_FutureDate_ReturnsTrue();
+        tests.IsHighPriority_HighPriority_ReturnsTrue();
+
+        Console.WriteLine();
+        Console.WriteLine("All tests passed! ✓");
+        Console.WriteLine();
+        Console.WriteLine("Note: These tests use REAL business logic");
+        Console.WriteLine("from the Task Manager API project!");
+        Console.WriteLine();
+        Console.WriteLine("In actual xUnit tests, you'd use:");
+        Console.WriteLine("  [Fact] attribute for test methods");
+        Console.WriteLine("  Assert.True(), Assert.False(), Assert.Equal()");
     }
 }`}
 />
@@ -116,23 +210,71 @@ class Program
 
 Format: **MethodName_Scenario_ExpectedBehavior**
 
-### Good Names ✅
+### Good Names ✅ (Task Manager API Examples)
 ```csharp
-Add_TwoPositiveNumbers_ReturnsSum()
-Add_NegativeAndPositive_ReturnsCorrectResult()
-Add_ZeroToNumber_ReturnsSameNumber()
-Divide_ByZero_ThrowsException()
-GetUser_ValidId_ReturnsUser()
-GetUser_InvalidId_ReturnsNull()
+// Task creation tests
+CreateTaskAsync_WithValidData_CreatesTask()
+CreateTaskAsync_WithEmptyTitle_ThrowsException()
+CreateTaskAsync_WithPastDueDate_ThrowsException()
+
+// Status transition tests
+UpdateTaskStatusAsync_TodoToInProgress_UpdatesStatus()
+UpdateTaskStatusAsync_TodoToDone_ThrowsException()
+UpdateTaskStatusAsync_TransitionToDone_SetsCompletedDate()
+
+// Query tests
+GetAllTasksAsync_FilteredByUser_ReturnsUserTasks()
+GetOverdueTasksAsync_WithMixedDates_ReturnsOnlyOverdue()
+GetTaskByIdAsync_ValidId_ReturnsTask()
+GetTaskByIdAsync_InvalidId_ReturnsNull()
 ```
 
 ### Bad Names ❌
 ```csharp
 Test1()
-TestAdd()
-AddTest()
+TestCreateTask()
+CreateTaskTest()
 TestMethod()
+TaskTest()
 ```
+
+## Real Example from Task Manager API
+
+Let's look at an actual test from the Task Manager API project:
+
+```csharp
+[Fact]
+public async Task CreateTaskAsync_WithValidData_ShouldCreateTask()
+{
+    // Arrange
+    var request = new CreateTaskRequest(
+        Title: "Test Task",
+        Description: "Test Description",
+        Priority: TaskPriority.High,
+        DueDate: DateTime.UtcNow.AddDays(7),
+        UserId: 1,
+        CategoryId: 1
+    );
+
+    // Act
+    var result = await _taskService.CreateTaskAsync(request);
+
+    // Assert
+    result.Should().NotBeNull();
+    result.Title.Should().Be("Test Task");
+    result.Priority.Should().Be(TaskPriority.High);
+    result.Status.Should().Be(TaskStatus.Todo);
+}
+```
+
+**Notice:**
+- Clear AAA sections with comments
+- Descriptive test name
+- Uses FluentAssertions (`Should()`) for readable assertions
+- Tests ONE thing: creating a task with valid data
+
+You can find this test in:
+`sample-projects/TaskManagerAPI.Tests/Services/TaskServiceTests.cs`
 
 ## Common Assertions
 
@@ -140,21 +282,46 @@ TestMethod()
 
 <CodeEditor
   initialCode={`using System;
-using Xunit;
 
-public class EqualityTests
+// Demonstrating equality assertions
+// In xUnit: Assert.Equal() and Assert.NotEqual()
+
+class Program
 {
-    [Fact]
-    public void TestEquality()
+    static void Main()
     {
+        Console.WriteLine("=== Equality Assertions ===");
+        Console.WriteLine();
+
         // Equal - checks if two values are equal
-        Assert.Equal(5, 2 + 3);
-        Assert.Equal("hello", "hello");
+        // In xUnit: Assert.Equal(5, 2 + 3);
+        if (5 == (2 + 3))
+            Console.WriteLine("✓ PASS: 2 + 3 equals 5");
+        else
+            Console.WriteLine("✗ FAIL: 2 + 3 does not equal 5");
+
+        // In xUnit: Assert.Equal("hello", "hello");
+        if ("hello" == "hello")
+            Console.WriteLine("✓ PASS: \"hello\" equals \"hello\"");
+        else
+            Console.WriteLine("✗ FAIL: strings not equal");
+
+        Console.WriteLine();
 
         // NotEqual - checks if two values are different
-        Assert.NotEqual(5, 3);
-        Assert.NotEqual("hello", "world");
+        // In xUnit: Assert.NotEqual(5, 3);
+        if (5 != 3)
+            Console.WriteLine("✓ PASS: 5 is not equal to 3");
+        else
+            Console.WriteLine("✗ FAIL: 5 should not equal 3");
 
+        // In xUnit: Assert.NotEqual("hello", "world");
+        if ("hello" != "world")
+            Console.WriteLine("✓ PASS: \"hello\" is not equal to \"world\"");
+        else
+            Console.WriteLine("✗ FAIL: strings should not be equal");
+
+        Console.WriteLine();
         Console.WriteLine("All equality assertions passed!");
     }
 }`}
@@ -164,21 +331,46 @@ public class EqualityTests
 
 <CodeEditor
   initialCode={`using System;
-using Xunit;
 
-public class BooleanTests
+// Demonstrating boolean assertions
+// In xUnit: Assert.True() and Assert.False()
+
+class Program
 {
-    [Fact]
-    public void TestBooleans()
+    static void Main()
     {
+        Console.WriteLine("=== Boolean Assertions ===");
+        Console.WriteLine();
+
         // True - checks if condition is true
-        Assert.True(5 > 3);
-        Assert.True("hello".Contains("ell"));
+        // In xUnit: Assert.True(5 > 3);
+        if (5 > 3)
+            Console.WriteLine("✓ PASS: 5 > 3 is true");
+        else
+            Console.WriteLine("✗ FAIL: 5 > 3 should be true");
+
+        // In xUnit: Assert.True("hello".Contains("ell"));
+        if ("hello".Contains("ell"))
+            Console.WriteLine("✓ PASS: \"hello\" contains \"ell\"");
+        else
+            Console.WriteLine("✗ FAIL: \"hello\" should contain \"ell\"");
+
+        Console.WriteLine();
 
         // False - checks if condition is false
-        Assert.False(3 > 5);
-        Assert.False("hello".Contains("xyz"));
+        // In xUnit: Assert.False(3 > 5);
+        if (!(3 > 5))
+            Console.WriteLine("✓ PASS: 3 > 5 is false");
+        else
+            Console.WriteLine("✗ FAIL: 3 > 5 should be false");
 
+        // In xUnit: Assert.False("hello".Contains("xyz"));
+        if (!("hello".Contains("xyz")))
+            Console.WriteLine("✓ PASS: \"hello\" does not contain \"xyz\"");
+        else
+            Console.WriteLine("✗ FAIL: \"hello\" should not contain \"xyz\"");
+
+        Console.WriteLine();
         Console.WriteLine("All boolean assertions passed!");
     }
 }`}
@@ -188,22 +380,35 @@ public class BooleanTests
 
 <CodeEditor
   initialCode={`using System;
-using Xunit;
 
-public class NullTests
+// Demonstrating null assertions
+// In xUnit: Assert.Null() and Assert.NotNull()
+
+class Program
 {
-    [Fact]
-    public void TestNull()
+    static void Main()
     {
+        Console.WriteLine("=== Null Assertions ===");
+        Console.WriteLine();
+
         string nullString = null;
         string notNullString = "hello";
 
         // Null - checks if value is null
-        Assert.Null(nullString);
+        // In xUnit: Assert.Null(nullString);
+        if (nullString == null)
+            Console.WriteLine("✓ PASS: nullString is null");
+        else
+            Console.WriteLine("✗ FAIL: nullString should be null");
 
         // NotNull - checks if value is not null
-        Assert.NotNull(notNullString);
+        // In xUnit: Assert.NotNull(notNullString);
+        if (notNullString != null)
+            Console.WriteLine("✓ PASS: notNullString is not null");
+        else
+            Console.WriteLine("✗ FAIL: notNullString should not be null");
 
+        Console.WriteLine();
         Console.WriteLine("All null assertions passed!");
     }
 }`}
@@ -213,27 +418,48 @@ public class NullTests
 
 <CodeEditor
   initialCode={`using System;
-using Xunit;
 
-public class StringTests
+// Demonstrating string assertions
+// In xUnit: Assert.Contains(), StartsWith(), EndsWith()
+
+class Program
 {
-    [Fact]
-    public void TestStrings()
+    static void Main()
     {
+        Console.WriteLine("=== String Assertions ===");
+        Console.WriteLine();
+
         string greeting = "Hello, World!";
 
         // Contains - checks if string contains substring
-        Assert.Contains("World", greeting);
+        // In xUnit: Assert.Contains("World", greeting);
+        if (greeting.Contains("World"))
+            Console.WriteLine("✓ PASS: greeting contains \"World\"");
+        else
+            Console.WriteLine("✗ FAIL: greeting should contain \"World\"");
 
         // DoesNotContain - checks if string doesn't contain substring
-        Assert.DoesNotContain("xyz", greeting);
+        // In xUnit: Assert.DoesNotContain("xyz", greeting);
+        if (!greeting.Contains("xyz"))
+            Console.WriteLine("✓ PASS: greeting does not contain \"xyz\"");
+        else
+            Console.WriteLine("✗ FAIL: greeting should not contain \"xyz\"");
 
         // StartsWith - checks if string starts with prefix
-        Assert.StartsWith("Hello", greeting);
+        // In xUnit: Assert.StartsWith("Hello", greeting);
+        if (greeting.StartsWith("Hello"))
+            Console.WriteLine("✓ PASS: greeting starts with \"Hello\"");
+        else
+            Console.WriteLine("✗ FAIL: greeting should start with \"Hello\"");
 
         // EndsWith - checks if string ends with suffix
-        Assert.EndsWith("World!", greeting);
+        // In xUnit: Assert.EndsWith("World!", greeting);
+        if (greeting.EndsWith("World!"))
+            Console.WriteLine("✓ PASS: greeting ends with \"World!\"");
+        else
+            Console.WriteLine("✗ FAIL: greeting should end with \"World!\"");
 
+        Console.WriteLine();
         Console.WriteLine("All string assertions passed!");
     }
 }`}
@@ -244,35 +470,65 @@ public class StringTests
 <CodeEditor
   initialCode={`using System;
 using System.Collections.Generic;
-using Xunit;
+using System.Linq;
 
-public class CollectionTests
+// Demonstrating collection assertions
+// In xUnit: Assert.Empty(), Contains(), Single(), All()
+
+class Program
 {
-    [Fact]
-    public void TestCollections()
+    static void Main()
     {
+        Console.WriteLine("=== Collection Assertions ===");
+        Console.WriteLine();
+
         List<int> numbers = new List<int> { 1, 2, 3, 4, 5 };
         List<int> emptyList = new List<int>();
 
         // Empty - checks if collection is empty
-        Assert.Empty(emptyList);
+        // In xUnit: Assert.Empty(emptyList);
+        if (emptyList.Count == 0)
+            Console.WriteLine("✓ PASS: emptyList is empty");
+        else
+            Console.WriteLine("✗ FAIL: emptyList should be empty");
 
         // NotEmpty - checks if collection has items
-        Assert.NotEmpty(numbers);
+        // In xUnit: Assert.NotEmpty(numbers);
+        if (numbers.Count > 0)
+            Console.WriteLine("✓ PASS: numbers is not empty");
+        else
+            Console.WriteLine("✗ FAIL: numbers should not be empty");
 
         // Contains - checks if collection contains item
-        Assert.Contains(3, numbers);
+        // In xUnit: Assert.Contains(3, numbers);
+        if (numbers.Contains(3))
+            Console.WriteLine("✓ PASS: numbers contains 3");
+        else
+            Console.WriteLine("✗ FAIL: numbers should contain 3");
 
         // DoesNotContain - checks if collection doesn't contain item
-        Assert.DoesNotContain(10, numbers);
+        // In xUnit: Assert.DoesNotContain(10, numbers);
+        if (!numbers.Contains(10))
+            Console.WriteLine("✓ PASS: numbers does not contain 10");
+        else
+            Console.WriteLine("✗ FAIL: numbers should not contain 10");
 
         // Single - checks if collection has exactly one item
         List<int> single = new List<int> { 42 };
-        Assert.Single(single);
+        // In xUnit: Assert.Single(single);
+        if (single.Count == 1)
+            Console.WriteLine("✓ PASS: single has exactly one item");
+        else
+            Console.WriteLine($"✗ FAIL: single should have 1 item, has {single.Count}");
 
         // All - checks if all items meet condition
-        Assert.All(numbers, n => Assert.True(n > 0));
+        // In xUnit: Assert.All(numbers, n => Assert.True(n > 0));
+        if (numbers.All(n => n > 0))
+            Console.WriteLine("✓ PASS: all numbers are greater than 0");
+        else
+            Console.WriteLine("✗ FAIL: all numbers should be greater than 0");
 
+        Console.WriteLine();
         Console.WriteLine("All collection assertions passed!");
     }
 }`}
@@ -284,7 +540,9 @@ When you expect code to throw an exception, test for it!
 
 <CodeEditor
   initialCode={`using System;
-using Xunit;
+
+// Demonstrating exception testing
+// In xUnit: Assert.Throws<T>() and Record.Exception()
 
 public class Calculator
 {
@@ -309,45 +567,70 @@ public class Calculator
 
 public class ExceptionTests
 {
-    [Fact]
+    // Test 1: Divide_ByZero_ThrowsException
+    // In xUnit: [Fact] public void Divide_ByZero_ThrowsException()
     public void Divide_ByZero_ThrowsException()
     {
         // Arrange
         var calculator = new Calculator();
 
         // Act & Assert - check that exception is thrown
-        Assert.Throws<DivideByZeroException>(() =>
-            calculator.Divide(10, 0)
-        );
+        // In xUnit: Assert.Throws<DivideByZeroException>(() => calculator.Divide(10, 0));
+        try
+        {
+            calculator.Divide(10, 0);
+            Console.WriteLine("✗ FAIL: Should have thrown DivideByZeroException");
+        }
+        catch (DivideByZeroException)
+        {
+            Console.WriteLine("✓ PASS: DivideByZeroException was thrown");
+        }
     }
 
-    [Fact]
+    // Test 2: ProcessAge_NegativeAge_ThrowsArgumentException
+    // In xUnit: [Fact] public void ProcessAge_NegativeAge_ThrowsArgumentException()
     public void ProcessAge_NegativeAge_ThrowsArgumentException()
     {
         // Arrange
         var calculator = new Calculator();
 
         // Act & Assert
-        var exception = Assert.Throws<ArgumentException>(() =>
-            calculator.ProcessAge(-5)
-        );
+        // In xUnit: var exception = Assert.Throws<ArgumentException>(() => calculator.ProcessAge(-5));
+        try
+        {
+            calculator.ProcessAge(-5);
+            Console.WriteLine("✗ FAIL: Should have thrown ArgumentException");
+        }
+        catch (ArgumentException ex)
+        {
+            Console.WriteLine("✓ PASS: ArgumentException was thrown");
 
-        // You can also check the exception message
-        Assert.Contains("negative", exception.Message.ToLower());
+            // You can also check the exception message
+            if (ex.Message.ToLower().Contains("negative"))
+                Console.WriteLine("✓ PASS: Exception message contains 'negative'");
+            else
+                Console.WriteLine("✗ FAIL: Exception message should contain 'negative'");
+        }
     }
 
-    [Fact]
+    // Test 3: Divide_NormalNumbers_DoesNotThrow
+    // In xUnit: [Fact] public void Divide_NormalNumbers_DoesNotThrow()
     public void Divide_NormalNumbers_DoesNotThrow()
     {
         // Arrange
         var calculator = new Calculator();
 
         // Act & Assert - verify NO exception is thrown
-        var exception = Record.Exception(() =>
-            calculator.Divide(10, 2)
-        );
-
-        Assert.Null(exception);
+        // In xUnit: var exception = Record.Exception(() => calculator.Divide(10, 2)); Assert.Null(exception);
+        try
+        {
+            double result = calculator.Divide(10, 2);
+            Console.WriteLine($"✓ PASS: No exception thrown, result = {result}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"✗ FAIL: Should not throw exception, but got: {ex.GetType().Name}");
+        }
     }
 }
 
@@ -355,7 +638,16 @@ class Program
 {
     static void Main()
     {
-        Console.WriteLine("Exception tests demonstrate proper error handling!");
+        Console.WriteLine("=== Exception Tests ===");
+        Console.WriteLine();
+
+        var tests = new ExceptionTests();
+        tests.Divide_ByZero_ThrowsException();
+        tests.ProcessAge_NegativeAge_ThrowsArgumentException();
+        tests.Divide_NormalNumbers_DoesNotThrow();
+
+        Console.WriteLine();
+        Console.WriteLine("All exception tests passed!");
     }
 }`}
 />
@@ -367,129 +659,133 @@ Let's build and test a complete string validator:
 <CodeEditor
   initialCode={`using System;
 using System.Text.RegularExpressions;
-using Xunit;
 
-namespace StringValidation
+// Complete example showing comprehensive testing
+// In xUnit, you'd use [Fact] attributes and Assert methods
+
+public class StringValidator
 {
-    public class StringValidator
+    public bool IsValidEmail(string email)
     {
-        public bool IsValidEmail(string email)
-        {
-            if (string.IsNullOrWhiteSpace(email))
-                return false;
+        if (string.IsNullOrWhiteSpace(email))
+            return false;
 
-            return email.Contains("@") &&
-                   email.Contains(".") &&
-                   email.IndexOf("@") < email.LastIndexOf(".");
+        return email.Contains("@") &&
+               email.Contains(".") &&
+               email.IndexOf("@") < email.LastIndexOf(".");
+    }
+
+    public bool HasMinimumLength(string text, int minLength)
+    {
+        if (text == null)
+            return false;
+
+        return text.Length >= minLength;
+    }
+
+    public bool ContainsOnlyLetters(string text)
+    {
+        if (string.IsNullOrEmpty(text))
+            return false;
+
+        return Regex.IsMatch(text, "^[a-zA-Z]+$");
+    }
+}
+
+public class StringValidatorTests
+{
+    private StringValidator validator = new StringValidator();
+    private int passedTests = 0;
+    private int failedTests = 0;
+
+    private void RunTest(string testName, bool condition, string description)
+    {
+        if (condition)
+        {
+            Console.WriteLine($"✓ PASS: {testName}");
+            passedTests++;
         }
-
-        public bool HasMinimumLength(string text, int minLength)
+        else
         {
-            if (text == null)
-                return false;
-
-            return text.Length >= minLength;
-        }
-
-        public bool ContainsOnlyLetters(string text)
-        {
-            if (string.IsNullOrEmpty(text))
-                return false;
-
-            return Regex.IsMatch(text, "^[a-zA-Z]+$");
+            Console.WriteLine($"✗ FAIL: {testName} - {description}");
+            failedTests++;
         }
     }
 
-    public class StringValidatorTests
+    public void RunAllTests()
     {
+        Console.WriteLine("=== String Validator Tests ===");
+        Console.WriteLine();
+
         // Email validation tests
-        [Fact]
-        public void IsValidEmail_ValidEmail_ReturnsTrue()
-        {
-            var validator = new StringValidator();
-            Assert.True(validator.IsValidEmail("user@example.com"));
-        }
+        // In xUnit: [Fact] public void IsValidEmail_ValidEmail_ReturnsTrue()
+        RunTest("IsValidEmail_ValidEmail_ReturnsTrue",
+            validator.IsValidEmail("user@example.com") == true,
+            "Valid email should return true");
 
-        [Fact]
-        public void IsValidEmail_NoAtSymbol_ReturnsFalse()
-        {
-            var validator = new StringValidator();
-            Assert.False(validator.IsValidEmail("userexample.com"));
-        }
+        RunTest("IsValidEmail_NoAtSymbol_ReturnsFalse",
+            validator.IsValidEmail("userexample.com") == false,
+            "Email without @ should return false");
 
-        [Fact]
-        public void IsValidEmail_NoDot_ReturnsFalse()
-        {
-            var validator = new StringValidator();
-            Assert.False(validator.IsValidEmail("user@examplecom"));
-        }
+        RunTest("IsValidEmail_NoDot_ReturnsFalse",
+            validator.IsValidEmail("user@examplecom") == false,
+            "Email without . should return false");
 
-        [Fact]
-        public void IsValidEmail_EmptyString_ReturnsFalse()
-        {
-            var validator = new StringValidator();
-            Assert.False(validator.IsValidEmail(""));
-        }
+        RunTest("IsValidEmail_EmptyString_ReturnsFalse",
+            validator.IsValidEmail("") == false,
+            "Empty email should return false");
 
-        [Fact]
-        public void IsValidEmail_Null_ReturnsFalse()
-        {
-            var validator = new StringValidator();
-            Assert.False(validator.IsValidEmail(null));
-        }
+        RunTest("IsValidEmail_Null_ReturnsFalse",
+            validator.IsValidEmail(null) == false,
+            "Null email should return false");
+
+        Console.WriteLine();
 
         // Minimum length tests
-        [Fact]
-        public void HasMinimumLength_MeetsRequirement_ReturnsTrue()
-        {
-            var validator = new StringValidator();
-            Assert.True(validator.HasMinimumLength("hello", 5));
-        }
+        RunTest("HasMinimumLength_MeetsRequirement_ReturnsTrue",
+            validator.HasMinimumLength("hello", 5) == true,
+            "String meeting min length should return true");
 
-        [Fact]
-        public void HasMinimumLength_TooShort_ReturnsFalse()
-        {
-            var validator = new StringValidator();
-            Assert.False(validator.HasMinimumLength("hi", 5));
-        }
+        RunTest("HasMinimumLength_TooShort_ReturnsFalse",
+            validator.HasMinimumLength("hi", 5) == false,
+            "String below min length should return false");
 
-        [Fact]
-        public void HasMinimumLength_NullString_ReturnsFalse()
-        {
-            var validator = new StringValidator();
-            Assert.False(validator.HasMinimumLength(null, 5));
-        }
+        RunTest("HasMinimumLength_NullString_ReturnsFalse",
+            validator.HasMinimumLength(null, 5) == false,
+            "Null string should return false");
+
+        Console.WriteLine();
 
         // Letters only tests
-        [Fact]
-        public void ContainsOnlyLetters_OnlyLetters_ReturnsTrue()
-        {
-            var validator = new StringValidator();
-            Assert.True(validator.ContainsOnlyLetters("Hello"));
-        }
+        RunTest("ContainsOnlyLetters_OnlyLetters_ReturnsTrue",
+            validator.ContainsOnlyLetters("Hello") == true,
+            "String with only letters should return true");
 
-        [Fact]
-        public void ContainsOnlyLetters_HasNumbers_ReturnsFalse()
-        {
-            var validator = new StringValidator();
-            Assert.False(validator.ContainsOnlyLetters("Hello123"));
-        }
+        RunTest("ContainsOnlyLetters_HasNumbers_ReturnsFalse",
+            validator.ContainsOnlyLetters("Hello123") == false,
+            "String with numbers should return false");
 
-        [Fact]
-        public void ContainsOnlyLetters_HasSpaces_ReturnsFalse()
-        {
-            var validator = new StringValidator();
-            Assert.False(validator.ContainsOnlyLetters("Hello World"));
-        }
+        RunTest("ContainsOnlyLetters_HasSpaces_ReturnsFalse",
+            validator.ContainsOnlyLetters("Hello World") == false,
+            "String with spaces should return false");
+
+        Console.WriteLine();
+        Console.WriteLine($"Results: {passedTests} passed, {failedTests} failed");
     }
+}
 
-    class Program
+class Program
+{
+    static void Main()
     {
-        static void Main()
-        {
-            Console.WriteLine("String Validator with comprehensive tests!");
-            Console.WriteLine("Run: dotnet test");
-        }
+        var tests = new StringValidatorTests();
+        tests.RunAllTests();
+
+        Console.WriteLine();
+        Console.WriteLine("Note: In real xUnit tests:");
+        Console.WriteLine("  - Each method would have [Fact] attribute");
+        Console.WriteLine("  - Use Assert.True(), Assert.False(), etc.");
+        Console.WriteLine("  - Tests run automatically with 'dotnet test'");
     }
 }`}
 />
@@ -502,16 +798,66 @@ namespace StringValidation
 - ✅ Use appropriate assertions (Equal, True, Contains, etc.)
 - ✅ Always test exception scenarios
 - ✅ Test edge cases (null, empty, zero, negative)
+- ✅ Study real tests in Task Manager API for best practices
+- ✅ Practice by extending the existing test suite
 
-## Practice Exercise
+## Practice Exercise: Task Manager API
 
-Create a `PasswordValidator` class that checks:
-1. Password has minimum 8 characters
-2. Password contains at least one uppercase letter
-3. Password contains at least one number
-4. Password is not null or empty
+Now let's practice with the **real Task Manager API project**!
 
-Write at least 6 tests for it!
+### Exercise 1: Explore Existing Tests
+
+Navigate to `sample-projects/TaskManagerAPI.Tests/Services/TaskServiceTests.cs` and find these tests:
+
+1. `CreateTaskAsync_WithValidData_ShouldCreateTask`
+2. `CreateTaskAsync_WithEmptyTitle_ShouldThrowException`
+3. `UpdateTaskStatusAsync_WithValidTransition_ShouldUpdateStatus`
+
+For each test, identify:
+- **Arrange** section (what's being set up?)
+- **Act** section (what action is performed?)
+- **Assert** section (what's being verified?)
+
+### Exercise 2: Run the Tests
+
+```bash
+cd sample-projects/TaskManagerAPI.Tests
+dotnet test
+```
+
+You should see 28 tests pass. Look at the output and notice the test names!
+
+### Exercise 3: Add Your Own Test
+
+Open `TaskServiceTests.cs` and add a new test:
+
+```csharp
+[Fact]
+public async Task GetTaskByIdAsync_WithValidId_ShouldReturnTask()
+{
+    // Arrange
+    int existingTaskId = 1;
+
+    // Act
+    var result = await _taskService.GetTaskByIdAsync(existingTaskId);
+
+    // Assert
+    result.Should().NotBeNull();
+    result!.Id.Should().Be(existingTaskId);
+}
+```
+
+Run the tests again to see your test pass!
+
+### Exercise 4: Practice AAA Pattern
+
+Write these tests yourself (don't peek at existing ones first!):
+
+1. Test that deleting a task with valid ID returns true
+2. Test that getting statistics for a user returns correct counts
+3. Test that updating a task with a too-long title throws an exception
+
+Then compare your tests with the ones in the project to see different approaches!
 
 ## Next Steps
 
